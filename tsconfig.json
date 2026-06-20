@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {},
+  "extends": "expo/tsconfig.base",
+  "include": [
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx",
+    "constants/**/*.ts",
+    "constants/**/*.tsx",
+    "lib/**/*.ts",
+    "lib/**/*.tsx",
+    "store/**/*.ts",
+    "store/**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "relicus-admin",
+    "relicus-admin-src",
+    "relicus-native"
+  ]
+}
