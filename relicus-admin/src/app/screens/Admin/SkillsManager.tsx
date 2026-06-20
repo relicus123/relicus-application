@@ -714,8 +714,7 @@ export function SkillsManager() {
                     <div className="grid gap-3 md:grid-cols-2">
                       <input
                         type="text"
-                        required
-                        placeholder="Module ID (e.g. mod-react-basics)"
+                        placeholder="Module ID (Optional, auto-generated)"
                         value={moduleForm.id}
                         onChange={(e) => setModuleForm({ ...moduleForm, id: e.target.value })}
                         className="rounded-xl border border-slate-200 p-2 text-xs bg-white dark:border-slate-800 dark:bg-slate-900"
@@ -866,8 +865,7 @@ export function SkillsManager() {
                             <div className="grid gap-2 md:grid-cols-3">
                               <input
                                 type="text"
-                                required
-                                placeholder="Lesson ID"
+                                placeholder="Lesson ID (Optional)"
                                 value={lessonForm.id}
                                 onChange={(e) => setLessonForm({ ...lessonForm, id: e.target.value })}
                                 className="rounded-lg border border-slate-200 p-2 text-xs bg-white dark:border-slate-800 dark:bg-slate-900"
