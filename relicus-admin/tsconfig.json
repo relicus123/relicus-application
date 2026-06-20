@@ -27,6 +27,5 @@
     "node_modules",
     "relicus-native",
     "dist"
-  ],
-  "extends": "expo/tsconfig.base"
+  ]
 }
