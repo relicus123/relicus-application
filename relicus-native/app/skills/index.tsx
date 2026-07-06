@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   Dimensions,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -150,15 +151,23 @@ export default function SkillEnhancementLanding() {
                   onPress={() => handleOpenCourse(course.id)}
                   style={styles.courseCard}
                 >
-                  <View style={styles.courseCardTop}>
-                    <View style={styles.thumbnailBox}>
-                      <Text style={styles.thumbnailText}>{course.thumbnail}</Text>
+                  {/* Premium Image Header */}
+                  <View style={styles.premiumThumbnailContainer}>
+                    {course.thumbnail && String(course.thumbnail).trim().startsWith('http') ? (
+                      <Image source={{ uri: String(course.thumbnail).trim() }} style={styles.premiumImage} resizeMode="cover" />
+                    ) : (
+                      <View style={styles.premiumPlaceholder}>
+                        <Text style={styles.premiumPlaceholderText}>{course.thumbnail || "📚"}</Text>
+                      </View>
+                    )}
+                    <View style={styles.premiumBadge}>
+                      <Text style={styles.premiumBadgeText}>{course.category} • {course.level}</Text>
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.courseCategory}>{course.category} • {course.level}</Text>
-                      <Text style={styles.courseTitle}>{course.title}</Text>
-                      <Text style={styles.courseInstructor}>Instructor: {course.instructor}</Text>
-                    </View>
+                  </View>
+
+                  <View style={{ marginTop: 4, marginBottom: 12 }}>
+                    <Text style={styles.premiumTitle}>{course.title}</Text>
+                    <Text style={styles.courseInstructor}>Instructor: {course.instructor}</Text>
                   </View>
 
                   {/* Skills tags */}
@@ -220,15 +229,23 @@ export default function SkillEnhancementLanding() {
                     onPress={() => handleOpenCourse(course.id)}
                     style={styles.courseCard}
                   >
-                    <View style={styles.courseCardTop}>
-                      <View style={styles.thumbnailBox}>
-                        <Text style={styles.thumbnailText}>{course.thumbnail}</Text>
+                    {/* Premium Image Header */}
+                    <View style={styles.premiumThumbnailContainer}>
+                      {course.thumbnail && String(course.thumbnail).trim().startsWith('http') ? (
+                        <Image source={{ uri: String(course.thumbnail).trim() }} style={styles.premiumImage} resizeMode="cover" />
+                      ) : (
+                        <View style={styles.premiumPlaceholder}>
+                          <Text style={styles.premiumPlaceholderText}>{course.thumbnail || "📚"}</Text>
+                        </View>
+                      )}
+                      <View style={styles.premiumBadge}>
+                        <Text style={styles.premiumBadgeText}>{course.category}</Text>
                       </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.courseCategory}>{course.category}</Text>
-                        <Text style={styles.courseTitle}>{course.title}</Text>
-                        <Text style={styles.courseInstructor}>{completedLessons} of {totalLessons} lessons completed</Text>
-                      </View>
+                    </View>
+
+                    <View style={{ marginTop: 4, marginBottom: 12 }}>
+                      <Text style={styles.premiumTitle}>{course.title}</Text>
+                      <Text style={styles.courseInstructor}>{completedLessons} of {totalLessons} lessons completed</Text>
                     </View>
 
                     <View style={styles.progressContainer}>
@@ -427,10 +444,57 @@ const styles = StyleSheet.create({
   courseCard: {
     backgroundColor: "white",
     borderRadius: 24,
-    padding: 20,
-    marginBottom: 16,
+    padding: 16,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: "rgba(28, 73, 102, 0.05)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  premiumThumbnailContainer: {
+    width: '100%',
+    height: 160,
+    borderRadius: 16,
+    overflow: 'hidden',
+    position: 'relative',
+    marginBottom: 12,
+  },
+  premiumImage: {
+    width: '100%',
+    height: '100%',
+  },
+  premiumPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: "rgba(143, 189, 215, 0.15)",
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  premiumPlaceholderText: {
+    fontSize: 48,
+  },
+  premiumBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  premiumBadgeText: {
+    fontSize: 10,
+    color: "#1C4966",
+    fontWeight: "bold",
+  },
+  premiumTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1C4966",
+    marginBottom: 4,
   },
   courseCardTop: {
     flexDirection: "row",
@@ -444,6 +508,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(143, 189, 215, 0.15)",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   thumbnailText: {
     fontSize: 26,

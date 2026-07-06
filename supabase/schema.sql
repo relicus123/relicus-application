@@ -60,7 +60,8 @@ create table if not exists skills_lessons (
   title text not null,
   video_url text not null,
   duration text not null,
-  sequence_number integer default 0
+  sequence_number integer default 0,
+  thumbnail text
 );
 
 create table if not exists skills_materials (
@@ -95,6 +96,23 @@ create table if not exists skills_assignments (
   download_url text
 );
 
+create table if not exists skills_doubts (
+  id uuid default gen_random_uuid() primary key,
+  course_id text references skills_courses(id) on delete cascade,
+  user_email text not null,
+  question text not null,
+  status text default 'Pending' check (status in ('Pending', 'Resolved')),
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+create table if not exists skills_doubt_responses (
+  id uuid default gen_random_uuid() primary key,
+  doubt_id uuid references skills_doubts(id) on delete cascade,
+  author text not null,
+  message text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
 -- RLS policies for Skills tables
 alter table skills_courses enable row level security;
 alter table skills_modules enable row level security;
@@ -103,6 +121,8 @@ alter table skills_materials enable row level security;
 alter table skills_quizzes enable row level security;
 alter table skills_questions enable row level security;
 alter table skills_assignments enable row level security;
+alter table skills_doubts enable row level security;
+alter table skills_doubt_responses enable row level security;
 
 create policy "Skills courses read viewable by all" on skills_courses for select using (true);
 create policy "Skills courses write by admin only" on skills_courses for all using (
@@ -138,6 +158,13 @@ create policy "Skills assignments read viewable by all" on skills_assignments fo
 create policy "Skills assignments write by admin only" on skills_assignments for all using (
   exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin')
 );
+
+create policy "Doubts are viewable by everyone" on skills_doubts for select using (true);
+create policy "Anyone can insert doubts" on skills_doubts for insert with check (true);
+create policy "Admin can update doubts" on skills_doubts for update using (true); 
+
+create policy "Responses are viewable by everyone" on skills_doubt_responses for select using (true);
+create policy "Admin can insert responses" on skills_doubt_responses for insert with check (true);
 
 
 -- -----------------------------------------------------------------------------

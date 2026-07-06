@@ -8,8 +8,11 @@ import {
   TextInput,
   Dimensions,
   RefreshControl,
+  Image,
 } from "react-native";
-import { useRouter, useFocusEffect } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { LinearGradient } from "expo-linear-gradient";
 import { MotiView } from "moti";
 import {
@@ -47,9 +50,17 @@ export default function SkillEnhancementLanding() {
     }, [])
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      store.fetchCourses();
+      store.fetchCertificateRequests();
+    }, [])
+  );
+
   const onRefresh = async () => {
     setRefreshing(true);
     await store.fetchCourses();
+    await store.fetchCertificateRequests();
     setRefreshing(false);
   };
 
@@ -88,6 +99,31 @@ export default function SkillEnhancementLanding() {
       pathname: "/skills/course-dashboard" as any,
       params: { courseId },
     });
+  };
+
+  const handleDownloadCertificate = async (cert: any) => {
+    try {
+      const html = `
+        <html>
+          <body style="padding: 40px; font-family: sans-serif; text-align: center; border: 15px solid #1C4966; box-sizing: border-box; min-height: 90vh;">
+            <div style="margin-top: 50px;">
+              <h1 style="color: #1C4966; font-size: 50px;">Certificate of Completion</h1>
+              <p style="font-size: 24px; margin-top: 40px;">This is to certify that</p>
+              <h2 style="font-size: 40px; color: #5F8B70; margin-top: 20px; text-decoration: underline;">${cert.recipientName}</h2>
+              <p style="font-size: 24px; margin-top: 20px;">has successfully completed the course</p>
+              <h2 style="font-size: 40px; color: #F59E0B; margin-top: 20px;">${cert.courseTitle}</h2>
+              <p style="font-size: 20px; margin-top: 80px;">Issued on: ${new Date(cert.date).toLocaleDateString()}</p>
+              <p style="font-size: 20px; margin-top: 10px; color: gray;">Credential ID: ${cert.id}</p>
+            </div>
+          </body>
+        </html>
+      `;
+      const { uri } = await Print.printToFileAsync({ html });
+      await Sharing.shareAsync(uri);
+    } catch (error) {
+      console.error("Error generating certificate", error);
+      alert("Failed to download certificate.");
+    }
   };
 
   return (
@@ -175,24 +211,37 @@ export default function SkillEnhancementLanding() {
                   onPress={() => handleOpenCourse(course.id)}
                   style={styles.courseCard}
                 >
-                  <View style={styles.courseCardTop}>
-                    <View style={styles.thumbnailBox}>
-                      <Text style={styles.thumbnailText}>{course.thumbnail}</Text>
+                  {/* Premium Image Header */}
+                  <View style={styles.premiumThumbnailContainer}>
+                    {course.thumbnail && String(course.thumbnail).trim().startsWith('http') ? (
+                      <Image source={{ uri: String(course.thumbnail).trim() }} style={styles.premiumImage} resizeMode="cover" />
+                    ) : (
+                      <View style={styles.premiumPlaceholder}>
+                        <Text style={styles.premiumPlaceholderText}>{course.thumbnail || "📚"}</Text>
+                      </View>
+                    )}
+                    <View style={styles.premiumBadge}>
+                      <Text style={styles.premiumBadgeText}>{course.category} • {course.level}</Text>
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.courseCategory}>{course.category} • {course.level}</Text>
-                      <Text style={styles.courseTitle}>{course.title}</Text>
-                      <Text style={styles.courseInstructor}>Instructor: {course.instructor}</Text>
-                    </View>
+                  </View>
+
+                  <View style={{ marginTop: 4, marginBottom: 12 }}>
+                    <Text style={styles.premiumTitle}>{course.title}</Text>
+                    <Text style={styles.courseInstructor}>Instructor: {course.instructor}</Text>
                   </View>
 
                   {/* Skills tags */}
                   <View style={styles.skillsTagsRow}>
-                    {course.skillsLearned.map((skill) => (
+                    {course.skillsLearned.slice(0, 3).map((skill) => (
                       <View key={skill} style={styles.skillTag}>
-                        <Text style={styles.skillTagText}>✓ {skill}</Text>
+                        <Text style={styles.skillTagText}>{skill}</Text>
                       </View>
                     ))}
+                    {course.skillsLearned.length > 3 && (
+                      <View style={[styles.skillTag, { backgroundColor: "#F5F7FA", borderWidth: 0 }]}>
+                        <Text style={[styles.skillTagText, { color: "#8FBDD7" }]}>+{course.skillsLearned.length - 3} more</Text>
+                      </View>
+                    )}
                   </View>
 
                   <View style={styles.cardDivider} />
@@ -264,15 +313,23 @@ export default function SkillEnhancementLanding() {
                     onPress={() => handleOpenCourse(course.id)}
                     style={styles.courseCard}
                   >
-                    <View style={styles.courseCardTop}>
-                      <View style={styles.thumbnailBox}>
-                        <Text style={styles.thumbnailText}>{course.thumbnail}</Text>
+                    {/* Premium Image Header */}
+                    <View style={styles.premiumThumbnailContainer}>
+                      {course.thumbnail && String(course.thumbnail).trim().startsWith('http') ? (
+                        <Image source={{ uri: String(course.thumbnail).trim() }} style={styles.premiumImage} resizeMode="cover" />
+                      ) : (
+                        <View style={styles.premiumPlaceholder}>
+                          <Text style={styles.premiumPlaceholderText}>{course.thumbnail || "📚"}</Text>
+                        </View>
+                      )}
+                      <View style={styles.premiumBadge}>
+                        <Text style={styles.premiumBadgeText}>{course.category}</Text>
                       </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.courseCategory}>{course.category}</Text>
-                        <Text style={styles.courseTitle}>{course.title}</Text>
-                        <Text style={styles.courseInstructor}>{completedLessons} of {totalLessons} lessons completed</Text>
-                      </View>
+                    </View>
+
+                    <View style={{ marginTop: 4, marginBottom: 12 }}>
+                      <Text style={styles.premiumTitle}>{course.title}</Text>
+                      <Text style={styles.courseInstructor}>{completedLessons} of {totalLessons} lessons completed</Text>
                     </View>
 
                     <View style={styles.progressContainer}>
@@ -310,15 +367,68 @@ export default function SkillEnhancementLanding() {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.certCategory}>PROFESSIONAL CREDENTIAL</Text>
                     <Text style={styles.certTitle}>{cert.courseTitle}</Text>
-                    <Text style={styles.certDate}>Issued to {cert.recipientName} on {cert.date}</Text>
+                    <Text style={styles.certDate}>Issued to {cert.recipientName} on {new Date(cert.date).toLocaleDateString()}</Text>
                   </View>
+                  <TouchableOpacity onPress={() => handleDownloadCertificate(cert)} style={{ padding: 8, backgroundColor: '#f1f5f9', borderRadius: 50 }}>
+                    <Download size={20} color="#1C4966" />
+                  </TouchableOpacity>
                 </View>
               ))
             ) : (
               <View style={styles.emptyContainer}>
                 <Award size={40} color="#8FBDD7" />
-                <Text style={styles.emptyText}>No certificates earned yet. Complete all lessons & quizzes in a course to earn a certificate.</Text>
+                <Text style={styles.emptyText}>No certificates earned yet.</Text>
               </View>
+            )}
+
+            <View style={{ height: 1, backgroundColor: 'rgba(28, 73, 102, 0.1)', marginVertical: 20 }} />
+            
+            <Text style={styles.resultsText}>Available for Certification</Text>
+            <Text style={[styles.emptyText, { textAlign: 'left', marginBottom: 16, marginTop: -8 }]}>Request a certificate for courses you've completed.</Text>
+            
+            {enrolledCourses.length > 0 ? (
+              enrolledCourses.map((c) => {
+                const request = store.certificateRequests.find(r => r.courseId === c.id);
+                const isEarned = earnedCertificates.some(cert => cert.courseId === c.id);
+                
+                if (isEarned) return null; // Don't show if already earned
+
+                // Calculate progress
+                const allLessons = c.modules.flatMap((m) => m.lessons);
+                const totalLessons = allLessons.length;
+                let totalProgressSum = 0;
+                allLessons.forEach(lesson => {
+                  const key = `${userId}_${c.id}_${lesson.id}`;
+                  totalProgressSum += store.lessonProgress[key]?.progress || 0;
+                });
+                const progressPercent = totalLessons > 0 ? Math.round(totalProgressSum / totalLessons) : 0;
+                
+                return (
+                  <View key={c.id} style={[styles.certCard, { alignItems: 'center' }]}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.certTitle}>{c.title}</Text>
+                      {request ? (
+                        <Text style={{ color: '#F59E0B', fontWeight: 'bold', fontSize: 12, marginTop: 4 }}>Status: {request.status}</Text>
+                      ) : (
+                        <Text style={{ color: progressPercent >= 100 ? '#8FBDD7' : '#94a3b8', fontSize: 12, marginTop: 4 }}>
+                          {progressPercent >= 100 ? "Ready to claim!" : `Course Progress: ${progressPercent}%`}
+                        </Text>
+                      )}
+                    </View>
+                    {!request && (
+                      <TouchableOpacity 
+                        onPress={() => progressPercent >= 100 ? store.requestCertificate(c.id, c.title, authStore.currentUser?.name || "Student") : alert("Please complete the course 100% to request a certificate.")}
+                        style={[styles.btn, { paddingHorizontal: 16, paddingVertical: 8, minWidth: 100, backgroundColor: progressPercent >= 100 ? "#1C4966" : "#cbd5e1" }]}
+                        activeOpacity={progressPercent >= 100 ? 0.8 : 1}
+                      >
+                        <Text style={[styles.btnText, { fontSize: 13, color: progressPercent >= 100 ? "white" : "#64748b" }]}>Request</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                );
+              })
+            ) : (
+              <Text style={styles.emptyText}>Enroll in courses to request certificates.</Text>
             )}
           </MotiView>
         )}
@@ -471,37 +581,57 @@ const styles = StyleSheet.create({
   courseCard: {
     backgroundColor: "white",
     borderRadius: 24,
-    padding: 20,
-    marginBottom: 16,
+    padding: 16,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: "rgba(28, 73, 102, 0.05)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
   },
-  courseCardTop: {
-    flexDirection: "row",
-    gap: 12,
-    alignItems: "center",
+  premiumThumbnailContainer: {
+    width: '100%',
+    height: 160,
+    borderRadius: 16,
+    overflow: 'hidden',
+    position: 'relative',
+    marginBottom: 12,
   },
-  thumbnailBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
+  premiumImage: {
+    width: '100%',
+    height: '100%',
+  },
+  premiumPlaceholder: {
+    width: '100%',
+    height: '100%',
     backgroundColor: "rgba(143, 189, 215, 0.15)",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  thumbnailText: {
-    fontSize: 26,
+  premiumPlaceholderText: {
+    fontSize: 48,
   },
-  courseCategory: {
+  premiumBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  premiumBadgeText: {
     fontSize: 10,
-    color: "#5F8B70",
+    color: "#1C4966",
     fontWeight: "bold",
   },
-  courseTitle: {
-    fontSize: 14,
+  premiumTitle: {
+    fontSize: 18,
     fontWeight: "bold",
     color: "#1C4966",
-    marginTop: 2,
+    marginBottom: 4,
   },
   courseInstructor: {
     fontSize: 12,
@@ -511,18 +641,20 @@ const styles = StyleSheet.create({
   skillsTagsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 6,
-    marginTop: 12,
+    gap: 8,
+    marginTop: 8,
   },
   skillTag: {
-    backgroundColor: "rgba(143, 189, 215, 0.1)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    backgroundColor: "rgba(95, 139, 112, 0.08)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(95, 139, 112, 0.15)",
   },
   skillTagText: {
-    fontSize: 10,
-    color: "#1C4966",
+    fontSize: 11,
+    color: "#5F8B70",
     fontWeight: "600",
   },
   cardDivider: {

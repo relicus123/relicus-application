@@ -36,7 +36,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="learning"
         options={{
-          title: "Learning",
+          title: "Coaching",
           tabBarIcon: ({ color }) => <GraduationCap color={color} size={24} />,
         }}
       />

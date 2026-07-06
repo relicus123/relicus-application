@@ -9,6 +9,7 @@ import {
   Dimensions,
   Linking,
   RefreshControl,
+  Image,
 } from "react-native";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -78,12 +79,14 @@ export default function CourseDashboardScreen() {
     useCallback(() => {
       // Refresh course data silently when screen comes to focus
       store.fetchCourses();
+      store.fetchDoubts();
     }, [])
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
     await store.fetchCourses();
+    await store.fetchDoubts();
     setRefreshing(false);
   };
 
@@ -130,8 +133,10 @@ export default function CourseDashboardScreen() {
     } else {
       setQuizFinished(true);
       // Log quiz score & update store
+      const passed = (score / activeQuiz!.questions.length) >= 0.5;
+      store.saveQuizProgress(courseId, activeQuiz!.id, score, passed);
       store.addLearningHours(0.25);
-      store.logActivity("Quiz Passed", `Scored ${score + (selectedAnswer === activeQuiz!.questions[currentQuestionIdx].correctAnswerIndex ? 1 : 0)}/${activeQuiz!.questions.length} in ${activeQuiz!.title}`);
+      store.logActivity("Quiz Passed", `Scored ${score}/${activeQuiz!.questions.length} in ${activeQuiz!.title}`);
     }
   };
 
@@ -282,25 +287,27 @@ export default function CourseDashboardScreen() {
         {activeTab === "curriculum" && (
           <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
             {/* Modules picker */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-              {course.modules.map((mod, index) => {
-                const active = selectedModuleIdx === index;
-                return (
-                  <TouchableOpacity
-                    key={mod.id}
-                    onPress={() => setSelectedModuleIdx(index)}
-                    style={[styles.modulePickerChip, active && styles.modulePickerChipActive]}
-                  >
-                    <Text style={[styles.modulePickerChipText, active && styles.modulePickerChipTextActive]}>
-                      Module {index + 1}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
+            {course.modules && course.modules.length > 0 ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16, marginLeft: -16, marginRight: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+                {course.modules.map((mod, index) => {
+                  const active = selectedModuleIdx === index;
+                  return (
+                    <TouchableOpacity
+                      key={mod.id}
+                      onPress={() => setSelectedModuleIdx(index)}
+                      style={[styles.modulePickerChip, active && styles.modulePickerChipActive]}
+                    >
+                      <Text style={[styles.modulePickerChipText, active && styles.modulePickerChipTextActive]}>
+                        Module {index + 1}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            ) : null}
 
             {/* Selected Module Detail */}
-            {course.modules[selectedModuleIdx] && (
+            {course.modules && course.modules.length > 0 && course.modules[selectedModuleIdx] ? (
               <View style={styles.card}>
                 <Text style={styles.cardTitle}>{course.modules[selectedModuleIdx].title}</Text>
                 <Text style={styles.subText}>{course.modules[selectedModuleIdx].description}</Text>
@@ -315,12 +322,20 @@ export default function CourseDashboardScreen() {
                       <View key={lesson.id} style={styles.lessonItem}>
                         <TouchableOpacity
                           onPress={() => handlePlayLesson(lesson, course.modules[selectedModuleIdx].id)}
-                          style={styles.lessonPlayBtn}
+                          style={styles.lessonThumbnailBox}
                         >
-                          <Play size={14} color="white" fill="white" />
+                          {lesson.thumbnail && String(lesson.thumbnail).trim().startsWith('http') ? (
+                            <Image source={{ uri: String(lesson.thumbnail).trim() }} style={styles.lessonThumbnailImage} resizeMode="cover" />
+                          ) : (
+                            <View style={styles.lessonThumbnailPlaceholder} />
+                          )}
+                          <View style={styles.lessonPlayOverlay}>
+                            <Play size={16} color="white" fill="white" />
+                          </View>
                         </TouchableOpacity>
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.lessonTitle}>{lesson.title}</Text>
+                        
+                        <View style={{ flex: 1, paddingVertical: 4 }}>
+                          <Text style={styles.lessonTitle} numberOfLines={2}>{lesson.title}</Text>
                           <DynamicDuration videoUrl={lesson.videoUrl} />
                           {/* Mini Progress Bar */}
                           <View style={{ width: "100%", height: 4, backgroundColor: "#E2E8F0", borderRadius: 2, marginTop: 6, overflow: "hidden" }}>
@@ -337,6 +352,12 @@ export default function CourseDashboardScreen() {
                   })}
                 </View>
               </View>
+            ) : (
+              <View style={[styles.card, { alignItems: 'center', paddingVertical: 40 }]}>
+                <BookOpen size={48} color="#8FBDD7" style={{ marginBottom: 16, opacity: 0.5 }} />
+                <Text style={styles.cardTitle}>Curriculum Coming Soon</Text>
+                <Text style={[styles.subText, { textAlign: 'center', marginTop: 8 }]}>The instructor has not added any modules or lectures to this course yet. Check back later!</Text>
+              </View>
             )}
           </MotiView>
         )}
@@ -350,6 +371,13 @@ export default function CourseDashboardScreen() {
                 <View key={assignment.id} style={styles.card}>
                   <Text style={styles.cardTitle}>{assignment.title}</Text>
                   <Text style={styles.overviewText}>{assignment.instructions}</Text>
+
+                  {assignment.downloadUrl ? (
+                    <TouchableOpacity onPress={() => Linking.openURL(assignment.downloadUrl)} style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center' }}>
+                      <Download size={16} color="#1C4966" />
+                      <Text style={{ marginLeft: 6, color: '#1C4966', fontWeight: 'bold' }}>Download Resources / View Link</Text>
+                    </TouchableOpacity>
+                  ) : null}
 
                   <View style={styles.cardDivider} />
 
@@ -463,15 +491,29 @@ export default function CourseDashboardScreen() {
                 )}
               </View>
             ) : (
-              course.modules.flatMap((m) => m.quizzes).map((quiz) => (
-                <View key={quiz.id} style={styles.card}>
-                  <Text style={styles.cardTitle}>{quiz.title}</Text>
-                  <Text style={styles.subText}>{quiz.type.toUpperCase()} QUIZ • {quiz.questions.length} questions</Text>
-                  <TouchableOpacity onPress={() => handleStartQuiz(quiz)} style={[styles.btn, { marginTop: 12 }]}>
-                    <Text style={styles.btnText}>Start Quiz</Text>
-                  </TouchableOpacity>
-                </View>
-              ))
+              course.modules.flatMap((m) => m.quizzes).map((quiz) => {
+                const quizStateKey = `${userId}_${courseId}_${quiz.id}`;
+                const progress = store.quizProgress[quizStateKey];
+
+                return (
+                  <View key={quiz.id} style={styles.card}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={styles.cardTitle}>{quiz.title}</Text>
+                      {progress && (
+                        <View style={{ backgroundColor: progress.passed ? '#E8F5E9' : '#FFEBEE', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 }}>
+                          <Text style={{ color: progress.passed ? '#2E7D32' : '#C62828', fontSize: 12, fontWeight: 'bold' }}>
+                            Score: {progress.score}/{quiz.questions.length}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.subText}>{quiz.type.toUpperCase()} QUIZ • {quiz.questions.length} questions</Text>
+                    <TouchableOpacity onPress={() => handleStartQuiz(quiz)} style={[styles.btn, { marginTop: 12 }]}>
+                      <Text style={styles.btnText}>{progress ? "Retake Quiz" : "Start Quiz"}</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })
             )}
           </MotiView>
         )}
@@ -640,18 +682,37 @@ const styles = StyleSheet.create({
   lessonItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(143, 189, 215, 0.03)",
+    backgroundColor: "white",
     borderWidth: 1,
-    borderColor: "rgba(143, 189, 215, 0.15)",
+    borderColor: "rgba(28, 73, 102, 0.08)",
     borderRadius: 16,
     padding: 12,
     gap: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  lessonPlayBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  lessonThumbnailBox: {
+    width: 100,
+    height: 64,
+    borderRadius: 12,
+    overflow: "hidden",
+    position: "relative",
+  },
+  lessonThumbnailImage: {
+    width: "100%",
+    height: "100%",
+  },
+  lessonThumbnailPlaceholder: {
+    width: "100%",
+    height: "100%",
     backgroundColor: "#1C4966",
+  },
+  lessonPlayOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.3)",
     alignItems: "center",
     justifyContent: "center",
   },

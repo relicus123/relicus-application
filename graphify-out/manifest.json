@@ -1,0 +1,2227 @@
+{
+  "app.json": {
+    "mtime": 1781870066.9764163,
+    "ast_hash": "6a17d3b451a150914a7a443fc7ecc1e8",
+    "semantic_hash": "6a17d3b451a150914a7a443fc7ecc1e8"
+  },
+  "app/(tabs)/_layout.tsx": {
+    "mtime": 1780338620.7134364,
+    "ast_hash": "22d7378dc25195a89482c3f1a02b181d",
+    "semantic_hash": "22d7378dc25195a89482c3f1a02b181d"
+  },
+  "app/(tabs)/home.tsx": {
+    "mtime": 1781975878.4511795,
+    "ast_hash": "c3febc6b1832d9909ad9b341c406de4a",
+    "semantic_hash": "c3febc6b1832d9909ad9b341c406de4a"
+  },
+  "app/(tabs)/learning.tsx": {
+    "mtime": 1781973385.328798,
+    "ast_hash": "2a64725ca93603ca9ec6b14f99a57e3b",
+    "semantic_hash": "2a64725ca93603ca9ec6b14f99a57e3b"
+  },
+  "app/(tabs)/notifications.tsx": {
+    "mtime": 1780342438.618601,
+    "ast_hash": "6cf1a337a8891cb4395230bf92501202",
+    "semantic_hash": "6cf1a337a8891cb4395230bf92501202"
+  },
+  "app/(tabs)/profile.tsx": {
+    "mtime": 1781971707.6430492,
+    "ast_hash": "39a0f6734a3a4ace96a618654373823b",
+    "semantic_hash": "39a0f6734a3a4ace96a618654373823b"
+  },
+  "app/(tabs)/sessions.tsx": {
+    "mtime": 1781876016.638688,
+    "ast_hash": "c23e56516180eea74c69219e1242ae5a",
+    "semantic_hash": "c23e56516180eea74c69219e1242ae5a"
+  },
+  "app/_layout.tsx": {
+    "mtime": 1780837932.286628,
+    "ast_hash": "c4af071ed500ad23260d6623f6dae948",
+    "semantic_hash": "c4af071ed500ad23260d6623f6dae948"
+  },
+  "app/coaching/dashboard.tsx": {
+    "mtime": 1781875775.5999818,
+    "ast_hash": "6183117d58b47a24f53be997d9ff3a29",
+    "semantic_hash": "6183117d58b47a24f53be997d9ff3a29"
+  },
+  "app/coaching/data/cuetData.ts": {
+    "mtime": 1780732714.2568216,
+    "ast_hash": "e11319629a7d3189edbe2627d0e73432",
+    "semantic_hash": "e11319629a7d3189edbe2627d0e73432"
+  },
+  "app/coaching/data/eamcetData.ts": {
+    "mtime": 1780736390.9637527,
+    "ast_hash": "a6ca22054baaba4b78eb92b8e3166599",
+    "semantic_hash": "a6ca22054baaba4b78eb92b8e3166599"
+  },
+  "app/coaching/data/examRegistry.ts": {
+    "mtime": 1780737428.0428782,
+    "ast_hash": "2d99aca2e229855e3dd04f4e639d2fd8",
+    "semantic_hash": "2d99aca2e229855e3dd04f4e639d2fd8"
+  },
+  "app/coaching/data/gateData.ts": {
+    "mtime": 1780737406.9118855,
+    "ast_hash": "27243ee1d1817ae08cfa0f50382383c4",
+    "semantic_hash": "27243ee1d1817ae08cfa0f50382383c4"
+  },
+  "app/coaching/data/icetData.ts": {
+    "mtime": 1780736397.2068472,
+    "ast_hash": "6a81c0bc5109322dadb97da864f031ee",
+    "semantic_hash": "6a81c0bc5109322dadb97da864f031ee"
+  },
+  "app/coaching/data/jeeData.ts": {
+    "mtime": 1780732702.7247522,
+    "ast_hash": "d05f0af25fa7e6c952e1aed1290880cf",
+    "semantic_hash": "d05f0af25fa7e6c952e1aed1290880cf"
+  },
+  "app/coaching/data/neetData.ts": {
+    "mtime": 1780732709.424469,
+    "ast_hash": "d59e8bb82bcd5726aa86dd243398e37c",
+    "semantic_hash": "d59e8bb82bcd5726aa86dd243398e37c"
+  },
+  "app/coaching/data/ugcNetData.ts": {
+    "mtime": 1780737346.975586,
+    "ast_hash": "6b1776718819da4b9ba2d186082a1b73",
+    "semantic_hash": "6b1776718819da4b9ba2d186082a1b73"
+  },
+  "app/coaching/exam-info.tsx": {
+    "mtime": 1781973137.0950792,
+    "ast_hash": "1c0ad036429e183ca261a0644b658135",
+    "semantic_hash": "1c0ad036429e183ca261a0644b658135"
+  },
+  "app/coaching/test.tsx": {
+    "mtime": 1780423952.9836018,
+    "ast_hash": "c4e8641a681351595b39cbba59ccb4db",
+    "semantic_hash": "c4e8641a681351595b39cbba59ccb4db"
+  },
+  "app/coaching/types/analytics.types.ts": {
+    "mtime": 1780732671.4559014,
+    "ast_hash": "e2095869978dc54cdfc3b8f4f1e43edc",
+    "semantic_hash": "e2095869978dc54cdfc3b8f4f1e43edc"
+  },
+  "app/coaching/types/chapter.types.ts": {
+    "mtime": 1780732661.7284381,
+    "ast_hash": "8b7c71a452fc3264238826bbd6d92a43",
+    "semantic_hash": "8b7c71a452fc3264238826bbd6d92a43"
+  },
+  "app/coaching/types/doubt.types.ts": {
+    "mtime": 1780732676.0963738,
+    "ast_hash": "00065656c4e787dcbd0e1484057b8b72",
+    "semantic_hash": "00065656c4e787dcbd0e1484057b8b72"
+  },
+  "app/coaching/types/exam.types.ts": {
+    "mtime": 1780737195.6732235,
+    "ast_hash": "17446a3751334eabf8a7c7c9645d77a1",
+    "semantic_hash": "17446a3751334eabf8a7c7c9645d77a1"
+  },
+  "app/coaching/types/test.types.ts": {
+    "mtime": 1780732666.9456725,
+    "ast_hash": "afbf68782f8061303d5b07af6fc9b5af",
+    "semantic_hash": "afbf68782f8061303d5b07af6fc9b5af"
+  },
+  "app/counselling/[id].tsx": {
+    "mtime": 1781875972.2459931,
+    "ast_hash": "ca0fd5e5dbaefda724ad323e17eefa78",
+    "semantic_hash": "ca0fd5e5dbaefda724ad323e17eefa78"
+  },
+  "app/counselling/book.tsx": {
+    "mtime": 1780425845.3013175,
+    "ast_hash": "77d6fc048f0502d06572bb2d1444697b",
+    "semantic_hash": "77d6fc048f0502d06572bb2d1444697b"
+  },
+  "app/counselling/video.tsx": {
+    "mtime": 1780423831.531025,
+    "ast_hash": "9a922819a92a6c8bd6dfb9f5a669b555",
+    "semantic_hash": "9a922819a92a6c8bd6dfb9f5a669b555"
+  },
+  "app/index.tsx": {
+    "mtime": 1780425890.4145124,
+    "ast_hash": "79bf20d6c3a8ec6e9790b5bd26c158ff",
+    "semantic_hash": "79bf20d6c3a8ec6e9790b5bd26c158ff"
+  },
+  "app/intro.tsx": {
+    "mtime": 1780425093.0950792,
+    "ast_hash": "8301d35cc981e0ee1c413251f297116c",
+    "semantic_hash": "8301d35cc981e0ee1c413251f297116c"
+  },
+  "app/knowNext/index.tsx": {
+    "mtime": 1781876314.0767155,
+    "ast_hash": "51041718482097f18e9a46d32137796e",
+    "semantic_hash": "51041718482097f18e9a46d32137796e"
+  },
+  "app/knowNext/screens/CollegeScreens.tsx": {
+    "mtime": 1781973211.0478644,
+    "ast_hash": "ad6d249c7034d5b42b63d5b48bfbb5f5",
+    "semantic_hash": "ad6d249c7034d5b42b63d5b48bfbb5f5"
+  },
+  "app/knowNext/screens/ExplorerScreens.tsx": {
+    "mtime": 1781973198.3054185,
+    "ast_hash": "da2eef6f9cc7afd889597abcbd0f58dd",
+    "semantic_hash": "da2eef6f9cc7afd889597abcbd0f58dd"
+  },
+  "app/knowNext/screens/PlanScreens.tsx": {
+    "mtime": 1781876318.1978564,
+    "ast_hash": "d9b1582b762c6c70c6ed810c12199bc7",
+    "semantic_hash": "d9b1582b762c6c70c6ed810c12199bc7"
+  },
+  "app/knowNext/screens/ScholarshipScreens.tsx": {
+    "mtime": 1781973228.1073449,
+    "ast_hash": "cd860c4cd1d66dc98979228ebc08a02e",
+    "semantic_hash": "cd860c4cd1d66dc98979228ebc08a02e"
+  },
+  "app/knowNext/types.ts": {
+    "mtime": 1780836275.093067,
+    "ast_hash": "b2427377d794af0696faeb0775d694a6",
+    "semantic_hash": "b2427377d794af0696faeb0775d694a6"
+  },
+  "app/landing.tsx": {
+    "mtime": 1781971674.1149385,
+    "ast_hash": "95081f9600b06d503f30d9175ebdb4e7",
+    "semantic_hash": "95081f9600b06d503f30d9175ebdb4e7"
+  },
+  "app/mindfulness/index.tsx": {
+    "mtime": 1781973161.266885,
+    "ast_hash": "775bd1d273f9da76fcb7e2a37a66f313",
+    "semantic_hash": "775bd1d273f9da76fcb7e2a37a66f313"
+  },
+  "app/otp.tsx": {
+    "mtime": 1781971691.25568,
+    "ast_hash": "d99ab67741ae09dcee28f815c8dc2d79",
+    "semantic_hash": "d99ab67741ae09dcee28f815c8dc2d79"
+  },
+  "app/profile/privacy.tsx": {
+    "mtime": 1780425411.1051161,
+    "ast_hash": "9fd46c789ce7e4ecbcedcca787772b53",
+    "semantic_hash": "9fd46c789ce7e4ecbcedcca787772b53"
+  },
+  "app/sessions/dashboard.tsx": {
+    "mtime": 1780425116.8485823,
+    "ast_hash": "40381e9d4c7057f5497f7d027e259494",
+    "semantic_hash": "40381e9d4c7057f5497f7d027e259494"
+  },
+  "app/skills/course-dashboard.tsx": {
+    "mtime": 1781975910.8520238,
+    "ast_hash": "d4ae762c18d50b4f811021b8cf412034",
+    "semantic_hash": "d4ae762c18d50b4f811021b8cf412034"
+  },
+  "app/skills/index.tsx": {
+    "mtime": 1781975618.209495,
+    "ast_hash": "ae392066ba305ce69741f63de4d48a43",
+    "semantic_hash": "ae392066ba305ce69741f63de4d48a43"
+  },
+  "app/skills/video-player.tsx": {
+    "mtime": 1781975341.314486,
+    "ast_hash": "e78af5377c91b4e1c1bad6155b3371c4",
+    "semantic_hash": "e78af5377c91b4e1c1bad6155b3371c4"
+  },
+  "app/student/dashboard.tsx": {
+    "mtime": 1780425868.8495026,
+    "ast_hash": "0ddb8fa1cfbbddf8844aeba5b3caf3bb",
+    "semantic_hash": "0ddb8fa1cfbbddf8844aeba5b3caf3bb"
+  },
+  "app/student/find-teacher.tsx": {
+    "mtime": 1780425856.573345,
+    "ast_hash": "c1118cb82b5bfa74694993e9ef10f5b5",
+    "semantic_hash": "c1118cb82b5bfa74694993e9ef10f5b5"
+  },
+  "app/teacher/dashboard.tsx": {
+    "mtime": 1780423883.7275567,
+    "ast_hash": "099dfc2d094276bdfc42ff690e65b490",
+    "semantic_hash": "099dfc2d094276bdfc42ff690e65b490"
+  },
+  "app/therapist/dashboard.tsx": {
+    "mtime": 1780423994.3017268,
+    "ast_hash": "ae58dd5c7655249aa5dc9ccaa75505e7",
+    "semantic_hash": "ae58dd5c7655249aa5dc9ccaa75505e7"
+  },
+  "app/tuition/index.tsx": {
+    "mtime": 1781124000.6102438,
+    "ast_hash": "95f1f6f1070db9e9d86fb592b402a7c3",
+    "semantic_hash": "95f1f6f1070db9e9d86fb592b402a7c3"
+  },
+  "app/tuition/screens/AssessmentScreens.tsx": {
+    "mtime": 1781973310.48074,
+    "ast_hash": "f2b4919882b31105a5a785cbcf3a5557",
+    "semantic_hash": "f2b4919882b31105a5a785cbcf3a5557"
+  },
+  "app/tuition/screens/ExtraScreens.tsx": {
+    "mtime": 1781123998.5689409,
+    "ast_hash": "ec4904db9820522046176f9cf127f3bf",
+    "semantic_hash": "ec4904db9820522046176f9cf127f3bf"
+  },
+  "app/tuition/screens/HomeScreens.tsx": {
+    "mtime": 1781123939.419463,
+    "ast_hash": "8887ea19462a5d1326cf03741ecc8510",
+    "semantic_hash": "8887ea19462a5d1326cf03741ecc8510"
+  },
+  "app/tuition/screens/LearningPathScreens.tsx": {
+    "mtime": 1781973278.7081368,
+    "ast_hash": "6498e9e6020e03d2cbdea5b6b56bc543",
+    "semantic_hash": "6498e9e6020e03d2cbdea5b6b56bc543"
+  },
+  "app/tuition/screens/MaterialScreens.tsx": {
+    "mtime": 1781973324.836236,
+    "ast_hash": "ea5858b8718c65236c68f6ac7f7fcfd3",
+    "semantic_hash": "ea5858b8718c65236c68f6ac7f7fcfd3"
+  },
+  "app/tuition/screens/ProfileScreens.tsx": {
+    "mtime": 1781123979.1087914,
+    "ast_hash": "025f6fac296d938ef2b1d4e912ad837f",
+    "semantic_hash": "025f6fac296d938ef2b1d4e912ad837f"
+  },
+  "app/tuition/screens/TeacherScreens.tsx": {
+    "mtime": 1781973293.7704065,
+    "ast_hash": "62fddfedb7c1f9a66ff0e2c767ac4b6b",
+    "semantic_hash": "62fddfedb7c1f9a66ff0e2c767ac4b6b"
+  },
+  "app/tuition/types.ts": {
+    "mtime": 1781123854.8332984,
+    "ast_hash": "6fead21e3451bcf302e915cc4794a52e",
+    "semantic_hash": "6fead21e3451bcf302e915cc4794a52e"
+  },
+  "babel.config.js": {
+    "mtime": 1780509249.169082,
+    "ast_hash": "7a5d204610ff5ade705c5291ca9e6138",
+    "semantic_hash": "7a5d204610ff5ade705c5291ca9e6138"
+  },
+  "components/AppContext.tsx": {
+    "mtime": 1780425807.8126163,
+    "ast_hash": "f908912bfb99b444825d52d75a70700f",
+    "semantic_hash": "f908912bfb99b444825d52d75a70700f"
+  },
+  "components/Button.tsx": {
+    "mtime": 1781870645.470718,
+    "ast_hash": "c756be7927ec68f0804330a489c278b6",
+    "semantic_hash": "c756be7927ec68f0804330a489c278b6"
+  },
+  "components/Input.tsx": {
+    "mtime": 1781870667.3198564,
+    "ast_hash": "68695f689be195320f489f8cadfdd708",
+    "semantic_hash": "68695f689be195320f489f8cadfdd708"
+  },
+  "constants/coaching/examCategories.ts": {
+    "mtime": 1780836500.3091702,
+    "ast_hash": "f03774c1fa513ed8efa35445771ade6d",
+    "semantic_hash": "f03774c1fa513ed8efa35445771ade6d"
+  },
+  "constants/coaching/examInfo.ts": {
+    "mtime": 1780836504.237816,
+    "ast_hash": "2ae2d33f70296bba1529505c477ed14c",
+    "semantic_hash": "2ae2d33f70296bba1529505c477ed14c"
+  },
+  "constants/coaching/exams.ts": {
+    "mtime": 1780836508.290526,
+    "ast_hash": "02d51f8ff56df54140062342538b8486",
+    "semantic_hash": "02d51f8ff56df54140062342538b8486"
+  },
+  "constants/coaching/storageKeys.ts": {
+    "mtime": 1780732689.945173,
+    "ast_hash": "c70446da1a3eac800a7cd4a51f35370f",
+    "semantic_hash": "c70446da1a3eac800a7cd4a51f35370f"
+  },
+  "constants/coaching/tabs.ts": {
+    "mtime": 1780732685.4845102,
+    "ast_hash": "951d3b0ff327070423d9b14a12832a7b",
+    "semantic_hash": "951d3b0ff327070423d9b14a12832a7b"
+  },
+  "constants/coaching/ui.ts": {
+    "mtime": 1780836512.9988112,
+    "ast_hash": "cc356aaba30b025551e6404bf964cc10",
+    "semantic_hash": "cc356aaba30b025551e6404bf964cc10"
+  },
+  "constants/knowNext/careers.ts": {
+    "mtime": 1780836422.7044158,
+    "ast_hash": "b161c2013f845f969226618ebd408e25",
+    "semantic_hash": "b161c2013f845f969226618ebd408e25"
+  },
+  "constants/knowNext/colleges.ts": {
+    "mtime": 1780836427.0521371,
+    "ast_hash": "0ae7b85972bcbec70ae1430eb52a6778",
+    "semantic_hash": "0ae7b85972bcbec70ae1430eb52a6778"
+  },
+  "constants/knowNext/industries.ts": {
+    "mtime": 1780836430.9733548,
+    "ast_hash": "ae4b398d0bf10f5f8cfacbd36d216abb",
+    "semantic_hash": "ae4b398d0bf10f5f8cfacbd36d216abb"
+  },
+  "constants/knowNext/roadmaps.ts": {
+    "mtime": 1780836436.6059303,
+    "ast_hash": "da68db56d58f7b45f62bc6da5e519b33",
+    "semantic_hash": "da68db56d58f7b45f62bc6da5e519b33"
+  },
+  "constants/knowNext/scholarships.ts": {
+    "mtime": 1780836441.038391,
+    "ast_hash": "8ac37c3b02a66d8779302f022719b588",
+    "semantic_hash": "8ac37c3b02a66d8779302f022719b588"
+  },
+  "constants/tuition/assessments.ts": {
+    "mtime": 1781123897.3998146,
+    "ast_hash": "02e2e2858a54ee52024f4abf9eed7069",
+    "semantic_hash": "02e2e2858a54ee52024f4abf9eed7069"
+  },
+  "constants/tuition/classes.ts": {
+    "mtime": 1781123890.5599158,
+    "ast_hash": "9073d7650cb40386c35a6baf18203471",
+    "semantic_hash": "9073d7650cb40386c35a6baf18203471"
+  },
+  "constants/tuition/materials.ts": {
+    "mtime": 1781123895.3704321,
+    "ast_hash": "627d617330ba50dea6eb5e855dff5abd",
+    "semantic_hash": "627d617330ba50dea6eb5e855dff5abd"
+  },
+  "constants/tuition/teachers.ts": {
+    "mtime": 1781123893.354204,
+    "ast_hash": "96103f99aa6a5a86ddb8fd44e63b54e2",
+    "semantic_hash": "96103f99aa6a5a86ddb8fd44e63b54e2"
+  },
+  "eas.json": {
+    "mtime": 1780379068.4867835,
+    "ast_hash": "c6d259e17f353f9f0fd9f85d26409d8f",
+    "semantic_hash": "c6d259e17f353f9f0fd9f85d26409d8f"
+  },
+  "lib/supabase.ts": {
+    "mtime": 1781713719.0098207,
+    "ast_hash": "df2025a9fe51fb4d1dc7295ca573375c",
+    "semantic_hash": "df2025a9fe51fb4d1dc7295ca573375c"
+  },
+  "metro.config.js": {
+    "mtime": 1781870051.3067923,
+    "ast_hash": "b06a9894e872f972ba86b6a95d7e8b2e",
+    "semantic_hash": "b06a9894e872f972ba86b6a95d7e8b2e"
+  },
+  "migrate.js": {
+    "mtime": 1781695349.4512453,
+    "ast_hash": "0ed862dcbef255c811efb052060e751c",
+    "semantic_hash": "0ed862dcbef255c811efb052060e751c"
+  },
+  "nativewind-env.d.ts": {
+    "mtime": 1780340810.4217305,
+    "ast_hash": "e3064341eeb31cf4df5b5219396ac00d",
+    "semantic_hash": "e3064341eeb31cf4df5b5219396ac00d"
+  },
+  "package.json": {
+    "mtime": 1781970063.5264728,
+    "ast_hash": "1fcefb104534de87f5f345dd1535fe95",
+    "semantic_hash": "1fcefb104534de87f5f345dd1535fe95"
+  },
+  "relicus-admin-src/app/App.tsx": {
+    "mtime": 1780337766.215536,
+    "ast_hash": "4835453e29817cc8746a19c6eace5362",
+    "semantic_hash": "4835453e29817cc8746a19c6eace5362"
+  },
+  "relicus-admin-src/app/components/Button.tsx": {
+    "mtime": 1780337766.216542,
+    "ast_hash": "c82562dd042ef354796e4eb80cee3b5d",
+    "semantic_hash": "c82562dd042ef354796e4eb80cee3b5d"
+  },
+  "relicus-admin-src/app/components/Card.tsx": {
+    "mtime": 1780337766.216542,
+    "ast_hash": "47b513da1a3abb74cfa72bfe84494dba",
+    "semantic_hash": "47b513da1a3abb74cfa72bfe84494dba"
+  },
+  "relicus-admin-src/app/components/GradientCard.tsx": {
+    "mtime": 1780337766.2180545,
+    "ast_hash": "18c47b87b5ede8f68713a27e20ec6eff",
+    "semantic_hash": "18c47b87b5ede8f68713a27e20ec6eff"
+  },
+  "relicus-admin-src/app/components/Input.tsx": {
+    "mtime": 1780337766.2180545,
+    "ast_hash": "74f47fb2248e556a6130206de7b179fb",
+    "semantic_hash": "74f47fb2248e556a6130206de7b179fb"
+  },
+  "relicus-admin-src/app/components/figma/ImageWithFallback.tsx": {
+    "mtime": 1780337766.2190647,
+    "ast_hash": "9e3d50241dd9ce80b8b780eba8cd2af0",
+    "semantic_hash": "9e3d50241dd9ce80b8b780eba8cd2af0"
+  },
+  "relicus-admin-src/app/components/ui/accordion.tsx": {
+    "mtime": 1780337766.2211483,
+    "ast_hash": "6ac8972bea8c72ef4531e7e939caffde",
+    "semantic_hash": "6ac8972bea8c72ef4531e7e939caffde"
+  },
+  "relicus-admin-src/app/components/ui/alert-dialog.tsx": {
+    "mtime": 1780337766.2221546,
+    "ast_hash": "bae17108fe0e26ee8ee04b6b499523f9",
+    "semantic_hash": "bae17108fe0e26ee8ee04b6b499523f9"
+  },
+  "relicus-admin-src/app/components/ui/alert.tsx": {
+    "mtime": 1780337766.2221546,
+    "ast_hash": "77dc96be09723e553d2096f30d6b5205",
+    "semantic_hash": "77dc96be09723e553d2096f30d6b5205"
+  },
+  "relicus-admin-src/app/components/ui/aspect-ratio.tsx": {
+    "mtime": 1780337766.2232447,
+    "ast_hash": "a9620dcbb14796aa5a3aeddab16e82ee",
+    "semantic_hash": "a9620dcbb14796aa5a3aeddab16e82ee"
+  },
+  "relicus-admin-src/app/components/ui/avatar.tsx": {
+    "mtime": 1780337766.2242475,
+    "ast_hash": "386ab38e62b7ce72f4581c80d529a664",
+    "semantic_hash": "386ab38e62b7ce72f4581c80d529a664"
+  },
+  "relicus-admin-src/app/components/ui/badge.tsx": {
+    "mtime": 1780337766.22576,
+    "ast_hash": "55f636d5ddf4274d9fea3502e5a9c022",
+    "semantic_hash": "55f636d5ddf4274d9fea3502e5a9c022"
+  },
+  "relicus-admin-src/app/components/ui/breadcrumb.tsx": {
+    "mtime": 1780337766.2267714,
+    "ast_hash": "4570611e1d93766ec30603117802f6de",
+    "semantic_hash": "4570611e1d93766ec30603117802f6de"
+  },
+  "relicus-admin-src/app/components/ui/button.tsx": {
+    "mtime": 1780337766.2267714,
+    "ast_hash": "e41e66deb18e99f0c6adad0833b9bda3",
+    "semantic_hash": "e41e66deb18e99f0c6adad0833b9bda3"
+  },
+  "relicus-admin-src/app/components/ui/calendar.tsx": {
+    "mtime": 1780337766.2282805,
+    "ast_hash": "077793c68a5f734718c7bcd58dda66fa",
+    "semantic_hash": "077793c68a5f734718c7bcd58dda66fa"
+  },
+  "relicus-admin-src/app/components/ui/card.tsx": {
+    "mtime": 1780337766.2292879,
+    "ast_hash": "3636f7385a18e766d8e9703ade2f3c3a",
+    "semantic_hash": "3636f7385a18e766d8e9703ade2f3c3a"
+  },
+  "relicus-admin-src/app/components/ui/carousel.tsx": {
+    "mtime": 1780337766.2292879,
+    "ast_hash": "bef00edc73965b6879f05e02a16b7200",
+    "semantic_hash": "bef00edc73965b6879f05e02a16b7200"
+  },
+  "relicus-admin-src/app/components/ui/chart.tsx": {
+    "mtime": 1780337766.2308085,
+    "ast_hash": "c94a6e8f6ad29f8333c6edaa16d32f3f",
+    "semantic_hash": "c94a6e8f6ad29f8333c6edaa16d32f3f"
+  },
+  "relicus-admin-src/app/components/ui/checkbox.tsx": {
+    "mtime": 1780337766.2313585,
+    "ast_hash": "354612a01e307a2da96d684c55745365",
+    "semantic_hash": "354612a01e307a2da96d684c55745365"
+  },
+  "relicus-admin-src/app/components/ui/collapsible.tsx": {
+    "mtime": 1780337766.2323773,
+    "ast_hash": "a17e8aaee3747e28c4524f4114cf738b",
+    "semantic_hash": "a17e8aaee3747e28c4524f4114cf738b"
+  },
+  "relicus-admin-src/app/components/ui/command.tsx": {
+    "mtime": 1780337766.2333732,
+    "ast_hash": "c38148668ea03a2f8392e198d0c9ecce",
+    "semantic_hash": "c38148668ea03a2f8392e198d0c9ecce"
+  },
+  "relicus-admin-src/app/components/ui/context-menu.tsx": {
+    "mtime": 1780337766.233883,
+    "ast_hash": "b36802510ef941608474813323320c92",
+    "semantic_hash": "b36802510ef941608474813323320c92"
+  },
+  "relicus-admin-src/app/components/ui/dialog.tsx": {
+    "mtime": 1780337766.233883,
+    "ast_hash": "6d4ff3d2e3fabf0f08e1b7c9faef9579",
+    "semantic_hash": "6d4ff3d2e3fabf0f08e1b7c9faef9579"
+  },
+  "relicus-admin-src/app/components/ui/drawer.tsx": {
+    "mtime": 1780337766.233883,
+    "ast_hash": "6ac1c53b510c868a3d515f3191c5bee0",
+    "semantic_hash": "6ac1c53b510c868a3d515f3191c5bee0"
+  },
+  "relicus-admin-src/app/components/ui/dropdown-menu.tsx": {
+    "mtime": 1780337766.2353897,
+    "ast_hash": "8e31a16de52ada1943b55c5ae9350c0d",
+    "semantic_hash": "8e31a16de52ada1943b55c5ae9350c0d"
+  },
+  "relicus-admin-src/app/components/ui/form.tsx": {
+    "mtime": 1780337766.2369213,
+    "ast_hash": "4dc1e43e7f987e87b0475436001d6f3f",
+    "semantic_hash": "4dc1e43e7f987e87b0475436001d6f3f"
+  },
+  "relicus-admin-src/app/components/ui/hover-card.tsx": {
+    "mtime": 1780337766.2369213,
+    "ast_hash": "a9025de8fb8c2c24abeb6585421d5e4f",
+    "semantic_hash": "a9025de8fb8c2c24abeb6585421d5e4f"
+  },
+  "relicus-admin-src/app/components/ui/input-otp.tsx": {
+    "mtime": 1780337766.2384279,
+    "ast_hash": "f1fc6b67e2487b74b378f039e2b179c7",
+    "semantic_hash": "f1fc6b67e2487b74b378f039e2b179c7"
+  },
+  "relicus-admin-src/app/components/ui/input.tsx": {
+    "mtime": 1780337766.2384279,
+    "ast_hash": "ee6a7da310ce684442534f9cc8665b15",
+    "semantic_hash": "ee6a7da310ce684442534f9cc8665b15"
+  },
+  "relicus-admin-src/app/components/ui/label.tsx": {
+    "mtime": 1780337766.2384279,
+    "ast_hash": "af1cc595d3044ec0c4d4acc377902324",
+    "semantic_hash": "af1cc595d3044ec0c4d4acc377902324"
+  },
+  "relicus-admin-src/app/components/ui/menubar.tsx": {
+    "mtime": 1780337766.2384279,
+    "ast_hash": "31e5133397eb7e90344279128046e4de",
+    "semantic_hash": "31e5133397eb7e90344279128046e4de"
+  },
+  "relicus-admin-src/app/components/ui/navigation-menu.tsx": {
+    "mtime": 1780337766.241243,
+    "ast_hash": "7c66900fe49bd30c4dc2f72eb80c43ba",
+    "semantic_hash": "7c66900fe49bd30c4dc2f72eb80c43ba"
+  },
+  "relicus-admin-src/app/components/ui/pagination.tsx": {
+    "mtime": 1780337766.2424011,
+    "ast_hash": "83f28ea401172adc158d838acf2d70da",
+    "semantic_hash": "83f28ea401172adc158d838acf2d70da"
+  },
+  "relicus-admin-src/app/components/ui/popover.tsx": {
+    "mtime": 1780337766.2433991,
+    "ast_hash": "b88476f4b00f8e2e966f6635a7da73db",
+    "semantic_hash": "b88476f4b00f8e2e966f6635a7da73db"
+  },
+  "relicus-admin-src/app/components/ui/progress.tsx": {
+    "mtime": 1780337766.244395,
+    "ast_hash": "6a06a31b6c44b9d05242aee0958d20bf",
+    "semantic_hash": "6a06a31b6c44b9d05242aee0958d20bf"
+  },
+  "relicus-admin-src/app/components/ui/radio-group.tsx": {
+    "mtime": 1780337766.244395,
+    "ast_hash": "c71bac07acf79b524b3157c8474ab58b",
+    "semantic_hash": "c71bac07acf79b524b3157c8474ab58b"
+  },
+  "relicus-admin-src/app/components/ui/resizable.tsx": {
+    "mtime": 1780337766.2459183,
+    "ast_hash": "5653c1f9a08e003d0210371613d01e4a",
+    "semantic_hash": "5653c1f9a08e003d0210371613d01e4a"
+  },
+  "relicus-admin-src/app/components/ui/scroll-area.tsx": {
+    "mtime": 1780337766.2469249,
+    "ast_hash": "0dd2932f08c9b5bf29056f4b76f93f88",
+    "semantic_hash": "0dd2932f08c9b5bf29056f4b76f93f88"
+  },
+  "relicus-admin-src/app/components/ui/select.tsx": {
+    "mtime": 1780337766.2479303,
+    "ast_hash": "70792371f02d0595fb7562c4877d4fdd",
+    "semantic_hash": "70792371f02d0595fb7562c4877d4fdd"
+  },
+  "relicus-admin-src/app/components/ui/separator.tsx": {
+    "mtime": 1780337766.2489285,
+    "ast_hash": "6cd697e94e33b3000258b5c4190aeb0e",
+    "semantic_hash": "6cd697e94e33b3000258b5c4190aeb0e"
+  },
+  "relicus-admin-src/app/components/ui/sheet.tsx": {
+    "mtime": 1780337766.2489285,
+    "ast_hash": "13bf7e121139a02120b9f7045bf4b228",
+    "semantic_hash": "13bf7e121139a02120b9f7045bf4b228"
+  },
+  "relicus-admin-src/app/components/ui/sidebar.tsx": {
+    "mtime": 1780337766.2499852,
+    "ast_hash": "300fc58c94eb800fbe50834dd11f7574",
+    "semantic_hash": "300fc58c94eb800fbe50834dd11f7574"
+  },
+  "relicus-admin-src/app/components/ui/skeleton.tsx": {
+    "mtime": 1780337766.251493,
+    "ast_hash": "f2b4a2e415b6c434154de7a28aaebbb4",
+    "semantic_hash": "f2b4a2e415b6c434154de7a28aaebbb4"
+  },
+  "relicus-admin-src/app/components/ui/slider.tsx": {
+    "mtime": 1780337766.251493,
+    "ast_hash": "00636c645a8500f5078059f33fd91c79",
+    "semantic_hash": "00636c645a8500f5078059f33fd91c79"
+  },
+  "relicus-admin-src/app/components/ui/sonner.tsx": {
+    "mtime": 1780337766.2530117,
+    "ast_hash": "10d479040581a90e3957cedc170b58be",
+    "semantic_hash": "10d479040581a90e3957cedc170b58be"
+  },
+  "relicus-admin-src/app/components/ui/switch.tsx": {
+    "mtime": 1780337766.2530117,
+    "ast_hash": "6965f0c019db02983e22b6bf4e560bf8",
+    "semantic_hash": "6965f0c019db02983e22b6bf4e560bf8"
+  },
+  "relicus-admin-src/app/components/ui/table.tsx": {
+    "mtime": 1780337766.2540243,
+    "ast_hash": "001ceb1022a0312e1eb4133baa6dc83d",
+    "semantic_hash": "001ceb1022a0312e1eb4133baa6dc83d"
+  },
+  "relicus-admin-src/app/components/ui/tabs.tsx": {
+    "mtime": 1780337766.2557156,
+    "ast_hash": "dbb20d36250470a06b4aaf7662ff44d3",
+    "semantic_hash": "dbb20d36250470a06b4aaf7662ff44d3"
+  },
+  "relicus-admin-src/app/components/ui/textarea.tsx": {
+    "mtime": 1780337766.2567265,
+    "ast_hash": "7b1d8603f8bc4143f670ad2e50dae5bf",
+    "semantic_hash": "7b1d8603f8bc4143f670ad2e50dae5bf"
+  },
+  "relicus-admin-src/app/components/ui/toggle-group.tsx": {
+    "mtime": 1780337766.25773,
+    "ast_hash": "dae00da8846531bbf8275720dbb756cc",
+    "semantic_hash": "dae00da8846531bbf8275720dbb756cc"
+  },
+  "relicus-admin-src/app/components/ui/toggle.tsx": {
+    "mtime": 1780337766.25773,
+    "ast_hash": "f3be0f749b20f0be6ea84414dafdbd39",
+    "semantic_hash": "f3be0f749b20f0be6ea84414dafdbd39"
+  },
+  "relicus-admin-src/app/components/ui/tooltip.tsx": {
+    "mtime": 1780337766.25773,
+    "ast_hash": "0938cd8c69f39046e757e4ce20475674",
+    "semantic_hash": "0938cd8c69f39046e757e4ce20475674"
+  },
+  "relicus-admin-src/app/components/ui/use-mobile.ts": {
+    "mtime": 1780337766.2592351,
+    "ast_hash": "b427d228366c1d3de5167763495116e3",
+    "semantic_hash": "b427d228366c1d3de5167763495116e3"
+  },
+  "relicus-admin-src/app/components/ui/utils.ts": {
+    "mtime": 1780337766.2592351,
+    "ast_hash": "e3f848f1b39f863e6164cf58b5a8e752",
+    "semantic_hash": "e3f848f1b39f863e6164cf58b5a8e752"
+  },
+  "relicus-admin-src/app/layouts/AdminLayout.tsx": {
+    "mtime": 1781125085.5718646,
+    "ast_hash": "483c72c152561f8c9b9d1d1ee8319814",
+    "semantic_hash": "483c72c152561f8c9b9d1d1ee8319814"
+  },
+  "relicus-admin-src/app/layouts/RootLayout.tsx": {
+    "mtime": 1780337766.2602453,
+    "ast_hash": "e2acca91d1da0c89734eef4b5e4c7ca9",
+    "semantic_hash": "e2acca91d1da0c89734eef4b5e4c7ca9"
+  },
+  "relicus-admin-src/app/routes.tsx": {
+    "mtime": 1781693402.2458637,
+    "ast_hash": "0e8dec71b4c06b5026943c244a47d746",
+    "semantic_hash": "0e8dec71b4c06b5026943c244a47d746"
+  },
+  "relicus-admin-src/app/screens/Admin/AdminLogin.tsx": {
+    "mtime": 1781125075.9833956,
+    "ast_hash": "dc52aef3473924c332b3d12bf57c4ede",
+    "semantic_hash": "dc52aef3473924c332b3d12bf57c4ede"
+  },
+  "relicus-admin-src/app/screens/Admin/AdminOverview.tsx": {
+    "mtime": 1781693375.173389,
+    "ast_hash": "8093bb8519895e53f5505632bf927daf",
+    "semantic_hash": "8093bb8519895e53f5505632bf927daf"
+  },
+  "relicus-admin-src/app/screens/Admin/CoachingManager.tsx": {
+    "mtime": 1781694686.1460483,
+    "ast_hash": "6dd8eb06368f4659914875d23de5e318",
+    "semantic_hash": "6dd8eb06368f4659914875d23de5e318"
+  },
+  "relicus-admin-src/app/screens/Admin/KnowNextManager.tsx": {
+    "mtime": 1781694626.2834272,
+    "ast_hash": "3488794b809a1bed24104ca894ad2bc3",
+    "semantic_hash": "3488794b809a1bed24104ca894ad2bc3"
+  },
+  "relicus-admin-src/app/screens/Admin/MindfulnessManager.tsx": {
+    "mtime": 1781694766.2820709,
+    "ast_hash": "8eba1e1cbe3fb2992806c3d5845a933e",
+    "semantic_hash": "8eba1e1cbe3fb2992806c3d5845a933e"
+  },
+  "relicus-admin-src/app/screens/Admin/SkillsManager.tsx": {
+    "mtime": 1781694603.2362652,
+    "ast_hash": "90a398df5b44cbae7de5db97db188863",
+    "semantic_hash": "90a398df5b44cbae7de5db97db188863"
+  },
+  "relicus-admin-src/app/screens/Admin/TuitionManager.tsx": {
+    "mtime": 1781694803.2339907,
+    "ast_hash": "639c8202c60dad175b200c6cb7ad6155",
+    "semantic_hash": "639c8202c60dad175b200c6cb7ad6155"
+  },
+  "relicus-admin-src/app/screens/AppIntro.tsx": {
+    "mtime": 1780337766.2627747,
+    "ast_hash": "576677bfaa0f3648895d2338f238b011",
+    "semantic_hash": "576677bfaa0f3648895d2338f238b011"
+  },
+  "relicus-admin-src/app/screens/ClientDashboard.tsx": {
+    "mtime": 1780337766.2637713,
+    "ast_hash": "832e61e05a1534549e262543a610a6a9",
+    "semantic_hash": "832e61e05a1534549e262543a610a6a9"
+  },
+  "relicus-admin-src/app/screens/CounsellingListing.tsx": {
+    "mtime": 1780337766.2647681,
+    "ast_hash": "4d14788e3a86fd4d11ff1d8cab245cf9",
+    "semantic_hash": "4d14788e3a86fd4d11ff1d8cab245cf9"
+  },
+  "relicus-admin-src/app/screens/DesignSystem.tsx": {
+    "mtime": 1780337766.2647681,
+    "ast_hash": "302d204b03743dfd8f924d9f0e58b562",
+    "semantic_hash": "302d204b03743dfd8f924d9f0e58b562"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching.legacy.tsx": {
+    "mtime": 1780732620.720867,
+    "ast_hash": "2c95938a0464b1427c61d2f9986946f5",
+    "semantic_hash": "2c95938a0464b1427c61d2f9986946f5"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching.tsx": {
+    "mtime": 1780733510.1178508,
+    "ast_hash": "34e5f473efd58eedd915644d8ea4933a",
+    "semantic_hash": "34e5f473efd58eedd915644d8ea4933a"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/EntranceCoaching.tsx": {
+    "mtime": 1780847149.109384,
+    "ast_hash": "56c4372abe391b301dafdfb2b98a2809",
+    "semantic_hash": "56c4372abe391b301dafdfb2b98a2809"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/ExamDashboard.tsx": {
+    "mtime": 1780847154.0744314,
+    "ast_hash": "9665014a208745354b1ae99075186ad0",
+    "semantic_hash": "9665014a208745354b1ae99075186ad0"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/ExamInfoScreen.tsx": {
+    "mtime": 1781694545.5783355,
+    "ast_hash": "7dc4a62910c578ffc17c8ef2fecc660d",
+    "semantic_hash": "7dc4a62910c578ffc17c8ef2fecc660d"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/ExamSelection.tsx": {
+    "mtime": 1780847141.6826355,
+    "ast_hash": "4582263388f76db1837af8d848e0106c",
+    "semantic_hash": "4582263388f76db1837af8d848e0106c"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/components/AnalyticsCard.tsx": {
+    "mtime": 1780733237.4314406,
+    "ast_hash": "15a0019a54f5ec646eb17745a7000240",
+    "semantic_hash": "15a0019a54f5ec646eb17745a7000240"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/components/ChapterCard.tsx": {
+    "mtime": 1780733223.4054956,
+    "ast_hash": "ecfe3f13f0172d09319ed54398082207",
+    "semantic_hash": "ecfe3f13f0172d09319ed54398082207"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/components/DailyStudyPlanWidget.tsx": {
+    "mtime": 1780737472.7220728,
+    "ast_hash": "ab957241e85921fea5673450596d648b",
+    "semantic_hash": "ab957241e85921fea5673450596d648b"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/components/EmptyState.tsx": {
+    "mtime": 1780733202.812997,
+    "ast_hash": "7d95611c46d760c292bd406234e639aa",
+    "semantic_hash": "7d95611c46d760c292bd406234e639aa"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/components/ErrorState.tsx": {
+    "mtime": 1780733206.65344,
+    "ast_hash": "c451c683d1c3a2d92f88f30cd3ae3253",
+    "semantic_hash": "c451c683d1c3a2d92f88f30cd3ae3253"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/components/ExamCountdownWidget.tsx": {
+    "mtime": 1780737449.0687838,
+    "ast_hash": "da195743d2f77226571e1cf0b6d16336",
+    "semantic_hash": "da195743d2f77226571e1cf0b6d16336"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/components/ExamReadinessCard.tsx": {
+    "mtime": 1780737520.857136,
+    "ast_hash": "b530d92afb7d9b485d18628ade3cfa61",
+    "semantic_hash": "b530d92afb7d9b485d18628ade3cfa61"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/components/LiveClassCard.tsx": {
+    "mtime": 1780733233.4379587,
+    "ast_hash": "2ea7630fb249c1ad25d1e697b1089e33",
+    "semantic_hash": "2ea7630fb249c1ad25d1e697b1089e33"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/components/LoadingSkeleton.tsx": {
+    "mtime": 1780733198.453553,
+    "ast_hash": "d40beac639d136dda75f8651abf4c92e",
+    "semantic_hash": "d40beac639d136dda75f8651abf4c92e"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/components/ProgressRing.tsx": {
+    "mtime": 1780733193.7382827,
+    "ast_hash": "018fb2dd276129fee868914b975cd050",
+    "semantic_hash": "018fb2dd276129fee868914b975cd050"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/components/RecommendedResourcesWidget.tsx": {
+    "mtime": 1780737544.2439477,
+    "ast_hash": "ac7fd1043000c6b09c0a5070f2b8cb69",
+    "semantic_hash": "ac7fd1043000c6b09c0a5070f2b8cb69"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/components/SearchBar.tsx": {
+    "mtime": 1780737810.9538527,
+    "ast_hash": "aad06259bee008e51630cd28dcfcda8a",
+    "semantic_hash": "aad06259bee008e51630cd28dcfcda8a"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/components/SubjectCard.tsx": {
+    "mtime": 1780733218.276662,
+    "ast_hash": "bf032e1d580a31d18316c06cc526ee6b",
+    "semantic_hash": "bf032e1d580a31d18316c06cc526ee6b"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/components/TestCard.tsx": {
+    "mtime": 1780733229.0321484,
+    "ast_hash": "f4ad954c4be3f330e3a1e5362269a9ca",
+    "semantic_hash": "f4ad954c4be3f330e3a1e5362269a9ca"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/constants/examCategories.ts": {
+    "mtime": 1780737211.2939343,
+    "ast_hash": "c0300ec1e0694057a1f7efadad5d1807",
+    "semantic_hash": "c0300ec1e0694057a1f7efadad5d1807"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/constants/examInfo.ts": {
+    "mtime": 1780737268.3301003,
+    "ast_hash": "1c38848e152f6f2da3edb8820fd33978",
+    "semantic_hash": "1c38848e152f6f2da3edb8820fd33978"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/constants/exams.ts": {
+    "mtime": 1780737284.4053173,
+    "ast_hash": "3b0f96363ae3d48d81b48c0dd86ee420",
+    "semantic_hash": "3b0f96363ae3d48d81b48c0dd86ee420"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/constants/storageKeys.ts": {
+    "mtime": 1780732689.945173,
+    "ast_hash": "c70446da1a3eac800a7cd4a51f35370f",
+    "semantic_hash": "c70446da1a3eac800a7cd4a51f35370f"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/constants/tabs.ts": {
+    "mtime": 1780732685.4845102,
+    "ast_hash": "951d3b0ff327070423d9b14a12832a7b",
+    "semantic_hash": "951d3b0ff327070423d9b14a12832a7b"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/constants/ui.ts": {
+    "mtime": 1780736373.939659,
+    "ast_hash": "7f1dd8041151ebc49bf9d0a714fc7b36",
+    "semantic_hash": "7f1dd8041151ebc49bf9d0a714fc7b36"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/data/cuetData.ts": {
+    "mtime": 1781694474.3481011,
+    "ast_hash": "0dea829b1483477270c586795eb4160d",
+    "semantic_hash": "0dea829b1483477270c586795eb4160d"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/data/eamcetData.ts": {
+    "mtime": 1781694487.2368324,
+    "ast_hash": "0dea829b1483477270c586795eb4160d",
+    "semantic_hash": "0dea829b1483477270c586795eb4160d"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/data/examRegistry.ts": {
+    "mtime": 1780843434.0950532,
+    "ast_hash": "a9f35e9512d79b9de267cbc54a2e0726",
+    "semantic_hash": "a9f35e9512d79b9de267cbc54a2e0726"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/data/gateData.ts": {
+    "mtime": 1781694484.814264,
+    "ast_hash": "0dea829b1483477270c586795eb4160d",
+    "semantic_hash": "0dea829b1483477270c586795eb4160d"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/data/icetData.ts": {
+    "mtime": 1781694495.0459938,
+    "ast_hash": "0dea829b1483477270c586795eb4160d",
+    "semantic_hash": "0dea829b1483477270c586795eb4160d"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/data/jeeData.ts": {
+    "mtime": 1781694470.2867846,
+    "ast_hash": "0dea829b1483477270c586795eb4160d",
+    "semantic_hash": "0dea829b1483477270c586795eb4160d"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/data/neetData.ts": {
+    "mtime": 1781694472.3088453,
+    "ast_hash": "0dea829b1483477270c586795eb4160d",
+    "semantic_hash": "0dea829b1483477270c586795eb4160d"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/data/ugcNetData.ts": {
+    "mtime": 1781694482.7882197,
+    "ast_hash": "0dea829b1483477270c586795eb4160d",
+    "semantic_hash": "0dea829b1483477270c586795eb4160d"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/mock-tests/ResultsScreen.tsx": {
+    "mtime": 1780733315.5796812,
+    "ast_hash": "ecd00d8ad6ed23c3c0e3b466dade34e9",
+    "semantic_hash": "ecd00d8ad6ed23c3c0e3b466dade34e9"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/mock-tests/ReviewAnswers.tsx": {
+    "mtime": 1780733322.0106273,
+    "ast_hash": "7cecc6903d509a7b48796966d3bea065",
+    "semantic_hash": "7cecc6903d509a7b48796966d3bea065"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/mock-tests/TestInstructions.tsx": {
+    "mtime": 1780733295.4890704,
+    "ast_hash": "44e135f4eab15351ba90c1b8564e59b6",
+    "semantic_hash": "44e135f4eab15351ba90c1b8564e59b6"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/mock-tests/TestRunner.tsx": {
+    "mtime": 1780733303.4254992,
+    "ast_hash": "83a6eb682cde115817303b22cb653e25",
+    "semantic_hash": "83a6eb682cde115817303b22cb653e25"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/services/analytics.service.ts": {
+    "mtime": 1780737783.3044586,
+    "ast_hash": "ab335986a0e6073f37dfe7778c2d16db",
+    "semantic_hash": "ab335986a0e6073f37dfe7778c2d16db"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/services/bookmark.service.ts": {
+    "mtime": 1780733163.6950648,
+    "ast_hash": "59ae43f41fbe162bd96c93b5a9a32f9c",
+    "semantic_hash": "59ae43f41fbe162bd96c93b5a9a32f9c"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/services/doubt.service.ts": {
+    "mtime": 1780733178.442247,
+    "ast_hash": "23c507f164b5abf63729c1491b3ff679",
+    "semantic_hash": "23c507f164b5abf63729c1491b3ff679"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/services/progress.service.ts": {
+    "mtime": 1780733159.1917374,
+    "ast_hash": "e8880e3c85d53ff7fbad351c83e75c1f",
+    "semantic_hash": "e8880e3c85d53ff7fbad351c83e75c1f"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/services/recentActivity.service.ts": {
+    "mtime": 1780733168.3543012,
+    "ast_hash": "b4d5a53f3df8458d6a4a986c0443d5f0",
+    "semantic_hash": "b4d5a53f3df8458d6a4a986c0443d5f0"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/services/test.service.ts": {
+    "mtime": 1780733173.321048,
+    "ast_hash": "81b159aad4f51edaa5344cb051f72678",
+    "semantic_hash": "81b159aad4f51edaa5344cb051f72678"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/store/coaching.store.ts": {
+    "mtime": 1781694521.8167279,
+    "ast_hash": "2538f9a937cce90fcc42bf72452a1d8b",
+    "semantic_hash": "2538f9a937cce90fcc42bf72452a1d8b"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/tabs/AnalyticsTab.tsx": {
+    "mtime": 1780847231.6887684,
+    "ast_hash": "2060b74b9730127ad0e98d0c08558665",
+    "semantic_hash": "2060b74b9730127ad0e98d0c08558665"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/tabs/BookmarksTab.tsx": {
+    "mtime": 1780733445.4434624,
+    "ast_hash": "26fd6bda0ccb5c16e37cd05b48764f9a",
+    "semantic_hash": "26fd6bda0ccb5c16e37cd05b48764f9a"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/tabs/ChaptersTab.tsx": {
+    "mtime": 1780847219.5331361,
+    "ast_hash": "68cb93724804a8fcefb5f1e7bc0e1739",
+    "semantic_hash": "68cb93724804a8fcefb5f1e7bc0e1739"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/tabs/DoubtDeskTab.tsx": {
+    "mtime": 1780736454.7379308,
+    "ast_hash": "3e77c9eb09b9ea9dccf893c3631ba042",
+    "semantic_hash": "3e77c9eb09b9ea9dccf893c3631ba042"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/tabs/LiveClassesTab.tsx": {
+    "mtime": 1780847203.153939,
+    "ast_hash": "549abe2e610036c44ba220d5aded7581",
+    "semantic_hash": "549abe2e610036c44ba220d5aded7581"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/tabs/MockTestsTab.tsx": {
+    "mtime": 1780847224.6944165,
+    "ast_hash": "ce54cc385a100a77618464e516a04da3",
+    "semantic_hash": "ce54cc385a100a77618464e516a04da3"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/tabs/NotificationsTab.tsx": {
+    "mtime": 1780847210.8079505,
+    "ast_hash": "33b9459b4633f672483fa1a6f732b5f4",
+    "semantic_hash": "33b9459b4633f672483fa1a6f732b5f4"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/tabs/OverviewTab.tsx": {
+    "mtime": 1780847176.4591446,
+    "ast_hash": "b2d43ef1f67018c8f1827cee5348c018",
+    "semantic_hash": "b2d43ef1f67018c8f1827cee5348c018"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/tabs/PYQsTab.tsx": {
+    "mtime": 1780736448.6086705,
+    "ast_hash": "dbca5e97a23348484d56afd113b4696a",
+    "semantic_hash": "dbca5e97a23348484d56afd113b4696a"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/types/analytics.types.ts": {
+    "mtime": 1780732671.4559014,
+    "ast_hash": "e2095869978dc54cdfc3b8f4f1e43edc",
+    "semantic_hash": "e2095869978dc54cdfc3b8f4f1e43edc"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/types/chapter.types.ts": {
+    "mtime": 1780732661.7284381,
+    "ast_hash": "8b7c71a452fc3264238826bbd6d92a43",
+    "semantic_hash": "8b7c71a452fc3264238826bbd6d92a43"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/types/doubt.types.ts": {
+    "mtime": 1780732676.0963738,
+    "ast_hash": "00065656c4e787dcbd0e1484057b8b72",
+    "semantic_hash": "00065656c4e787dcbd0e1484057b8b72"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/types/exam.types.ts": {
+    "mtime": 1780737195.6732235,
+    "ast_hash": "17446a3751334eabf8a7c7c9645d77a1",
+    "semantic_hash": "17446a3751334eabf8a7c7c9645d77a1"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/types/test.types.ts": {
+    "mtime": 1780732666.9456725,
+    "ast_hash": "afbf68782f8061303d5b07af6fc9b5af",
+    "semantic_hash": "afbf68782f8061303d5b07af6fc9b5af"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/utils/analytics.ts": {
+    "mtime": 1780733153.5230167,
+    "ast_hash": "161d39397e61107b39951e226bdcfb4b",
+    "semantic_hash": "161d39397e61107b39951e226bdcfb4b"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/utils/dateHelpers.ts": {
+    "mtime": 1780733144.756702,
+    "ast_hash": "8dc585231e3fd435db6541b4360da2b0",
+    "semantic_hash": "8dc585231e3fd435db6541b4360da2b0"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/utils/formatting.ts": {
+    "mtime": 1780733149.1194818,
+    "ast_hash": "a624cb42f6cc36c95527da6c77515796",
+    "semantic_hash": "a624cb42f6cc36c95527da6c77515796"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/utils/progress.ts": {
+    "mtime": 1780733128.7784486,
+    "ast_hash": "6f23425fa1114b4847b86fe594f37378",
+    "semantic_hash": "6f23425fa1114b4847b86fe594f37378"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/utils/rankCalculator.ts": {
+    "mtime": 1780733138.8453248,
+    "ast_hash": "601d227dff5974d6c65e6bc4159683f1",
+    "semantic_hash": "601d227dff5974d6c65e6bc4159683f1"
+  },
+  "relicus-admin-src/app/screens/EntranceCoaching/utils/scoreCalculator.ts": {
+    "mtime": 1780733133.2510214,
+    "ast_hash": "52b629243919e710a8b43bcb7ef03d0b",
+    "semantic_hash": "52b629243919e710a8b43bcb7ef03d0b"
+  },
+  "relicus-admin-src/app/screens/Home.tsx": {
+    "mtime": 1780835297.6267045,
+    "ast_hash": "7f3fd5f7f89a1b992ddbfeae5b86ca38",
+    "semantic_hash": "7f3fd5f7f89a1b992ddbfeae5b86ca38"
+  },
+  "relicus-admin-src/app/screens/KnowNext/KnowNext.tsx": {
+    "mtime": 1781693560.2480302,
+    "ast_hash": "b0b6393bd491631f6e9cccd2dfdaaa94",
+    "semantic_hash": "b0b6393bd491631f6e9cccd2dfdaaa94"
+  },
+  "relicus-admin-src/app/screens/KnowNext/KnowNextRoute.tsx": {
+    "mtime": 1780835276.789485,
+    "ast_hash": "cd53686b057d13416368c97edaf74bf1",
+    "semantic_hash": "cd53686b057d13416368c97edaf74bf1"
+  },
+  "relicus-admin-src/app/screens/KnowNext/components/CareerCard.tsx": {
+    "mtime": 1780834674.9315434,
+    "ast_hash": "49d44c3e027536eca936a029872f8c03",
+    "semantic_hash": "49d44c3e027536eca936a029872f8c03"
+  },
+  "relicus-admin-src/app/screens/KnowNext/components/CareerStageFilter.tsx": {
+    "mtime": 1780834638.9018643,
+    "ast_hash": "16191cad871bc43edeac6550891ac376",
+    "semantic_hash": "16191cad871bc43edeac6550891ac376"
+  },
+  "relicus-admin-src/app/screens/KnowNext/components/CollegeCard.tsx": {
+    "mtime": 1780834709.6823542,
+    "ast_hash": "39cb4965f79b11be1c6e7092a76891b9",
+    "semantic_hash": "39cb4965f79b11be1c6e7092a76891b9"
+  },
+  "relicus-admin-src/app/screens/KnowNext/components/CompareDrawer.tsx": {
+    "mtime": 1780834824.5450497,
+    "ast_hash": "7f612681e18162ccd2cb094e256a4e98",
+    "semantic_hash": "7f612681e18162ccd2cb094e256a4e98"
+  },
+  "relicus-admin-src/app/screens/KnowNext/components/DeadlineCountdownBadge.tsx": {
+    "mtime": 1780834672.8954043,
+    "ast_hash": "305c43b21bb3334a608976606a7040af",
+    "semantic_hash": "305c43b21bb3334a608976606a7040af"
+  },
+  "relicus-admin-src/app/screens/KnowNext/components/FilterBar.tsx": {
+    "mtime": 1780834655.6081357,
+    "ast_hash": "395d6025a17a787f919b20a3b65cb1d7",
+    "semantic_hash": "395d6025a17a787f919b20a3b65cb1d7"
+  },
+  "relicus-admin-src/app/screens/KnowNext/components/GlobalSearch.tsx": {
+    "mtime": 1780834795.19694,
+    "ast_hash": "fd64e2a67e0486549fbcf5ecab208f02",
+    "semantic_hash": "fd64e2a67e0486549fbcf5ecab208f02"
+  },
+  "relicus-admin-src/app/screens/KnowNext/components/IndustryCard.tsx": {
+    "mtime": 1780834749.4924693,
+    "ast_hash": "91c47416afde1c518d66388dea6f1a12",
+    "semantic_hash": "91c47416afde1c518d66388dea6f1a12"
+  },
+  "relicus-admin-src/app/screens/KnowNext/components/ModuleIntegrationCard.tsx": {
+    "mtime": 1780834813.7042353,
+    "ast_hash": "cc01e7704d0f1177679bcd9d369f355f",
+    "semantic_hash": "cc01e7704d0f1177679bcd9d369f355f"
+  },
+  "relicus-admin-src/app/screens/KnowNext/components/QuickActionsRow.tsx": {
+    "mtime": 1780834804.4279082,
+    "ast_hash": "73c0a62a8b648a3aa9e69200592a7d46",
+    "semantic_hash": "73c0a62a8b648a3aa9e69200592a7d46"
+  },
+  "relicus-admin-src/app/screens/KnowNext/components/RecentActivityFeed.tsx": {
+    "mtime": 1780834630.109916,
+    "ast_hash": "808d0b700502ce997f80565f835fffda",
+    "semantic_hash": "808d0b700502ce997f80565f835fffda"
+  },
+  "relicus-admin-src/app/screens/KnowNext/components/RoadmapProgressRing.tsx": {
+    "mtime": 1780834757.7289946,
+    "ast_hash": "7afc423bf1eecc369b7563f7f6ac415c",
+    "semantic_hash": "7afc423bf1eecc369b7563f7f6ac415c"
+  },
+  "relicus-admin-src/app/screens/KnowNext/components/RoadmapTimeline.tsx": {
+    "mtime": 1780834755.6923363,
+    "ast_hash": "c5d4b403c3c95c0d06d4babdd91fac9b",
+    "semantic_hash": "c5d4b403c3c95c0d06d4babdd91fac9b"
+  },
+  "relicus-admin-src/app/screens/KnowNext/components/SaveButton.tsx": {
+    "mtime": 1780834636.8776865,
+    "ast_hash": "1553e73c63696afbe5d9e2a4e683dafe",
+    "semantic_hash": "1553e73c63696afbe5d9e2a4e683dafe"
+  },
+  "relicus-admin-src/app/screens/KnowNext/components/ScholarshipCard.tsx": {
+    "mtime": 1780834711.701826,
+    "ast_hash": "645d9c1f9f19b2ffff1ca839f7d32a90",
+    "semantic_hash": "645d9c1f9f19b2ffff1ca839f7d32a90"
+  },
+  "relicus-admin-src/app/screens/KnowNext/components/TrendChart.tsx": {
+    "mtime": 1780834822.5164576,
+    "ast_hash": "1d0c735c212adf0da9751fb5e33e7b5f",
+    "semantic_hash": "1d0c735c212adf0da9751fb5e33e7b5f"
+  },
+  "relicus-admin-src/app/screens/KnowNext/constants/careers.ts": {
+    "mtime": 1780834267.898436,
+    "ast_hash": "8c2cfc21ffaf435965b48234348341c7",
+    "semantic_hash": "8c2cfc21ffaf435965b48234348341c7"
+  },
+  "relicus-admin-src/app/screens/KnowNext/constants/colleges.ts": {
+    "mtime": 1780834475.6392355,
+    "ast_hash": "74b0bc77229d45e03563f2f495b67e5c",
+    "semantic_hash": "74b0bc77229d45e03563f2f495b67e5c"
+  },
+  "relicus-admin-src/app/screens/KnowNext/constants/industries.ts": {
+    "mtime": 1780834593.0463912,
+    "ast_hash": "b439fc2632cf36335c90871ff601d22b",
+    "semantic_hash": "b439fc2632cf36335c90871ff601d22b"
+  },
+  "relicus-admin-src/app/screens/KnowNext/constants/roadmaps.ts": {
+    "mtime": 1780834384.7388115,
+    "ast_hash": "567af82bb43594475770132d77ebe2be",
+    "semantic_hash": "567af82bb43594475770132d77ebe2be"
+  },
+  "relicus-admin-src/app/screens/KnowNext/constants/scholarships.ts": {
+    "mtime": 1780834523.841656,
+    "ast_hash": "af1101ebfb56e3fd19a7dd8294af8bf9",
+    "semantic_hash": "af1101ebfb56e3fd19a7dd8294af8bf9"
+  },
+  "relicus-admin-src/app/screens/KnowNext/screens/CareerExplorer/CareerComparison.tsx": {
+    "mtime": 1780834975.1219385,
+    "ast_hash": "08aa04e9f33c337b4ca818d08b7cb2a8",
+    "semantic_hash": "08aa04e9f33c337b4ca818d08b7cb2a8"
+  },
+  "relicus-admin-src/app/screens/KnowNext/screens/CareerExplorer/CareerDetails.tsx": {
+    "mtime": 1780843375.9495008,
+    "ast_hash": "9a28f5ae0c8930bdfff259b418da667c",
+    "semantic_hash": "9a28f5ae0c8930bdfff259b418da667c"
+  },
+  "relicus-admin-src/app/screens/KnowNext/screens/CareerExplorer/CareerExplorer.tsx": {
+    "mtime": 1780843354.953423,
+    "ast_hash": "e3901b61a55869228cd23e473648c85e",
+    "semantic_hash": "e3901b61a55869228cd23e473648c85e"
+  },
+  "relicus-admin-src/app/screens/KnowNext/screens/CareerExplorer/CareerRoadmapView.tsx": {
+    "mtime": 1780835368.5544436,
+    "ast_hash": "072427b6a2f47bede0f2ee879286a71d",
+    "semantic_hash": "072427b6a2f47bede0f2ee879286a71d"
+  },
+  "relicus-admin-src/app/screens/KnowNext/screens/CareerPlan/CareerPlan.tsx": {
+    "mtime": 1780835195.7274415,
+    "ast_hash": "e52b48318af4036f81fd65788d4eb5c2",
+    "semantic_hash": "e52b48318af4036f81fd65788d4eb5c2"
+  },
+  "relicus-admin-src/app/screens/KnowNext/screens/CareerPlan/SavedItems.tsx": {
+    "mtime": 1780835220.7648346,
+    "ast_hash": "78e67e31fdf744558b1c90f4900130f0",
+    "semantic_hash": "78e67e31fdf744558b1c90f4900130f0"
+  },
+  "relicus-admin-src/app/screens/KnowNext/screens/CareerRoadmaps/CareerRoadmaps.tsx": {
+    "mtime": 1780835163.6068895,
+    "ast_hash": "5eef18c6fd192ea266ed566251d83154",
+    "semantic_hash": "5eef18c6fd192ea266ed566251d83154"
+  },
+  "relicus-admin-src/app/screens/KnowNext/screens/CareerRoadmaps/LearningPath.tsx": {
+    "mtime": 1780835383.1707308,
+    "ast_hash": "078729e15cf0386da5f25a9268e35efd",
+    "semantic_hash": "078729e15cf0386da5f25a9268e35efd"
+  },
+  "relicus-admin-src/app/screens/KnowNext/screens/Colleges/CollegeComparison.tsx": {
+    "mtime": 1780835054.1963193,
+    "ast_hash": "f5da3bb35ef573dc4952e286738aa5e5",
+    "semantic_hash": "f5da3bb35ef573dc4952e286738aa5e5"
+  },
+  "relicus-admin-src/app/screens/KnowNext/screens/Colleges/CollegeDetails.tsx": {
+    "mtime": 1780835052.1648371,
+    "ast_hash": "828dc3146b3042979f722a09acf4fe58",
+    "semantic_hash": "828dc3146b3042979f722a09acf4fe58"
+  },
+  "relicus-admin-src/app/screens/KnowNext/screens/Colleges/CollegeExplorer.tsx": {
+    "mtime": 1780835020.325209,
+    "ast_hash": "17682451ecc5944b2938a1a30cac7320",
+    "semantic_hash": "17682451ecc5944b2938a1a30cac7320"
+  },
+  "relicus-admin-src/app/screens/KnowNext/screens/IndustryInsights/IndustryInsights.tsx": {
+    "mtime": 1780835124.647888,
+    "ast_hash": "2451d438c22677793bb73bd7ef0e96a1",
+    "semantic_hash": "2451d438c22677793bb73bd7ef0e96a1"
+  },
+  "relicus-admin-src/app/screens/KnowNext/screens/IndustryInsights/MarketTrends.tsx": {
+    "mtime": 1780835126.66932,
+    "ast_hash": "580813bc8e81a30901117e40cbbf0e7b",
+    "semantic_hash": "580813bc8e81a30901117e40cbbf0e7b"
+  },
+  "relicus-admin-src/app/screens/KnowNext/screens/LandingHub.tsx": {
+    "mtime": 1780843347.6707876,
+    "ast_hash": "336d81f8625eb19d9c4f0faef733b45f",
+    "semantic_hash": "336d81f8625eb19d9c4f0faef733b45f"
+  },
+  "relicus-admin-src/app/screens/KnowNext/screens/Scholarships/ScholarshipDetails.tsx": {
+    "mtime": 1780835091.5522316,
+    "ast_hash": "c5d9a0ef0a47bcac74347ca8e1c22744",
+    "semantic_hash": "c5d9a0ef0a47bcac74347ca8e1c22744"
+  },
+  "relicus-admin-src/app/screens/KnowNext/screens/Scholarships/ScholarshipExplorer.tsx": {
+    "mtime": 1780835089.5241902,
+    "ast_hash": "cb9d1f28ea4a396c501db2f2ee9be103",
+    "semantic_hash": "cb9d1f28ea4a396c501db2f2ee9be103"
+  },
+  "relicus-admin-src/app/screens/KnowNext/store/knowNext.store.ts": {
+    "mtime": 1780843338.210061,
+    "ast_hash": "487dafd170aaae5c52a959c34b9bdb16",
+    "semantic_hash": "487dafd170aaae5c52a959c34b9bdb16"
+  },
+  "relicus-admin-src/app/screens/KnowNext/types/knowNext.types.ts": {
+    "mtime": 1780834066.2748947,
+    "ast_hash": "006d897e833d16dc797dc7b9f34fb2f7",
+    "semantic_hash": "006d897e833d16dc797dc7b9f34fb2f7"
+  },
+  "relicus-admin-src/app/screens/Landing.tsx": {
+    "mtime": 1780737106.0896814,
+    "ast_hash": "a657f1ce9471722b45162f0f77c16613",
+    "semantic_hash": "a657f1ce9471722b45162f0f77c16613"
+  },
+  "relicus-admin-src/app/screens/Mindfulness.tsx": {
+    "mtime": 1781693517.1529775,
+    "ast_hash": "26705c5b69a76bd713721a06cf7567a1",
+    "semantic_hash": "26705c5b69a76bd713721a06cf7567a1"
+  },
+  "relicus-admin-src/app/screens/MockTest.tsx": {
+    "mtime": 1780337766.269323,
+    "ast_hash": "c5e106ad7f6b4b4f252b9f8ec5286713",
+    "semantic_hash": "c5e106ad7f6b4b4f252b9f8ec5286713"
+  },
+  "relicus-admin-src/app/screens/OTP.tsx": {
+    "mtime": 1780337766.269323,
+    "ast_hash": "b870233881b96b71d7274da871a23e57",
+    "semantic_hash": "b870233881b96b71d7274da871a23e57"
+  },
+  "relicus-admin-src/app/screens/Profile.tsx": {
+    "mtime": 1780337766.269323,
+    "ast_hash": "fb6746275c1f4a7c97321cf01a9355f4",
+    "semantic_hash": "fb6746275c1f4a7c97321cf01a9355f4"
+  },
+  "relicus-admin-src/app/screens/SessionBooking.tsx": {
+    "mtime": 1780337766.271381,
+    "ast_hash": "8c6579ac111bd8df67d16a22cb5922ca",
+    "semantic_hash": "8c6579ac111bd8df67d16a22cb5922ca"
+  },
+  "relicus-admin-src/app/screens/Showcase.tsx": {
+    "mtime": 1780337766.2718964,
+    "ast_hash": "b111c679dd7b8cbbd63d5691efea540c",
+    "semantic_hash": "b111c679dd7b8cbbd63d5691efea540c"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement.tsx": {
+    "mtime": 1780735452.29913,
+    "ast_hash": "226447252d74c84ccfa272f71f1b56a0",
+    "semantic_hash": "226447252d74c84ccfa272f71f1b56a0"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/SkillEnhancement.tsx": {
+    "mtime": 1781693545.2018242,
+    "ast_hash": "5fe142cd4e2a6250a38ea2b86d80bde5",
+    "semantic_hash": "5fe142cd4e2a6250a38ea2b86d80bde5"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/components/ContinueLearningWidget.tsx": {
+    "mtime": 1780735632.7228112,
+    "ast_hash": "f3cea068fddce193188c49aca4347846",
+    "semantic_hash": "f3cea068fddce193188c49aca4347846"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/components/CourseCompletionScreen.tsx": {
+    "mtime": 1780735643.7166736,
+    "ast_hash": "a5d46a2a1fff951b2e615c366f1a99b3",
+    "semantic_hash": "a5d46a2a1fff951b2e615c366f1a99b3"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/components/CourseFeedbackModal.tsx": {
+    "mtime": 1780735637.229916,
+    "ast_hash": "b67089f7f5b07c51b44503bef029c5f1",
+    "semantic_hash": "b67089f7f5b07c51b44503bef029c5f1"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/components/DoubtSubmissionDrawer.tsx": {
+    "mtime": 1780735410.5286014,
+    "ast_hash": "64abc202397eb105d79fa00e6cb5eafc",
+    "semantic_hash": "64abc202397eb105d79fa00e6cb5eafc"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/components/DynamicCertificate.tsx": {
+    "mtime": 1780735416.2465608,
+    "ast_hash": "b939df85c0f604f5a1f6462a771ece0d",
+    "semantic_hash": "b939df85c0f604f5a1f6462a771ece0d"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/components/EmptyState.tsx": {
+    "mtime": 1780735382.2115278,
+    "ast_hash": "236a8372822f71cc93943b55281920e8",
+    "semantic_hash": "236a8372822f71cc93943b55281920e8"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/components/ErrorState.tsx": {
+    "mtime": 1780735390.2443242,
+    "ast_hash": "df6d9baeca3146f7f9314ba5599a7fcb",
+    "semantic_hash": "df6d9baeca3146f7f9314ba5599a7fcb"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/components/InteractiveQuizModal.tsx": {
+    "mtime": 1780735403.303409,
+    "ast_hash": "827b66775b9e960698e35b8719b6b6a4",
+    "semantic_hash": "827b66775b9e960698e35b8719b6b6a4"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/components/LoadingSkeleton.tsx": {
+    "mtime": 1780735386.4214647,
+    "ast_hash": "a890ec0e76ebed7589d519f66301461c",
+    "semantic_hash": "a890ec0e76ebed7589d519f66301461c"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/components/NotificationCenter.tsx": {
+    "mtime": 1780735648.7584183,
+    "ast_hash": "47f0cc8926e7e2eb8d71402cd3d3d803",
+    "semantic_hash": "47f0cc8926e7e2eb8d71402cd3d3d803"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/components/VideoLectureDrawer.tsx": {
+    "mtime": 1780735395.6948688,
+    "ast_hash": "ae9570f12193ab3c0a90079810a19745",
+    "semantic_hash": "ae9570f12193ab3c0a90079810a19745"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/panels/CourseDashboard.tsx": {
+    "mtime": 1780735830.5544972,
+    "ast_hash": "c26e4213681ed42230b836dbeac11780",
+    "semantic_hash": "c26e4213681ed42230b836dbeac11780"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/panels/LandingHub.tsx": {
+    "mtime": 1780735740.9008634,
+    "ast_hash": "9c120ed812ffe5b5b09a448d3631876c",
+    "semantic_hash": "9c120ed812ffe5b5b09a448d3631876c"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/services/analytics.service.ts": {
+    "mtime": 1780735377.6266172,
+    "ast_hash": "e05360c2feb04b8c422a48b6640818a1",
+    "semantic_hash": "e05360c2feb04b8c422a48b6640818a1"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/services/certificate.service.ts": {
+    "mtime": 1780735372.8371272,
+    "ast_hash": "c3adae9aada573928180bb619e7d68ad",
+    "semantic_hash": "c3adae9aada573928180bb619e7d68ad"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/services/course.service.ts": {
+    "mtime": 1780735627.2921932,
+    "ast_hash": "013f8680fa3291954f7e1d23d01cf08b",
+    "semantic_hash": "013f8680fa3291954f7e1d23d01cf08b"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/services/enrollment.service.ts": {
+    "mtime": 1780735362.5688176,
+    "ast_hash": "c383c374e3f7196f400f1b316bfb76d2",
+    "semantic_hash": "c383c374e3f7196f400f1b316bfb76d2"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/services/progress.service.ts": {
+    "mtime": 1780735367.970883,
+    "ast_hash": "1169fec58225294d5d6fef98144f5423",
+    "semantic_hash": "1169fec58225294d5d6fef98144f5423"
+  },
+  "relicus-admin-src/app/screens/SkillEnhancement/store/skills.store.ts": {
+    "mtime": 1780843404.0259867,
+    "ast_hash": "ee7680efcc3c05babceb23b49ec1db18",
+    "semantic_hash": "ee7680efcc3c05babceb23b49ec1db18"
+  },
+  "relicus-admin-src/app/screens/Splash.tsx": {
+    "mtime": 1780337766.2740276,
+    "ast_hash": "6553478620b68ad637bed52503d89eb0",
+    "semantic_hash": "6553478620b68ad637bed52503d89eb0"
+  },
+  "relicus-admin-src/app/screens/StudentDashboard.tsx": {
+    "mtime": 1781693461.123126,
+    "ast_hash": "380b01f699cd7617bafb350599e506b3",
+    "semantic_hash": "380b01f699cd7617bafb350599e506b3"
+  },
+  "relicus-admin-src/app/screens/TeacherDashboard.tsx": {
+    "mtime": 1781693489.4787252,
+    "ast_hash": "38778cf2931fd9ebbd9bf3373c93dfc3",
+    "semantic_hash": "38778cf2931fd9ebbd9bf3373c93dfc3"
+  },
+  "relicus-admin-src/app/screens/TherapistDashboard.tsx": {
+    "mtime": 1780337766.275535,
+    "ast_hash": "a190d68638a7996d4f0f653f2a2e597f",
+    "semantic_hash": "a190d68638a7996d4f0f653f2a2e597f"
+  },
+  "relicus-admin-src/app/screens/TherapistProfile.tsx": {
+    "mtime": 1780337766.2765393,
+    "ast_hash": "80bfe09bcd60c6cd8933c1ef644a5080",
+    "semantic_hash": "80bfe09bcd60c6cd8933c1ef644a5080"
+  },
+  "relicus-admin-src/app/screens/VideoCall.tsx": {
+    "mtime": 1780337766.2775426,
+    "ast_hash": "20336e3845e5fd28930dee247caab34d",
+    "semantic_hash": "20336e3845e5fd28930dee247caab34d"
+  },
+  "relicus-admin-src/app/services/supabaseClient.ts": {
+    "mtime": 1780843183.0606468,
+    "ast_hash": "b4ee36b0dc965ae04ad120a6d70dc420",
+    "semantic_hash": "b4ee36b0dc965ae04ad120a6d70dc420"
+  },
+  "relicus-admin-src/main.tsx": {
+    "mtime": 1780337766.2795806,
+    "ast_hash": "3a17b50137d0110b8437a1b081bd965a",
+    "semantic_hash": "3a17b50137d0110b8437a1b081bd965a"
+  },
+  "relicus-admin/create_user.js": {
+    "mtime": 1781125447.712249,
+    "ast_hash": "d012c34a3fb0bec11e56860c58a78663",
+    "semantic_hash": "d012c34a3fb0bec11e56860c58a78663"
+  },
+  "relicus-admin/package.json": {
+    "mtime": 1781977625.170341,
+    "ast_hash": "b88b5937eedb70d8e33650a112c14a4b",
+    "semantic_hash": "b88b5937eedb70d8e33650a112c14a4b"
+  },
+  "relicus-admin/postcss.config.mjs": {
+    "mtime": 1780337766.2140298,
+    "ast_hash": "ed236affd433122e965a27640d696d98",
+    "semantic_hash": "ed236affd433122e965a27640d696d98"
+  },
+  "relicus-admin/src/app/App.tsx": {
+    "mtime": 1780337766.215536,
+    "ast_hash": "4835453e29817cc8746a19c6eace5362",
+    "semantic_hash": "4835453e29817cc8746a19c6eace5362"
+  },
+  "relicus-admin/src/app/components/Button.tsx": {
+    "mtime": 1780337766.216542,
+    "ast_hash": "c82562dd042ef354796e4eb80cee3b5d",
+    "semantic_hash": "c82562dd042ef354796e4eb80cee3b5d"
+  },
+  "relicus-admin/src/app/components/Card.tsx": {
+    "mtime": 1780337766.216542,
+    "ast_hash": "47b513da1a3abb74cfa72bfe84494dba",
+    "semantic_hash": "47b513da1a3abb74cfa72bfe84494dba"
+  },
+  "relicus-admin/src/app/components/GradientCard.tsx": {
+    "mtime": 1780337766.2180545,
+    "ast_hash": "18c47b87b5ede8f68713a27e20ec6eff",
+    "semantic_hash": "18c47b87b5ede8f68713a27e20ec6eff"
+  },
+  "relicus-admin/src/app/components/Input.tsx": {
+    "mtime": 1780337766.2180545,
+    "ast_hash": "74f47fb2248e556a6130206de7b179fb",
+    "semantic_hash": "74f47fb2248e556a6130206de7b179fb"
+  },
+  "relicus-admin/src/app/components/figma/ImageWithFallback.tsx": {
+    "mtime": 1780337766.2190647,
+    "ast_hash": "9e3d50241dd9ce80b8b780eba8cd2af0",
+    "semantic_hash": "9e3d50241dd9ce80b8b780eba8cd2af0"
+  },
+  "relicus-admin/src/app/components/ui/accordion.tsx": {
+    "mtime": 1780337766.2211483,
+    "ast_hash": "6ac8972bea8c72ef4531e7e939caffde",
+    "semantic_hash": "6ac8972bea8c72ef4531e7e939caffde"
+  },
+  "relicus-admin/src/app/components/ui/alert-dialog.tsx": {
+    "mtime": 1780337766.2221546,
+    "ast_hash": "bae17108fe0e26ee8ee04b6b499523f9",
+    "semantic_hash": "bae17108fe0e26ee8ee04b6b499523f9"
+  },
+  "relicus-admin/src/app/components/ui/alert.tsx": {
+    "mtime": 1780337766.2221546,
+    "ast_hash": "77dc96be09723e553d2096f30d6b5205",
+    "semantic_hash": "77dc96be09723e553d2096f30d6b5205"
+  },
+  "relicus-admin/src/app/components/ui/aspect-ratio.tsx": {
+    "mtime": 1780337766.2232447,
+    "ast_hash": "a9620dcbb14796aa5a3aeddab16e82ee",
+    "semantic_hash": "a9620dcbb14796aa5a3aeddab16e82ee"
+  },
+  "relicus-admin/src/app/components/ui/avatar.tsx": {
+    "mtime": 1780337766.2242475,
+    "ast_hash": "386ab38e62b7ce72f4581c80d529a664",
+    "semantic_hash": "386ab38e62b7ce72f4581c80d529a664"
+  },
+  "relicus-admin/src/app/components/ui/badge.tsx": {
+    "mtime": 1780337766.22576,
+    "ast_hash": "55f636d5ddf4274d9fea3502e5a9c022",
+    "semantic_hash": "55f636d5ddf4274d9fea3502e5a9c022"
+  },
+  "relicus-admin/src/app/components/ui/breadcrumb.tsx": {
+    "mtime": 1780337766.2267714,
+    "ast_hash": "4570611e1d93766ec30603117802f6de",
+    "semantic_hash": "4570611e1d93766ec30603117802f6de"
+  },
+  "relicus-admin/src/app/components/ui/button.tsx": {
+    "mtime": 1780337766.2267714,
+    "ast_hash": "e41e66deb18e99f0c6adad0833b9bda3",
+    "semantic_hash": "e41e66deb18e99f0c6adad0833b9bda3"
+  },
+  "relicus-admin/src/app/components/ui/calendar.tsx": {
+    "mtime": 1780337766.2282805,
+    "ast_hash": "077793c68a5f734718c7bcd58dda66fa",
+    "semantic_hash": "077793c68a5f734718c7bcd58dda66fa"
+  },
+  "relicus-admin/src/app/components/ui/card.tsx": {
+    "mtime": 1780337766.2292879,
+    "ast_hash": "3636f7385a18e766d8e9703ade2f3c3a",
+    "semantic_hash": "3636f7385a18e766d8e9703ade2f3c3a"
+  },
+  "relicus-admin/src/app/components/ui/carousel.tsx": {
+    "mtime": 1780337766.2292879,
+    "ast_hash": "bef00edc73965b6879f05e02a16b7200",
+    "semantic_hash": "bef00edc73965b6879f05e02a16b7200"
+  },
+  "relicus-admin/src/app/components/ui/chart.tsx": {
+    "mtime": 1780337766.2308085,
+    "ast_hash": "c94a6e8f6ad29f8333c6edaa16d32f3f",
+    "semantic_hash": "c94a6e8f6ad29f8333c6edaa16d32f3f"
+  },
+  "relicus-admin/src/app/components/ui/checkbox.tsx": {
+    "mtime": 1780337766.2313585,
+    "ast_hash": "354612a01e307a2da96d684c55745365",
+    "semantic_hash": "354612a01e307a2da96d684c55745365"
+  },
+  "relicus-admin/src/app/components/ui/collapsible.tsx": {
+    "mtime": 1780337766.2323773,
+    "ast_hash": "a17e8aaee3747e28c4524f4114cf738b",
+    "semantic_hash": "a17e8aaee3747e28c4524f4114cf738b"
+  },
+  "relicus-admin/src/app/components/ui/command.tsx": {
+    "mtime": 1780337766.2333732,
+    "ast_hash": "c38148668ea03a2f8392e198d0c9ecce",
+    "semantic_hash": "c38148668ea03a2f8392e198d0c9ecce"
+  },
+  "relicus-admin/src/app/components/ui/context-menu.tsx": {
+    "mtime": 1780337766.233883,
+    "ast_hash": "b36802510ef941608474813323320c92",
+    "semantic_hash": "b36802510ef941608474813323320c92"
+  },
+  "relicus-admin/src/app/components/ui/dialog.tsx": {
+    "mtime": 1780337766.233883,
+    "ast_hash": "6d4ff3d2e3fabf0f08e1b7c9faef9579",
+    "semantic_hash": "6d4ff3d2e3fabf0f08e1b7c9faef9579"
+  },
+  "relicus-admin/src/app/components/ui/drawer.tsx": {
+    "mtime": 1780337766.233883,
+    "ast_hash": "6ac1c53b510c868a3d515f3191c5bee0",
+    "semantic_hash": "6ac1c53b510c868a3d515f3191c5bee0"
+  },
+  "relicus-admin/src/app/components/ui/dropdown-menu.tsx": {
+    "mtime": 1780337766.2353897,
+    "ast_hash": "8e31a16de52ada1943b55c5ae9350c0d",
+    "semantic_hash": "8e31a16de52ada1943b55c5ae9350c0d"
+  },
+  "relicus-admin/src/app/components/ui/form.tsx": {
+    "mtime": 1780337766.2369213,
+    "ast_hash": "4dc1e43e7f987e87b0475436001d6f3f",
+    "semantic_hash": "4dc1e43e7f987e87b0475436001d6f3f"
+  },
+  "relicus-admin/src/app/components/ui/hover-card.tsx": {
+    "mtime": 1780337766.2369213,
+    "ast_hash": "a9025de8fb8c2c24abeb6585421d5e4f",
+    "semantic_hash": "a9025de8fb8c2c24abeb6585421d5e4f"
+  },
+  "relicus-admin/src/app/components/ui/input-otp.tsx": {
+    "mtime": 1780337766.2384279,
+    "ast_hash": "f1fc6b67e2487b74b378f039e2b179c7",
+    "semantic_hash": "f1fc6b67e2487b74b378f039e2b179c7"
+  },
+  "relicus-admin/src/app/components/ui/input.tsx": {
+    "mtime": 1780337766.2384279,
+    "ast_hash": "ee6a7da310ce684442534f9cc8665b15",
+    "semantic_hash": "ee6a7da310ce684442534f9cc8665b15"
+  },
+  "relicus-admin/src/app/components/ui/label.tsx": {
+    "mtime": 1780337766.2384279,
+    "ast_hash": "af1cc595d3044ec0c4d4acc377902324",
+    "semantic_hash": "af1cc595d3044ec0c4d4acc377902324"
+  },
+  "relicus-admin/src/app/components/ui/menubar.tsx": {
+    "mtime": 1780337766.2384279,
+    "ast_hash": "31e5133397eb7e90344279128046e4de",
+    "semantic_hash": "31e5133397eb7e90344279128046e4de"
+  },
+  "relicus-admin/src/app/components/ui/navigation-menu.tsx": {
+    "mtime": 1780337766.241243,
+    "ast_hash": "7c66900fe49bd30c4dc2f72eb80c43ba",
+    "semantic_hash": "7c66900fe49bd30c4dc2f72eb80c43ba"
+  },
+  "relicus-admin/src/app/components/ui/pagination.tsx": {
+    "mtime": 1780337766.2424011,
+    "ast_hash": "83f28ea401172adc158d838acf2d70da",
+    "semantic_hash": "83f28ea401172adc158d838acf2d70da"
+  },
+  "relicus-admin/src/app/components/ui/popover.tsx": {
+    "mtime": 1780337766.2433991,
+    "ast_hash": "b88476f4b00f8e2e966f6635a7da73db",
+    "semantic_hash": "b88476f4b00f8e2e966f6635a7da73db"
+  },
+  "relicus-admin/src/app/components/ui/progress.tsx": {
+    "mtime": 1780337766.244395,
+    "ast_hash": "6a06a31b6c44b9d05242aee0958d20bf",
+    "semantic_hash": "6a06a31b6c44b9d05242aee0958d20bf"
+  },
+  "relicus-admin/src/app/components/ui/radio-group.tsx": {
+    "mtime": 1780337766.244395,
+    "ast_hash": "c71bac07acf79b524b3157c8474ab58b",
+    "semantic_hash": "c71bac07acf79b524b3157c8474ab58b"
+  },
+  "relicus-admin/src/app/components/ui/resizable.tsx": {
+    "mtime": 1780337766.2459183,
+    "ast_hash": "5653c1f9a08e003d0210371613d01e4a",
+    "semantic_hash": "5653c1f9a08e003d0210371613d01e4a"
+  },
+  "relicus-admin/src/app/components/ui/scroll-area.tsx": {
+    "mtime": 1780337766.2469249,
+    "ast_hash": "0dd2932f08c9b5bf29056f4b76f93f88",
+    "semantic_hash": "0dd2932f08c9b5bf29056f4b76f93f88"
+  },
+  "relicus-admin/src/app/components/ui/select.tsx": {
+    "mtime": 1780337766.2479303,
+    "ast_hash": "70792371f02d0595fb7562c4877d4fdd",
+    "semantic_hash": "70792371f02d0595fb7562c4877d4fdd"
+  },
+  "relicus-admin/src/app/components/ui/separator.tsx": {
+    "mtime": 1780337766.2489285,
+    "ast_hash": "6cd697e94e33b3000258b5c4190aeb0e",
+    "semantic_hash": "6cd697e94e33b3000258b5c4190aeb0e"
+  },
+  "relicus-admin/src/app/components/ui/sheet.tsx": {
+    "mtime": 1780337766.2489285,
+    "ast_hash": "13bf7e121139a02120b9f7045bf4b228",
+    "semantic_hash": "13bf7e121139a02120b9f7045bf4b228"
+  },
+  "relicus-admin/src/app/components/ui/sidebar.tsx": {
+    "mtime": 1780337766.2499852,
+    "ast_hash": "300fc58c94eb800fbe50834dd11f7574",
+    "semantic_hash": "300fc58c94eb800fbe50834dd11f7574"
+  },
+  "relicus-admin/src/app/components/ui/skeleton.tsx": {
+    "mtime": 1780337766.251493,
+    "ast_hash": "f2b4a2e415b6c434154de7a28aaebbb4",
+    "semantic_hash": "f2b4a2e415b6c434154de7a28aaebbb4"
+  },
+  "relicus-admin/src/app/components/ui/slider.tsx": {
+    "mtime": 1780337766.251493,
+    "ast_hash": "00636c645a8500f5078059f33fd91c79",
+    "semantic_hash": "00636c645a8500f5078059f33fd91c79"
+  },
+  "relicus-admin/src/app/components/ui/sonner.tsx": {
+    "mtime": 1780337766.2530117,
+    "ast_hash": "10d479040581a90e3957cedc170b58be",
+    "semantic_hash": "10d479040581a90e3957cedc170b58be"
+  },
+  "relicus-admin/src/app/components/ui/switch.tsx": {
+    "mtime": 1780337766.2530117,
+    "ast_hash": "6965f0c019db02983e22b6bf4e560bf8",
+    "semantic_hash": "6965f0c019db02983e22b6bf4e560bf8"
+  },
+  "relicus-admin/src/app/components/ui/table.tsx": {
+    "mtime": 1780337766.2540243,
+    "ast_hash": "001ceb1022a0312e1eb4133baa6dc83d",
+    "semantic_hash": "001ceb1022a0312e1eb4133baa6dc83d"
+  },
+  "relicus-admin/src/app/components/ui/tabs.tsx": {
+    "mtime": 1780337766.2557156,
+    "ast_hash": "dbb20d36250470a06b4aaf7662ff44d3",
+    "semantic_hash": "dbb20d36250470a06b4aaf7662ff44d3"
+  },
+  "relicus-admin/src/app/components/ui/textarea.tsx": {
+    "mtime": 1780337766.2567265,
+    "ast_hash": "7b1d8603f8bc4143f670ad2e50dae5bf",
+    "semantic_hash": "7b1d8603f8bc4143f670ad2e50dae5bf"
+  },
+  "relicus-admin/src/app/components/ui/toggle-group.tsx": {
+    "mtime": 1780337766.25773,
+    "ast_hash": "dae00da8846531bbf8275720dbb756cc",
+    "semantic_hash": "dae00da8846531bbf8275720dbb756cc"
+  },
+  "relicus-admin/src/app/components/ui/toggle.tsx": {
+    "mtime": 1780337766.25773,
+    "ast_hash": "f3be0f749b20f0be6ea84414dafdbd39",
+    "semantic_hash": "f3be0f749b20f0be6ea84414dafdbd39"
+  },
+  "relicus-admin/src/app/components/ui/tooltip.tsx": {
+    "mtime": 1780337766.25773,
+    "ast_hash": "0938cd8c69f39046e757e4ce20475674",
+    "semantic_hash": "0938cd8c69f39046e757e4ce20475674"
+  },
+  "relicus-admin/src/app/components/ui/use-mobile.ts": {
+    "mtime": 1780337766.2592351,
+    "ast_hash": "b427d228366c1d3de5167763495116e3",
+    "semantic_hash": "b427d228366c1d3de5167763495116e3"
+  },
+  "relicus-admin/src/app/components/ui/utils.ts": {
+    "mtime": 1780337766.2592351,
+    "ast_hash": "e3f848f1b39f863e6164cf58b5a8e752",
+    "semantic_hash": "e3f848f1b39f863e6164cf58b5a8e752"
+  },
+  "relicus-admin/src/app/layouts/AdminLayout.tsx": {
+    "mtime": 1781868387.813203,
+    "ast_hash": "b996650f094b40d783c5d91f11511ad5",
+    "semantic_hash": "b996650f094b40d783c5d91f11511ad5"
+  },
+  "relicus-admin/src/app/layouts/RootLayout.tsx": {
+    "mtime": 1780337766.2602453,
+    "ast_hash": "e2acca91d1da0c89734eef4b5e4c7ca9",
+    "semantic_hash": "e2acca91d1da0c89734eef4b5e4c7ca9"
+  },
+  "relicus-admin/src/app/routes.tsx": {
+    "mtime": 1781866683.3843937,
+    "ast_hash": "b55e4454abd9ebfadbef7a4af1d057b6",
+    "semantic_hash": "b55e4454abd9ebfadbef7a4af1d057b6"
+  },
+  "relicus-admin/src/app/screens/Admin/AdminLogin.tsx": {
+    "mtime": 1781868989.3911877,
+    "ast_hash": "e521c330ad014d068faf799f5df49690",
+    "semantic_hash": "e521c330ad014d068faf799f5df49690"
+  },
+  "relicus-admin/src/app/screens/Admin/AdminOverview.tsx": {
+    "mtime": 1781693375.173389,
+    "ast_hash": "8093bb8519895e53f5505632bf927daf",
+    "semantic_hash": "8093bb8519895e53f5505632bf927daf"
+  },
+  "relicus-admin/src/app/screens/Admin/CoachingManager.tsx": {
+    "mtime": 1781866155.50535,
+    "ast_hash": "f71697b6fe62b1a237e0a278593b7a7e",
+    "semantic_hash": "f71697b6fe62b1a237e0a278593b7a7e"
+  },
+  "relicus-admin/src/app/screens/Admin/KnowNextManager.tsx": {
+    "mtime": 1781694626.2834272,
+    "ast_hash": "3488794b809a1bed24104ca894ad2bc3",
+    "semantic_hash": "3488794b809a1bed24104ca894ad2bc3"
+  },
+  "relicus-admin/src/app/screens/Admin/MindfulnessManager.tsx": {
+    "mtime": 1781694766.2820709,
+    "ast_hash": "8eba1e1cbe3fb2992806c3d5845a933e",
+    "semantic_hash": "8eba1e1cbe3fb2992806c3d5845a933e"
+  },
+  "relicus-admin/src/app/screens/Admin/SkillsManager.tsx": {
+    "mtime": 1781978567.8301103,
+    "ast_hash": "e96b9b481f79a7455a7e1691943d6cc0",
+    "semantic_hash": "e96b9b481f79a7455a7e1691943d6cc0"
+  },
+  "relicus-admin/src/app/screens/Admin/TuitionManager.tsx": {
+    "mtime": 1781694803.2339907,
+    "ast_hash": "639c8202c60dad175b200c6cb7ad6155",
+    "semantic_hash": "639c8202c60dad175b200c6cb7ad6155"
+  },
+  "relicus-admin/src/app/screens/EntranceCoaching.legacy.tsx": {
+    "mtime": 1780732620.720867,
+    "ast_hash": "2c95938a0464b1427c61d2f9986946f5",
+    "semantic_hash": "2c95938a0464b1427c61d2f9986946f5"
+  },
+  "relicus-admin/src/app/screens/EntranceCoaching.tsx": {
+    "mtime": 1780733510.1178508,
+    "ast_hash": "34e5f473efd58eedd915644d8ea4933a",
+    "semantic_hash": "34e5f473efd58eedd915644d8ea4933a"
+  },
+  "relicus-admin/src/app/screens/SkillEnhancement.tsx": {
+    "mtime": 1780735452.29913,
+    "ast_hash": "226447252d74c84ccfa272f71f1b56a0",
+    "semantic_hash": "226447252d74c84ccfa272f71f1b56a0"
+  },
+  "relicus-admin/src/app/services/supabaseClient.ts": {
+    "mtime": 1781866167.5641553,
+    "ast_hash": "a34384f61c69fcae2862432ab69e4130",
+    "semantic_hash": "a34384f61c69fcae2862432ab69e4130"
+  },
+  "relicus-admin/src/main.tsx": {
+    "mtime": 1780337766.2795806,
+    "ast_hash": "3a17b50137d0110b8437a1b081bd965a",
+    "semantic_hash": "3a17b50137d0110b8437a1b081bd965a"
+  },
+  "relicus-admin/tsconfig.json": {
+    "mtime": 1781977713.3292186,
+    "ast_hash": "fb6e709a8c312095676148b98f7e519f",
+    "semantic_hash": "fb6e709a8c312095676148b98f7e519f"
+  },
+  "relicus-admin/vercel.json": {
+    "mtime": 1781978387.6692803,
+    "ast_hash": "61bd31a2b0ac08f10f13c932b32d6ca1",
+    "semantic_hash": "61bd31a2b0ac08f10f13c932b32d6ca1"
+  },
+  "relicus-admin/vite.config.ts": {
+    "mtime": 1780337766.2831733,
+    "ast_hash": "e5387c33e5183e5f02f9d1bab3571ca3",
+    "semantic_hash": "e5387c33e5183e5f02f9d1bab3571ca3"
+  },
+  "relicus-native/app/(tabs)/_layout.tsx": {
+    "mtime": 1780338620.7134364,
+    "ast_hash": "22d7378dc25195a89482c3f1a02b181d",
+    "semantic_hash": "22d7378dc25195a89482c3f1a02b181d"
+  },
+  "relicus-native/app/(tabs)/home.tsx": {
+    "mtime": 1781124374.6850226,
+    "ast_hash": "27d3d10ddb0007cdd4a7221995cb0aca",
+    "semantic_hash": "27d3d10ddb0007cdd4a7221995cb0aca"
+  },
+  "relicus-native/app/(tabs)/learning.tsx": {
+    "mtime": 1780836470.4157622,
+    "ast_hash": "3e4228631e9443664d39504941a2e668",
+    "semantic_hash": "3e4228631e9443664d39504941a2e668"
+  },
+  "relicus-native/app/(tabs)/notifications.tsx": {
+    "mtime": 1780342438.618601,
+    "ast_hash": "6cf1a337a8891cb4395230bf92501202",
+    "semantic_hash": "6cf1a337a8891cb4395230bf92501202"
+  },
+  "relicus-native/app/(tabs)/profile.tsx": {
+    "mtime": 1780425823.1306896,
+    "ast_hash": "bea2e5ca7453fe670dae02c29f21f73b",
+    "semantic_hash": "bea2e5ca7453fe670dae02c29f21f73b"
+  },
+  "relicus-native/app/(tabs)/sessions.tsx": {
+    "mtime": 1780425130.0558882,
+    "ast_hash": "9ff13b0250adbd261d23160b7afa6ae3",
+    "semantic_hash": "9ff13b0250adbd261d23160b7afa6ae3"
+  },
+  "relicus-native/app/_layout.tsx": {
+    "mtime": 1780837932.286628,
+    "ast_hash": "c4af071ed500ad23260d6623f6dae948",
+    "semantic_hash": "c4af071ed500ad23260d6623f6dae948"
+  },
+  "relicus-native/app/coaching/dashboard.tsx": {
+    "mtime": 1780836466.2239382,
+    "ast_hash": "827c86898887084cf7b3d36998f0245b",
+    "semantic_hash": "827c86898887084cf7b3d36998f0245b"
+  },
+  "relicus-native/app/coaching/data/cuetData.ts": {
+    "mtime": 1780732714.2568216,
+    "ast_hash": "e11319629a7d3189edbe2627d0e73432",
+    "semantic_hash": "e11319629a7d3189edbe2627d0e73432"
+  },
+  "relicus-native/app/coaching/data/eamcetData.ts": {
+    "mtime": 1780736390.9637527,
+    "ast_hash": "a6ca22054baaba4b78eb92b8e3166599",
+    "semantic_hash": "a6ca22054baaba4b78eb92b8e3166599"
+  },
+  "relicus-native/app/coaching/data/examRegistry.ts": {
+    "mtime": 1780737428.0428782,
+    "ast_hash": "2d99aca2e229855e3dd04f4e639d2fd8",
+    "semantic_hash": "2d99aca2e229855e3dd04f4e639d2fd8"
+  },
+  "relicus-native/app/coaching/data/gateData.ts": {
+    "mtime": 1780737406.9118855,
+    "ast_hash": "27243ee1d1817ae08cfa0f50382383c4",
+    "semantic_hash": "27243ee1d1817ae08cfa0f50382383c4"
+  },
+  "relicus-native/app/coaching/data/icetData.ts": {
+    "mtime": 1780736397.2068472,
+    "ast_hash": "6a81c0bc5109322dadb97da864f031ee",
+    "semantic_hash": "6a81c0bc5109322dadb97da864f031ee"
+  },
+  "relicus-native/app/coaching/data/jeeData.ts": {
+    "mtime": 1780732702.7247522,
+    "ast_hash": "d05f0af25fa7e6c952e1aed1290880cf",
+    "semantic_hash": "d05f0af25fa7e6c952e1aed1290880cf"
+  },
+  "relicus-native/app/coaching/data/neetData.ts": {
+    "mtime": 1780732709.424469,
+    "ast_hash": "d59e8bb82bcd5726aa86dd243398e37c",
+    "semantic_hash": "d59e8bb82bcd5726aa86dd243398e37c"
+  },
+  "relicus-native/app/coaching/data/ugcNetData.ts": {
+    "mtime": 1780737346.975586,
+    "ast_hash": "6b1776718819da4b9ba2d186082a1b73",
+    "semantic_hash": "6b1776718819da4b9ba2d186082a1b73"
+  },
+  "relicus-native/app/coaching/exam-info.tsx": {
+    "mtime": 1780836461.3219216,
+    "ast_hash": "366e959364c7b794bffd024045ab1a74",
+    "semantic_hash": "366e959364c7b794bffd024045ab1a74"
+  },
+  "relicus-native/app/coaching/test.tsx": {
+    "mtime": 1780423952.9836018,
+    "ast_hash": "c4e8641a681351595b39cbba59ccb4db",
+    "semantic_hash": "c4e8641a681351595b39cbba59ccb4db"
+  },
+  "relicus-native/app/coaching/types/analytics.types.ts": {
+    "mtime": 1780732671.4559014,
+    "ast_hash": "e2095869978dc54cdfc3b8f4f1e43edc",
+    "semantic_hash": "e2095869978dc54cdfc3b8f4f1e43edc"
+  },
+  "relicus-native/app/coaching/types/chapter.types.ts": {
+    "mtime": 1780732661.7284381,
+    "ast_hash": "8b7c71a452fc3264238826bbd6d92a43",
+    "semantic_hash": "8b7c71a452fc3264238826bbd6d92a43"
+  },
+  "relicus-native/app/coaching/types/doubt.types.ts": {
+    "mtime": 1780732676.0963738,
+    "ast_hash": "00065656c4e787dcbd0e1484057b8b72",
+    "semantic_hash": "00065656c4e787dcbd0e1484057b8b72"
+  },
+  "relicus-native/app/coaching/types/exam.types.ts": {
+    "mtime": 1780737195.6732235,
+    "ast_hash": "17446a3751334eabf8a7c7c9645d77a1",
+    "semantic_hash": "17446a3751334eabf8a7c7c9645d77a1"
+  },
+  "relicus-native/app/coaching/types/test.types.ts": {
+    "mtime": 1780732666.9456725,
+    "ast_hash": "afbf68782f8061303d5b07af6fc9b5af",
+    "semantic_hash": "afbf68782f8061303d5b07af6fc9b5af"
+  },
+  "relicus-native/app/counselling/[id].tsx": {
+    "mtime": 1780423979.0793433,
+    "ast_hash": "0a92e83cee3db084f7bc1bb3722649c8",
+    "semantic_hash": "0a92e83cee3db084f7bc1bb3722649c8"
+  },
+  "relicus-native/app/counselling/book.tsx": {
+    "mtime": 1780425845.3013175,
+    "ast_hash": "77d6fc048f0502d06572bb2d1444697b",
+    "semantic_hash": "77d6fc048f0502d06572bb2d1444697b"
+  },
+  "relicus-native/app/counselling/video.tsx": {
+    "mtime": 1780423831.531025,
+    "ast_hash": "9a922819a92a6c8bd6dfb9f5a669b555",
+    "semantic_hash": "9a922819a92a6c8bd6dfb9f5a669b555"
+  },
+  "relicus-native/app/index.tsx": {
+    "mtime": 1780425890.4145124,
+    "ast_hash": "79bf20d6c3a8ec6e9790b5bd26c158ff",
+    "semantic_hash": "79bf20d6c3a8ec6e9790b5bd26c158ff"
+  },
+  "relicus-native/app/intro.tsx": {
+    "mtime": 1780425093.0950792,
+    "ast_hash": "8301d35cc981e0ee1c413251f297116c",
+    "semantic_hash": "8301d35cc981e0ee1c413251f297116c"
+  },
+  "relicus-native/app/knowNext/index.tsx": {
+    "mtime": 1780836042.0225782,
+    "ast_hash": "82802dacdc2ad47d1cbebb887c150934",
+    "semantic_hash": "82802dacdc2ad47d1cbebb887c150934"
+  },
+  "relicus-native/app/knowNext/screens/CollegeScreens.tsx": {
+    "mtime": 1780836457.355877,
+    "ast_hash": "37a61e58ebff292369ce46e85a3cb8b5",
+    "semantic_hash": "37a61e58ebff292369ce46e85a3cb8b5"
+  },
+  "relicus-native/app/knowNext/screens/ExplorerScreens.tsx": {
+    "mtime": 1780836453.3878798,
+    "ast_hash": "1b5f40b5611f118d09f8e3e98b79131f",
+    "semantic_hash": "1b5f40b5611f118d09f8e3e98b79131f"
+  },
+  "relicus-native/app/knowNext/screens/PlanScreens.tsx": {
+    "mtime": 1780836449.131964,
+    "ast_hash": "f6f568b5f0aa4c135e0a8af1d9ffe570",
+    "semantic_hash": "f6f568b5f0aa4c135e0a8af1d9ffe570"
+  },
+  "relicus-native/app/knowNext/screens/ScholarshipScreens.tsx": {
+    "mtime": 1780836445.233461,
+    "ast_hash": "d8c4d65b936779cd411ab62b628f1886",
+    "semantic_hash": "d8c4d65b936779cd411ab62b628f1886"
+  },
+  "relicus-native/app/knowNext/types.ts": {
+    "mtime": 1780836275.093067,
+    "ast_hash": "b2427377d794af0696faeb0775d694a6",
+    "semantic_hash": "b2427377d794af0696faeb0775d694a6"
+  },
+  "relicus-native/app/landing.tsx": {
+    "mtime": 1780737106.0896814,
+    "ast_hash": "e9b5cf0f9e96b29c6b6dfa1816eb6407",
+    "semantic_hash": "e9b5cf0f9e96b29c6b6dfa1816eb6407"
+  },
+  "relicus-native/app/mindfulness/index.tsx": {
+    "mtime": 1780423895.5194628,
+    "ast_hash": "bb5764d400188bc7aa8a7f3875a2e8ae",
+    "semantic_hash": "bb5764d400188bc7aa8a7f3875a2e8ae"
+  },
+  "relicus-native/app/otp.tsx": {
+    "mtime": 1780342059.1006577,
+    "ast_hash": "38c98e52d192af772caedd2186df4a5b",
+    "semantic_hash": "38c98e52d192af772caedd2186df4a5b"
+  },
+  "relicus-native/app/profile/privacy.tsx": {
+    "mtime": 1780425411.1051161,
+    "ast_hash": "9fd46c789ce7e4ecbcedcca787772b53",
+    "semantic_hash": "9fd46c789ce7e4ecbcedcca787772b53"
+  },
+  "relicus-native/app/sessions/dashboard.tsx": {
+    "mtime": 1780425116.8485823,
+    "ast_hash": "40381e9d4c7057f5497f7d027e259494",
+    "semantic_hash": "40381e9d4c7057f5497f7d027e259494"
+  },
+  "relicus-native/app/skills/course-dashboard.tsx": {
+    "mtime": 1780836335.8574948,
+    "ast_hash": "3baf53f2768795b2d957d393672cf59e",
+    "semantic_hash": "3baf53f2768795b2d957d393672cf59e"
+  },
+  "relicus-native/app/skills/index.tsx": {
+    "mtime": 1780836146.4753828,
+    "ast_hash": "96077b3bd9cf94eae5bb28360855cd50",
+    "semantic_hash": "96077b3bd9cf94eae5bb28360855cd50"
+  },
+  "relicus-native/app/student/dashboard.tsx": {
+    "mtime": 1780425868.8495026,
+    "ast_hash": "0ddb8fa1cfbbddf8844aeba5b3caf3bb",
+    "semantic_hash": "0ddb8fa1cfbbddf8844aeba5b3caf3bb"
+  },
+  "relicus-native/app/student/find-teacher.tsx": {
+    "mtime": 1780425856.573345,
+    "ast_hash": "c1118cb82b5bfa74694993e9ef10f5b5",
+    "semantic_hash": "c1118cb82b5bfa74694993e9ef10f5b5"
+  },
+  "relicus-native/app/teacher/dashboard.tsx": {
+    "mtime": 1780423883.7275567,
+    "ast_hash": "099dfc2d094276bdfc42ff690e65b490",
+    "semantic_hash": "099dfc2d094276bdfc42ff690e65b490"
+  },
+  "relicus-native/app/therapist/dashboard.tsx": {
+    "mtime": 1780423994.3017268,
+    "ast_hash": "ae58dd5c7655249aa5dc9ccaa75505e7",
+    "semantic_hash": "ae58dd5c7655249aa5dc9ccaa75505e7"
+  },
+  "relicus-native/app/tuition/index.tsx": {
+    "mtime": 1781124000.6102438,
+    "ast_hash": "95f1f6f1070db9e9d86fb592b402a7c3",
+    "semantic_hash": "95f1f6f1070db9e9d86fb592b402a7c3"
+  },
+  "relicus-native/app/tuition/screens/AssessmentScreens.tsx": {
+    "mtime": 1781123975.0481646,
+    "ast_hash": "eb3bdfb8af4c7e3a7550e57608d688f7",
+    "semantic_hash": "eb3bdfb8af4c7e3a7550e57608d688f7"
+  },
+  "relicus-native/app/tuition/screens/ExtraScreens.tsx": {
+    "mtime": 1781123998.5689409,
+    "ast_hash": "ec4904db9820522046176f9cf127f3bf",
+    "semantic_hash": "ec4904db9820522046176f9cf127f3bf"
+  },
+  "relicus-native/app/tuition/screens/HomeScreens.tsx": {
+    "mtime": 1781123939.419463,
+    "ast_hash": "8887ea19462a5d1326cf03741ecc8510",
+    "semantic_hash": "8887ea19462a5d1326cf03741ecc8510"
+  },
+  "relicus-native/app/tuition/screens/LearningPathScreens.tsx": {
+    "mtime": 1781123941.4606733,
+    "ast_hash": "94a44daa72f775a96778849846415adb",
+    "semantic_hash": "94a44daa72f775a96778849846415adb"
+  },
+  "relicus-native/app/tuition/screens/MaterialScreens.tsx": {
+    "mtime": 1781123977.0687668,
+    "ast_hash": "8382c1b853edbcf25213302d81a8cfc3",
+    "semantic_hash": "8382c1b853edbcf25213302d81a8cfc3"
+  },
+  "relicus-native/app/tuition/screens/ProfileScreens.tsx": {
+    "mtime": 1781123979.1087914,
+    "ast_hash": "025f6fac296d938ef2b1d4e912ad837f",
+    "semantic_hash": "025f6fac296d938ef2b1d4e912ad837f"
+  },
+  "relicus-native/app/tuition/screens/TeacherScreens.tsx": {
+    "mtime": 1781123943.478507,
+    "ast_hash": "56a25266632a48567b84e93bd6bca2a1",
+    "semantic_hash": "56a25266632a48567b84e93bd6bca2a1"
+  },
+  "relicus-native/app/tuition/types.ts": {
+    "mtime": 1781123854.8332984,
+    "ast_hash": "6fead21e3451bcf302e915cc4794a52e",
+    "semantic_hash": "6fead21e3451bcf302e915cc4794a52e"
+  },
+  "relicus-native/constants/coaching/examCategories.ts": {
+    "mtime": 1780836500.3091702,
+    "ast_hash": "f03774c1fa513ed8efa35445771ade6d",
+    "semantic_hash": "f03774c1fa513ed8efa35445771ade6d"
+  },
+  "relicus-native/constants/coaching/examInfo.ts": {
+    "mtime": 1780836504.237816,
+    "ast_hash": "2ae2d33f70296bba1529505c477ed14c",
+    "semantic_hash": "2ae2d33f70296bba1529505c477ed14c"
+  },
+  "relicus-native/constants/coaching/exams.ts": {
+    "mtime": 1780836508.290526,
+    "ast_hash": "02d51f8ff56df54140062342538b8486",
+    "semantic_hash": "02d51f8ff56df54140062342538b8486"
+  },
+  "relicus-native/constants/coaching/storageKeys.ts": {
+    "mtime": 1780732689.945173,
+    "ast_hash": "c70446da1a3eac800a7cd4a51f35370f",
+    "semantic_hash": "c70446da1a3eac800a7cd4a51f35370f"
+  },
+  "relicus-native/constants/coaching/tabs.ts": {
+    "mtime": 1780732685.4845102,
+    "ast_hash": "951d3b0ff327070423d9b14a12832a7b",
+    "semantic_hash": "951d3b0ff327070423d9b14a12832a7b"
+  },
+  "relicus-native/constants/coaching/ui.ts": {
+    "mtime": 1780836512.9988112,
+    "ast_hash": "cc356aaba30b025551e6404bf964cc10",
+    "semantic_hash": "cc356aaba30b025551e6404bf964cc10"
+  },
+  "relicus-native/constants/knowNext/careers.ts": {
+    "mtime": 1780836422.7044158,
+    "ast_hash": "b161c2013f845f969226618ebd408e25",
+    "semantic_hash": "b161c2013f845f969226618ebd408e25"
+  },
+  "relicus-native/constants/knowNext/colleges.ts": {
+    "mtime": 1780836427.0521371,
+    "ast_hash": "0ae7b85972bcbec70ae1430eb52a6778",
+    "semantic_hash": "0ae7b85972bcbec70ae1430eb52a6778"
+  },
+  "relicus-native/constants/knowNext/industries.ts": {
+    "mtime": 1780836430.9733548,
+    "ast_hash": "ae4b398d0bf10f5f8cfacbd36d216abb",
+    "semantic_hash": "ae4b398d0bf10f5f8cfacbd36d216abb"
+  },
+  "relicus-native/constants/knowNext/roadmaps.ts": {
+    "mtime": 1780836436.6059303,
+    "ast_hash": "da68db56d58f7b45f62bc6da5e519b33",
+    "semantic_hash": "da68db56d58f7b45f62bc6da5e519b33"
+  },
+  "relicus-native/constants/knowNext/scholarships.ts": {
+    "mtime": 1780836441.038391,
+    "ast_hash": "8ac37c3b02a66d8779302f022719b588",
+    "semantic_hash": "8ac37c3b02a66d8779302f022719b588"
+  },
+  "relicus-native/constants/tuition/assessments.ts": {
+    "mtime": 1781123897.3998146,
+    "ast_hash": "02e2e2858a54ee52024f4abf9eed7069",
+    "semantic_hash": "02e2e2858a54ee52024f4abf9eed7069"
+  },
+  "relicus-native/constants/tuition/classes.ts": {
+    "mtime": 1781123890.5599158,
+    "ast_hash": "9073d7650cb40386c35a6baf18203471",
+    "semantic_hash": "9073d7650cb40386c35a6baf18203471"
+  },
+  "relicus-native/constants/tuition/materials.ts": {
+    "mtime": 1781123895.3704321,
+    "ast_hash": "627d617330ba50dea6eb5e855dff5abd",
+    "semantic_hash": "627d617330ba50dea6eb5e855dff5abd"
+  },
+  "relicus-native/constants/tuition/teachers.ts": {
+    "mtime": 1781123893.354204,
+    "ast_hash": "96103f99aa6a5a86ddb8fd44e63b54e2",
+    "semantic_hash": "96103f99aa6a5a86ddb8fd44e63b54e2"
+  },
+  "store/auth.store.ts": {
+    "mtime": 1781971546.8890722,
+    "ast_hash": "b8114a50c6dbe2fae9db1e74cd97d7be",
+    "semantic_hash": "b8114a50c6dbe2fae9db1e74cd97d7be"
+  },
+  "store/coaching.store.ts": {
+    "mtime": 1781969364.1535258,
+    "ast_hash": "b4b542027f5919c19bffeaf4fd3d7ddb",
+    "semantic_hash": "b4b542027f5919c19bffeaf4fd3d7ddb"
+  },
+  "store/knownext.store.ts": {
+    "mtime": 1781872884.4924316,
+    "ast_hash": "a84055f90890b017318cc6a932a2428f",
+    "semantic_hash": "a84055f90890b017318cc6a932a2428f"
+  },
+  "store/mindfulness.store.ts": {
+    "mtime": 1781872836.0145483,
+    "ast_hash": "f1e6c077dc81b911aa1ef1e3f4513de3",
+    "semantic_hash": "f1e6c077dc81b911aa1ef1e3f4513de3"
+  },
+  "store/skills.store.ts": {
+    "mtime": 1781976543.4340067,
+    "ast_hash": "d5efb80dfa124065a1afa4be8c9bd2df",
+    "semantic_hash": "d5efb80dfa124065a1afa4be8c9bd2df"
+  },
+  "store/tuition.store.ts": {
+    "mtime": 1781872955.27228,
+    "ast_hash": "695270c545242163eb2cb6a8600edf21",
+    "semantic_hash": "695270c545242163eb2cb6a8600edf21"
+  },
+  "supabase/schema.sql": {
+    "mtime": 1781875951.4122243,
+    "ast_hash": "68af1c7a9b85d595b5b85d9e9f9e53f9",
+    "semantic_hash": "68af1c7a9b85d595b5b85d9e9f9e53f9"
+  },
+  "tailwind.config.js": {
+    "mtime": 1780837315.678883,
+    "ast_hash": "a75bbc8455baecd4599e206afcec83b6",
+    "semantic_hash": "a75bbc8455baecd4599e206afcec83b6"
+  },
+  "tsconfig.json": {
+    "mtime": 1781872603.7423651,
+    "ast_hash": "572f65c86b5f542801c698a58e1cfa73",
+    "semantic_hash": "572f65c86b5f542801c698a58e1cfa73"
+  }
+}

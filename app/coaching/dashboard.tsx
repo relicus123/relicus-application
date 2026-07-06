@@ -101,15 +101,19 @@ export default function CoachingDashboard() {
   const [activeTab, setActiveTab] = useState<"overview" | "chapters" | "live" | "tests" | "pyqs" | "doubt" | "analytics">("overview");
 
   const [doubtText, setDoubtText] = useState("");
-  const { doubts, addDoubt, learningStreak, testAttempts, addTestAttempt } = useCoachingStore();
+  const { doubts, addDoubt, learningStreak, testAttempts, addTestAttempt, fetchCoachingData } = useCoachingStore();
+
+  React.useEffect(() => {
+    fetchCoachingData();
+  }, [fetchCoachingData]);
 
   const handleBack = () => {
     router.back();
   };
 
-  const handleAddDoubt = () => {
+  const handleAddDoubt = async () => {
     if (!doubtText.trim()) return;
-    addDoubt({
+    await addDoubt({
       id: Math.random().toString(),
       examType: examType as any,
       title: `${selectedSubjectId} Doubt`,
@@ -122,14 +126,12 @@ export default function CoachingDashboard() {
     alert("Your doubt has been submitted to the Doubt Desk!");
   };
 
-  const handleStartTest = (testName: string) => {
+  const handleStartTest = async (testName: string) => {
     const score = Math.floor(Math.random() * 40) + 60; // Mock score 60-100%
-    addTestAttempt({
-      id: Math.random().toString(),
+    await addTestAttempt({
       testId: Math.random().toString(),
       testName: testName,
       examType: examType as any,
-      date: new Date().toISOString(),
       score,
       maxScore: 100,
       accuracy: score,

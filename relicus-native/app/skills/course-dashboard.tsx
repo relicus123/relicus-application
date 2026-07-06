@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   Dimensions,
+  Image,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -37,6 +38,10 @@ export default function CourseDashboardScreen() {
   const store = useSkillsStore();
   const course = useMemo(() => store.courses.find((c) => c.id === courseId), [courseId, store.courses]);
   const activeTab = store.activeDashboardTab;
+
+  React.useEffect(() => {
+    store.fetchDoubts();
+  }, []);
 
   // Local state
   const [selectedModuleIdx, setSelectedModuleIdx] = useState(0);
@@ -145,9 +150,14 @@ export default function CourseDashboardScreen() {
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <ArrowLeft color="white" size={24} />
           </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle} numberOfLines={1}>{course.title}</Text>
-            <Text style={styles.headerSubtitle}>By {course.instructor}</Text>
+          <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12 }}>
+            {course.thumbnail && String(course.thumbnail).trim().startsWith('http') ? (
+              <Image source={{ uri: String(course.thumbnail).trim() }} style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)" }} resizeMode="cover" />
+            ) : null}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.headerTitle} numberOfLines={1}>{course.title}</Text>
+              <Text style={styles.headerSubtitle}>By {course.instructor}</Text>
+            </View>
           </View>
         </View>
       </LinearGradient>
@@ -233,12 +243,24 @@ export default function CourseDashboardScreen() {
 
                     return (
                       <View key={lesson.id} style={styles.lessonItem}>
-                        <TouchableOpacity
-                          onPress={() => handlePlayLesson(lesson, course.modules[selectedModuleIdx].id)}
-                          style={styles.lessonPlayBtn}
-                        >
-                          <Play size={14} color="white" fill="white" />
-                        </TouchableOpacity>
+                        {lesson.thumbnail && String(lesson.thumbnail).trim().startsWith('http') ? (
+                          <View style={{ width: 64, height: 48, borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+                            <Image source={{ uri: String(lesson.thumbnail).trim() }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                            <TouchableOpacity
+                              onPress={() => handlePlayLesson(lesson, course.modules[selectedModuleIdx].id)}
+                              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}
+                            >
+                              <Play size={16} color="white" fill="white" />
+                            </TouchableOpacity>
+                          </View>
+                        ) : (
+                          <TouchableOpacity
+                            onPress={() => handlePlayLesson(lesson, course.modules[selectedModuleIdx].id)}
+                            style={styles.lessonPlayBtn}
+                          >
+                            <Play size={14} color="white" fill="white" />
+                          </TouchableOpacity>
+                        )}
                         <View style={{ flex: 1 }}>
                           <Text style={styles.lessonTitle}>{lesson.title}</Text>
                           <Text style={styles.lessonDuration}>{lesson.duration}</Text>

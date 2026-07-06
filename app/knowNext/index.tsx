@@ -1,5 +1,5 @@
 import React, { useReducer, useCallback } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, ActivityIndicator, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
@@ -61,14 +61,14 @@ function navReducer(state: NavState, action: NavAction): NavState {
 export default function KnowNextMain() {
   const router = useRouter();
   const [navState, dispatch] = useReducer(navReducer, initialState);
-  const { fetchAllData } = useKnowNextStore();
+  const { fetchKnowNextData, isLoading } = useKnowNextStore();
 
   // Sync stage filter with store if needed
   const activeStage = useKnowNextStore((s) => s.activeStage);
 
   React.useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
+    fetchKnowNextData();
+  }, [fetchKnowNextData]);
 
   const handleNavigate = useCallback((view: KnowNextView, ctx?: NavContext) => {
     dispatch({ type: "PUSH", view, context: ctx });
@@ -135,7 +135,14 @@ export default function KnowNextMain() {
 
   return (
     <View style={styles.container}>
-      {renderView()}
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1C4966" />
+          <Text style={styles.loadingText}>Loading KnowNext Profile...</Text>
+        </View>
+      ) : (
+        renderView()
+      )}
     </View>
   );
 }
@@ -144,5 +151,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFF0",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FFFFF0",
+  },
+  loadingText: {
+    marginTop: 16,
+    color: "#1C4966",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

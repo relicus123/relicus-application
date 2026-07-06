@@ -100,10 +100,20 @@ export function CareerCard({ career, onSelect }: CareerCardProps) {
       <View style={styles.cardStats}>
         <View style={styles.statChip}>
           <TrendingUp size={12} color="#5F8B70" />
-          <Text style={styles.statChipText}>{career.industryDemand} Demand</Text>
+          <Text style={styles.statChipText}>{career.industryDemand || career.industry_demand || 'High'} Demand</Text>
         </View>
         <View style={styles.statChip}>
-          <Text style={styles.statChipText}>₹{career.salaryRange.min}-{career.salaryRange.max} LPA</Text>
+          <Text style={styles.statChipText}>
+            ₹{(() => {
+              try {
+                const sr = career.salaryRange || career.salary_range;
+                const parsed = typeof sr === 'string' ? JSON.parse(sr) : sr;
+                return `${parsed?.min ?? 0}-${parsed?.max ?? 0}`;
+              } catch (e) {
+                return "0-0";
+              }
+            })()} LPA
+          </Text>
         </View>
       </View>
 
@@ -388,11 +398,21 @@ export const CareerDetails: React.FC<CareerDetailsProps> = ({ careerId, onNaviga
           <View style={styles.metaRow}>
             <View style={styles.metaCol}>
               <Text style={styles.metaLabel}>SALARY RANGE</Text>
-              <Text style={styles.metaValue}>₹{career.salaryRange.min}-{career.salaryRange.max} LPA</Text>
+              <Text style={styles.metaValue}>
+                ₹{(() => {
+                  try {
+                    const sr = career.salaryRange || career.salary_range;
+                    const parsed = typeof sr === 'string' ? JSON.parse(sr) : sr;
+                    return `${parsed?.min ?? 0}-${parsed?.max ?? 0}`;
+                  } catch (e) {
+                    return "0-0";
+                  }
+                })()} LPA
+              </Text>
             </View>
             <View style={styles.metaCol}>
               <Text style={styles.metaLabel}>INDUSTRY DEMAND</Text>
-              <Text style={styles.metaValue}>{career.industryDemand}</Text>
+              <Text style={styles.metaValue}>{career.industryDemand || career.industry_demand || 'High'}</Text>
             </View>
           </View>
 

@@ -9,6 +9,7 @@ export interface Lesson {
   title: string;
   videoUrl: string;
   duration: string;
+  thumbnail?: string;
   progress: number;
   completed: boolean;
 }
@@ -40,6 +41,16 @@ export interface Assignment {
   title: string;
   instructions: string;
   downloadUrl: string;
+}
+
+export interface CertificateRequest {
+  id: string;
+  userEmail: string;
+  courseId: string;
+  courseTitle: string;
+  recipientName: string;
+  status: string;
+  createdAt: string;
 }
 
 export interface Module {
@@ -160,10 +171,12 @@ interface SkillsState {
   enrolledCourseIds: Record<string, string[]>; // userId -> courseIds
   currentCourseId: string | null;
   lessonProgress: Record<string, { progress: number; completed: boolean }>; // userId_courseId_lessonId -> progress
+  quizProgress: Record<string, { score: number; passed: boolean; completedAt: string }>; // userId_courseId_quizId -> progress
   submissions: AssignmentSubmission[];
   doubts: Doubt[];
   bookmarks: Bookmark[];
   certificates: Record<string, Certificate[]>; // userId -> certificates
+  certificateRequests: CertificateRequest[];
   notifications: SkillNotification[];
   reviews: CourseReview[];
   activityFeed: ActivityLog[];
@@ -180,11 +193,15 @@ interface SkillsState {
   enrollInCourse: (courseId: string) => void;
   selectCourse: (courseId: string | null) => void;
   updateLessonProgress: (courseId: string, lessonId: string, progress: number, completed: boolean) => void;
+  saveQuizProgress: (courseId: string, quizId: string, score: number, passed: boolean) => void;
   submitAssignment: (submission: Omit<AssignmentSubmission, "submittedAt">) => void;
-  addDoubt: (doubt: Omit<Doubt, "id" | "submittedAt" | "responses">) => void;
+  fetchDoubts: () => Promise<void>;
+  addDoubt: (doubt: Omit<Doubt, "id" | "submittedAt" | "responses">) => Promise<void>;
   resolveDoubt: (doubtId: string) => void;
   toggleBookmark: (bookmark: Omit<Bookmark, "bookmarkedAt">) => void;
   generateCertificate: (courseId: string, recipientName: string) => void;
+  fetchCertificateRequests: () => Promise<void>;
+  requestCertificate: (courseId: string, courseTitle: string, recipientName: string) => Promise<void>;
   addLearningHours: (hours: number) => void;
   incrementStreak: () => void;
   setActiveLandingTab: (tab: "catalog" | "my-courses" | "certificates" | "analytics") => void;
@@ -207,10 +224,12 @@ export const useSkillsStore = create<SkillsState>()(
       enrolledCourseIds: {},
       currentCourseId: null,
       lessonProgress: {},
+      quizProgress: {},
       submissions: [],
       doubts: [],
       bookmarks: [],
       certificates: {},
+      certificateRequests: [],
       notifications: [],
       reviews: [],
       activityFeed: [],
@@ -298,6 +317,18 @@ export const useSkillsStore = create<SkillsState>()(
         }));
       },
 
+      saveQuizProgress: (courseId, quizId, score, passed) => {
+        const userId = useAuthStore.getState().currentUser?.id;
+        if (!userId) return;
+        const key = `${userId}_${courseId}_${quizId}`;
+        set((state) => ({
+          quizProgress: {
+            ...state.quizProgress,
+            [key]: { score, passed, completedAt: new Date().toISOString() },
+          },
+        }));
+      },
+
       submitAssignment: (sub) =>
         set((state) => {
           const filtered = state.submissions.filter(
@@ -318,20 +349,8 @@ export const useSkillsStore = create<SkillsState>()(
           };
 
           if (sub.status === "Submitted") {
-            setTimeout(() => {
-              get().submitAssignment({
-                ...newSubmission,
-                status: "Reviewed",
-                grade: "A",
-                feedback: "Superb work! Your code uses proper layout alignment, responsive constraints, and follows all design specifications."
-              });
-              
-              get().addNotification({
-                category: "Assignment Graded",
-                title: "Assignment Evaluated",
-                message: `Your project assignment for ${courseObj?.title} has been graded. Score: Grade A.`
-              });
-            }, 3000);
+            // Note: Auto-grading mockup removed as per request.
+            // Submissions will remain in "Submitted" status until graded by Admin.
           }
 
           return {
@@ -340,48 +359,61 @@ export const useSkillsStore = create<SkillsState>()(
           };
         }),
 
-      addDoubt: (doubt) =>
-        set((state) => {
-          const newDoubt: Doubt = {
-            ...doubt,
-            id: `doubt-${Math.random().toString(36).substr(2, 9)}`,
-            submittedAt: new Date().toISOString(),
-            status: "Pending",
-            responses: []
-          };
+      fetchDoubts: async () => {
+        const email = useAuthStore.getState().currentUser?.email;
+        if (!email) return;
+        try {
+          const { data, error } = await supabase
+            .from("skills_doubts")
+            .select(`*, responses:skills_doubt_responses(*)`)
+            .eq("user_email", email)
+            .order("created_at", { ascending: false });
+          if (error) throw error;
+          
+          const formattedDoubts = data.map((d: any) => ({
+            id: d.id,
+            courseId: d.course_id,
+            question: d.question,
+            status: d.status,
+            submittedAt: d.created_at,
+            responses: (d.responses || []).map((r: any) => ({
+              author: r.author,
+              avatar: "👨‍🏫",
+              message: r.message,
+              timestamp: r.created_at
+            }))
+          }));
+          
+          set({ doubts: formattedDoubts });
+        } catch (error) {
+          console.error("Error fetching doubts", error);
+        }
+      },
 
-          setTimeout(() => {
-            set((s) => ({
-              doubts: s.doubts.map((d) => {
-                if (d.id === newDoubt.id) {
-                  return {
-                    ...d,
-                    status: "Resolved" as const,
-                    responses: [
-                      {
-                        author: "Sarah Jenkins (Instructor)",
-                        avatar: "👩‍🔬",
-                        message: "Hello! This is a great question. You can resolve this issue by ensuring your imports are exact and checking that you are not mutating store state directly. Ensure you follow standard immutable update patterns in React.",
-                        timestamp: new Date().toISOString()
-                      }
-                    ]
-                  };
-                }
-                return d;
-              })
-            }));
-            
-            get().addNotification({
-              category: "Course Update",
-              title: "Mentor Replied to Doubt",
-              message: `An instructor responded to your question: "${doubt.question.substr(0, 30)}..."`
-            });
-          }, 4000);
-
-          return {
-            doubts: [newDoubt, ...state.doubts]
-          };
-        }),
+      addDoubt: async (doubt) => {
+        const email = useAuthStore.getState().currentUser?.email;
+        if (!email) return;
+        try {
+          const { error } = await supabase.from("skills_doubts").insert({
+            course_id: doubt.courseId,
+            user_email: email,
+            question: doubt.question,
+            status: "Pending"
+          });
+          if (error) throw error;
+          
+          // Refresh doubts
+          await get().fetchDoubts();
+          
+          get().addNotification({
+            category: "Course Update",
+            title: "Doubt Submitted",
+            message: `Your question "${doubt.question.substr(0, 30)}..." was sent to instructors.`
+          });
+        } catch (error) {
+          console.error("Error adding doubt", error);
+        }
+      },
 
       resolveDoubt: (doubtId) =>
         set((state) => ({
@@ -431,6 +463,78 @@ export const useSkillsStore = create<SkillsState>()(
           });
         }
       },
+
+      fetchCertificateRequests: async () => {
+        const email = useAuthStore.getState().currentUser?.email;
+        if (!email) return;
+        try {
+          const { data, error } = await supabase
+            .from("skills_certificate_requests")
+            .select("*")
+            .eq("user_email", email)
+            .order("created_at", { ascending: false });
+          if (error) throw error;
+          
+          const requests: CertificateRequest[] = data.map((d: any) => ({
+            id: d.id,
+            userEmail: d.user_email,
+            courseId: d.course_id,
+            courseTitle: d.course_title,
+            recipientName: d.recipient_name,
+            status: d.status,
+            createdAt: d.created_at
+          }));
+          
+          set({ certificateRequests: requests });
+
+          // Auto-generate local certificates for approved requests
+          const userId = useAuthStore.getState().currentUser?.id;
+          if (userId) {
+            const currentCerts = get().certificates[userId] || [];
+            requests.forEach(req => {
+              if (req.status === "Approved") {
+                const alreadyHasCert = currentCerts.some(c => c.courseId === req.courseId);
+                if (!alreadyHasCert) {
+                  get().generateCertificate(req.courseId, req.recipientName);
+                  get().addNotification({
+                    category: "Course Update",
+                    title: "Certificate Approved!",
+                    message: `Your certificate for ${req.courseTitle} has been approved and is now available.`
+                  });
+                }
+              }
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching certificate requests", error);
+        }
+      },
+
+      requestCertificate: async (courseId, courseTitle, recipientName) => {
+        const email = useAuthStore.getState().currentUser?.email;
+        if (!email) return;
+        try {
+          const { error } = await supabase.from("skills_certificate_requests").insert({
+            user_email: email,
+            course_id: courseId,
+            course_title: courseTitle,
+            recipient_name: recipientName,
+            status: "Pending"
+          });
+          if (error) throw error;
+          
+          await get().fetchCertificateRequests();
+          
+          get().addNotification({
+            category: "Course Update",
+            title: "Certificate Requested",
+            message: `Your certificate request for ${courseTitle} has been sent to the admin.`
+          });
+        } catch (error) {
+          console.error("Error requesting certificate", error);
+        }
+      },
+
       addLearningHours: (hours) => {
         const userId = useAuthStore.getState().currentUser?.id;
         if (!userId) return;
@@ -575,8 +679,8 @@ export const useSkillsStore = create<SkillsState>()(
         enrolledCourseIds: state.enrolledCourseIds,
         currentCourseId: state.currentCourseId,
         lessonProgress: state.lessonProgress,
+        quizProgress: state.quizProgress,
         submissions: state.submissions,
-        doubts: state.doubts,
         bookmarks: state.bookmarks,
         certificates: state.certificates,
         notifications: state.notifications,

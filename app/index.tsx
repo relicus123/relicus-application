@@ -5,17 +5,24 @@ import { MotiView } from "moti";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useAuthStore } from "../store/auth.store";
+
 const { width, height } = Dimensions.get("window");
 
 export default function Splash() {
   const router = useRouter();
+  const currentUser = useAuthStore(state => state.currentUser);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.replace("/intro" as any);
+      if (currentUser) {
+        router.replace("/(tabs)/home");
+      } else {
+        router.replace("/intro" as any);
+      }
     }, 3000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [currentUser, router]);
 
   return (
     <View style={styles.container}>

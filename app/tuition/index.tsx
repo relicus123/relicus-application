@@ -1,6 +1,7 @@
-import React, { useReducer, useCallback } from "react";
-import { View, StyleSheet } from "react-native";
+import React, { useReducer, useCallback, useEffect } from "react";
+import { View, StyleSheet, ActivityIndicator, Text } from "react-native";
 import { useRouter } from "expo-router";
+import { useTuitionStore } from "../../store/tuition.store";
 
 import { TuitionView, TuitionNavContext } from "./types";
 
@@ -12,6 +13,7 @@ import { AssessmentCentre } from "./screens/AssessmentScreens";
 import { MaterialLibrary } from "./screens/MaterialScreens";
 import { ProfileDashboard, ParentDashboard } from "./screens/ProfileScreens";
 import { AIAssistant } from "./screens/ExtraScreens";
+import { SetupScreen } from "./screens/SetupScreen";
 
 // ── State Definition ────────────────────────────────
 interface NavState {
@@ -60,7 +62,12 @@ function navReducer(state: NavState, action: NavAction): NavState {
 
 export default function TuitionMain() {
   const router = useRouter();
+  const store = useTuitionStore();
   const [navState, dispatch] = useReducer(navReducer, initialState);
+
+  useEffect(() => {
+    store.fetchProfile();
+  }, []);
 
   const handleNavigate = useCallback((view: TuitionView, ctx?: TuitionNavContext) => {
     dispatch({ type: "PUSH", view, context: ctx });
@@ -114,7 +121,16 @@ export default function TuitionMain() {
 
   return (
     <View style={styles.container}>
-      {renderView()}
+      {store.isLoading && !store.student ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1C4966" />
+          <Text style={styles.loadingText}>Loading Profile...</Text>
+        </View>
+      ) : !store.student ? (
+        <SetupScreen />
+      ) : (
+        renderView()
+      )}
     </View>
   );
 }
@@ -123,5 +139,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFF0",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FFFFF0",
+  },
+  loadingText: {
+    marginTop: 16,
+    color: "#1C4966",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

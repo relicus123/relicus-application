@@ -7,6 +7,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../../components/Button";
 import { supabase } from "../../lib/supabase";
+import { useMindfulnessStore } from "../../store/mindfulness.store";
 
 const { width } = Dimensions.get("window");
 
@@ -21,6 +22,7 @@ export default function Mindfulness() {
   const [loading, setLoading] = useState(true);
 
   const [refreshing, setRefreshing] = useState(false);
+  const store = useMindfulnessStore();
 
   const fetchData = useCallback(async () => {
     try {
@@ -62,6 +64,8 @@ export default function Mindfulness() {
           completed: false
         })));
       }
+      
+      await store.fetchMindfulnessData();
     } catch (error) {
       console.error("Error fetching mindfulness data:", error);
     } finally {
@@ -240,8 +244,14 @@ export default function Mindfulness() {
               style={styles.journalInput}
             />
             <Button
-              onPress={() => {
+              onPress={async () => {
+                if (!moodText.trim()) return;
+                await store.addJournalEntry({
+                  content: moodText,
+                  mood: "neutral"
+                });
                 setMoodText("");
+                alert("Journal entry saved successfully!");
               }}
               style={styles.saveBtn}
             >

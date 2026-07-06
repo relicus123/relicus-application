@@ -23,6 +23,7 @@ export default function OTP() {
   const authStore = useAuthStore();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(60);
+  const [isVerifying, setIsVerifying] = useState(false);
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
   useEffect(() => {
@@ -50,22 +51,25 @@ export default function OTP() {
     }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     if (otp.every((digit) => digit !== "")) {
       const { mode, phone, username, email } = params;
       
+      setIsVerifying(true);
       try {
         if (mode === "signup") {
-          authStore.signup(phone as string, username as string, email as string);
+          await authStore.signup(phone as string, username as string, email as string);
         } else {
-          const user = authStore.login(phone as string);
+          const user = await authStore.login(phone as string);
           if (!user) {
+            setIsVerifying(false);
             alert("No account found with this phone number. Please sign up.");
             return;
           }
         }
         router.replace("/(tabs)/home");
       } catch (e: any) {
+        setIsVerifying(false);
         alert(e.message);
       }
     }
@@ -135,13 +139,13 @@ export default function OTP() {
             )}
           </View>
 
-          <Button
-            onPress={handleVerify}
-            disabled={otp.some((digit) => digit === "")}
+          <Button 
+            onPress={handleVerify} 
+            size="lg" 
             style={styles.verifyButton}
-            size="lg"
+            disabled={isVerifying || !otp.every((digit) => digit !== "")}
           >
-            Verify & Continue
+            {isVerifying ? "Verifying..." : "Verify & Continue"}
           </Button>
         </View>
       </View>

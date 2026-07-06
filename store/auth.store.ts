@@ -1,78 +1,84 @@
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// Simple random ID generator for local testing
-const generateId = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+import { supabase } from "../lib/supabase";
 
 export interface User {
   id: string;
   phone: string;
   username: string;
   email: string;
-  createdAt: string;
+  created_at?: string;
 }
 
 interface AuthState {
-  users: User[];
   currentUser: User | null;
   
   // Actions
-  signup: (phone: string, username: string, email: string) => User;
-  login: (phone: string) => User | null;
+  signup: (phone: string, username: string, email: string) => Promise<User>;
+  login: (phone: string) => Promise<User | null>;
   logout: () => void;
-  getUserById: (id: string) => User | undefined;
+  getUserById: (id: string) => Promise<User | undefined>;
+  hydrate: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      users: [],
-      currentUser: null,
+export const useAuthStore = create<AuthState>((set, get) => ({
+  currentUser: null,
 
-      signup: (phone, username, email) => {
-        // Check if user already exists
-        const existing = get().users.find(u => u.phone === phone);
-        if (existing) {
-          throw new Error("Phone number already registered.");
-        }
+  signup: async (phone, username, email) => {
+    // Check if user already exists
+    const { data: existing } = await supabase
+      .from("users")
+      .select("*")
+      .eq("phone", phone)
+      .single();
 
-        const newUser: User = {
-          id: generateId(),
-          phone,
-          username,
-          email,
-          createdAt: new Date().toISOString()
-        };
-
-        set((state) => ({
-          users: [...state.users, newUser],
-          currentUser: newUser, // auto-login on signup
-        }));
-
-        return newUser;
-      },
-
-      login: (phone) => {
-        const user = get().users.find(u => u.phone === phone);
-        if (user) {
-          set({ currentUser: user });
-          return user;
-        }
-        return null;
-      },
-
-      logout: () => {
-        set({ currentUser: null });
-      },
-
-      getUserById: (id) => {
-        return get().users.find(u => u.id === id);
-      }
-    }),
-    {
-      name: "relicus-auth-storage",
-      storage: createJSONStorage(() => AsyncStorage),
+    if (existing) {
+      throw new Error("Phone number already registered.");
     }
-  )
-);
+
+    const { data, error } = await supabase
+      .from("users")
+      .insert([{ phone, username, email }])
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error("Failed to create account. " + error.message);
+    }
+
+    set({ currentUser: data as User });
+    return data as User;
+  },
+
+  login: async (phone) => {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("phone", phone)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    set({ currentUser: data as User });
+    return data as User;
+  },
+
+  logout: () => {
+    set({ currentUser: null });
+  },
+
+  getUserById: async (id) => {
+    const { data } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", id)
+      .single();
+    
+    return data as User | undefined;
+  },
+
+  hydrate: async () => {
+    // Optionally restore session if we implement true Supabase auth later
+  }
+}));

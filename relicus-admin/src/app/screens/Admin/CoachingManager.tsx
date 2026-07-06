@@ -124,6 +124,10 @@ export function CoachingManager() {
   };
 
   const fillExamForm = (ex: any) => {
+    let catId = ex.categoryId || ex.category_id || "undergraduate";
+    if (categories.length > 0 && !categories.some(c => c.id === catId)) {
+      catId = categories[0].id;
+    }
     setExamForm({
       id: ex.id || "",
       fullName: ex.fullName || ex.full_name || "",
@@ -131,7 +135,7 @@ export function CoachingManager() {
       overview: ex.overview || "",
       nextExamDate: ex.nextExamDate || ex.next_exam_date || "2027-05-01",
       difficultyLevel: ex.difficultyLevel || ex.difficulty_level || 3,
-      categoryId: ex.categoryId || ex.category_id || "undergraduate",
+      categoryId: catId,
       eligibility: Array.isArray(ex.eligibility) ? ex.eligibility.join(", ") : "",
       careerOpportunities: Array.isArray(ex.careerOpportunities) || Array.isArray(ex.career_opportunities) ? (ex.careerOpportunities || ex.career_opportunities).join(", ") : "",
       syllabusTopics: Array.isArray(ex.syllabusTopics) || Array.isArray(ex.syllabus_topics) ? (ex.syllabusTopics || ex.syllabus_topics).join(", ") : "",
@@ -342,6 +346,7 @@ export function CoachingManager() {
           .from("coaching_chapters")
           .insert({
             id: newChapter.id,
+            exam_id: selectedExam.id,
             subject_id: newChapter.subject_id,
             name: newChapter.name,
             progress: 0
@@ -1004,6 +1009,19 @@ export function CoachingManager() {
                     </div>
 
                     <div>
+                      <label className="block text-[10px] uppercase font-bold text-slate-400">Exam Category Alignment</label>
+                      <select
+                        value={examForm.categoryId}
+                        onChange={e => setExamForm({ ...examForm, categoryId: e.target.value })}
+                        className="w-full rounded-xl border p-2.5 text-xs bg-white dark:bg-slate-800"
+                      >
+                        {categories.map((c: any) => (
+                          <option key={c.id} value={c.id}>{c.title}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
                       <label className="block text-[10px] uppercase font-bold text-slate-400">Overview Description</label>
                       <textarea
                         rows={4}
@@ -1110,7 +1128,7 @@ export function CoachingManager() {
                               <span>{sub.icon || "📐"}</span>
                               <span>{sub.name}</span>
                             </span>
-                            <span className="text-[10px] text-slate-400 font-normal">{(selectedExam.chapters || []).filter((ch: any) => ch.subjectId === sub.id).length} ch</span>
+                            <span className="text-[10px] text-slate-400 font-normal">{(selectedExam.chapters || []).filter((ch: any) => ch.subject_id === sub.id).length} ch</span>
                           </button>
                         ))}
                       </div>
@@ -1144,7 +1162,7 @@ export function CoachingManager() {
 
                       {selectedSubject ? (
                         <div className="space-y-1">
-                          {(selectedExam.chapters || []).filter((ch: any) => ch.subjectId === selectedSubject.id).map((ch: any) => (
+                          {(selectedExam.chapters || []).filter((ch: any) => ch.subject_id === selectedSubject.id).map((ch: any) => (
                             <button
                               key={ch.id}
                               onClick={() => setSelectedChapter(ch)}
