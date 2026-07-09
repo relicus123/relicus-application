@@ -36,6 +36,12 @@
         "projectId": "87315b77-72b1-4ac6-969d-183ae3dadc1a"
       }
     },
-    "owner": "relicus52"
+    "owner": "relicus52",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/87315b77-72b1-4ac6-969d-183ae3dadc1a"
+    }
   }
 }
