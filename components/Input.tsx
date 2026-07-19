@@ -1,76 +1,75 @@
-import React from "react";
-import {
-  TextInput,
-  View,
-  Text,
-  StyleSheet,
-  ViewStyle,
-  TextStyle,
-} from "react-native";
+import React, { useState } from "react";
+import { TextInput, TextInputProps, View, ViewStyle } from "react-native";
 import { MotiView } from "moti";
+import { Typography } from "./Typography";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
-interface InputProps {
+interface InputProps extends TextInputProps {
   label?: string;
-  placeholder?: string;
-  value?: string;
-  onChangeText?: (text: string) => void;
-  type?: "text" | "email" | "tel" | "password";
-  style?: ViewStyle;
+  error?: string;
+  className?: string;
+  containerStyle?: ViewStyle;
 }
 
 export function Input({
   label,
-  placeholder,
-  value,
-  onChangeText,
-  type = "text",
+  error,
+  className,
+  containerStyle,
   style,
+  onFocus,
+  onBlur,
+  ...props
 }: InputProps) {
+  const [isFocused, setIsFocused] = useState(false);
+
+  const handleFocus = (e: any) => {
+    setIsFocused(true);
+    onFocus?.(e);
+  };
+
+  const handleBlur = (e: any) => {
+    setIsFocused(false);
+    onBlur?.(e);
+  };
+
+  const inputClasses = twMerge(
+    clsx(
+      "bg-surface-primary border rounded-2xl px-4 py-4 text-base text-text-primary",
+      isFocused ? "border-accent-primary" : "border-border-subtle",
+      error && "border-error",
+      className
+    )
+  );
+
   return (
     <MotiView
       from={{ opacity: 0, translateY: 10 }}
       animate={{ opacity: 1, translateY: 0 }}
-      style={[styles.container, style]}
+      transition={{ type: "timing", duration: 300 }}
+      style={[{ marginBottom: 16 }, containerStyle]}
     >
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && (
+        <Typography variant="bodySecondary" weight="medium" color="secondary" className="mb-2 ml-1">
+          {label}
+        </Typography>
+      )}
+      
       <TextInput
-        style={styles.input}
-        placeholder={placeholder}
-        placeholderTextColor="#8FBDD7"
-        value={value}
-        onChangeText={onChangeText}
-        autoCapitalize={type === "email" ? "none" : "sentences"}
-        keyboardType={
-          type === "email"
-            ? "email-address"
-            : type === "tel"
-            ? "phone-pad"
-            : "default"
-        }
-        secureTextEntry={type === "password"}
+        className={inputClasses}
+        placeholderTextColor="#9CA3AF"
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        style={style}
+        {...props}
       />
+      
+      {error && (
+        <MotiView from={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 20 }} className="mt-1 ml-1">
+          <Typography variant="caption" color="error">{error}</Typography>
+        </MotiView>
+      )}
     </MotiView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1C4966",
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.1)",
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: "#1C4966",
-  },
-});

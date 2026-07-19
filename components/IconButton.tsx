@@ -1,32 +1,31 @@
 import React from "react";
 import { TouchableOpacity, TouchableOpacityProps, ViewStyle } from "react-native";
 import { MotiView } from "moti";
-import { Typography } from "./Typography";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-interface ButtonProps extends TouchableOpacityProps {
+interface IconButtonProps extends TouchableOpacityProps {
   variant?: "primary" | "secondary" | "outline" | "ghost" | "glass";
   size?: "sm" | "md" | "lg";
-  children: React.ReactNode;
+  icon: React.ReactNode;
   className?: string;
   style?: ViewStyle;
 }
 
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
 
-export function Button({
+export function IconButton({
   variant = "primary",
   size = "md",
   disabled = false,
   className,
   style,
-  children,
+  icon,
   onPressIn,
   onPressOut,
   ...props
-}: ButtonProps & { onPressIn?: any, onPressOut?: any }) {
-  const baseClasses = "flex-row items-center justify-center rounded-2xl overflow-hidden";
+}: IconButtonProps & { onPressIn?: any, onPressOut?: any }) {
+  const baseClasses = "items-center justify-center rounded-full overflow-hidden";
   
   const variantClasses = {
     primary: "bg-primary",
@@ -37,18 +36,10 @@ export function Button({
   };
 
   const sizeClasses = {
-    sm: "px-4 py-2",
-    md: "px-6 py-3.5",
-    lg: "px-8 py-4",
+    sm: "w-8 h-8",
+    md: "w-12 h-12",
+    lg: "w-16 h-16",
   };
-
-  const textVariantClasses = {
-    primary: "white",
-    secondary: "primary",
-    outline: "primary",
-    ghost: "primary",
-    glass: "white",
-  } as const;
 
   const containerClasses = twMerge(
     clsx(
@@ -67,8 +58,8 @@ export function Button({
 
   return (
     <MotiView
-      from={{ opacity: 0, translateY: 4 }}
-      animate={{ opacity: 1, translateY: 0 }}
+      from={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
       transition={{ type: "timing", duration: 300 }}
     >
       <TouchableOpacity
@@ -76,7 +67,7 @@ export function Button({
         activeOpacity={0.8}
         style={style}
         onPressIn={(e) => {
-          scale.value = withSpring(0.96, { damping: 15, stiffness: 300 });
+          scale.value = withSpring(0.9, { damping: 15, stiffness: 300 });
           onPressIn?.(e);
         }}
         onPressOut={(e) => {
@@ -86,13 +77,7 @@ export function Button({
         {...props}
       >
         <Animated.View className={containerClasses} style={animatedStyle}>
-          <Typography 
-            variant={size === "sm" ? "bodySecondary" : "button"} 
-            weight="semibold" 
-            color={textVariantClasses[variant]}
-          >
-            {children}
-          </Typography>
+          {icon}
         </Animated.View>
       </TouchableOpacity>
     </MotiView>

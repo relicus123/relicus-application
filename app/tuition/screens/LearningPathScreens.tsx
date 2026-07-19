@@ -1,8 +1,13 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from "react-native";
+import { View, ScrollView, RefreshControl } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { TuitionView, TuitionNavContext } from "../types";
 import { supabase } from "../../../lib/supabase";
+import { Typography } from "../../../components/Typography";
+import { BentoCard } from "../../../components/BentoCard";
+import { IconButton } from "../../../components/IconButton";
+import { ArrowLeft, Clock, BookOpen, CheckCircle, Circle } from "lucide-react-native";
+import { Button } from "../../../components/Button";
 
 interface ScreenProps {
   context: TuitionNavContext;
@@ -13,7 +18,6 @@ interface ScreenProps {
 export function LearningPath({ onNavigate, onBack }: ScreenProps) {
   const [classes, setClasses] = React.useState<any[]>([]);
   const [syllabus, setSyllabus] = React.useState<any[]>([]);
-
   const [refreshing, setRefreshing] = React.useState(false);
 
   const fetchData = React.useCallback(async () => {
@@ -40,75 +44,94 @@ export function LearningPath({ onNavigate, onBack }: ScreenProps) {
   };
 
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#007AFF" />}
-    >
-      <TouchableOpacity onPress={onBack} style={styles.backButton}>
-        <Text style={styles.backText}>← Back</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.header}>Learning Path</Text>
-
-      {/* Upcoming Classes */}
-      <Text style={styles.sectionTitle}>Upcoming Classes</Text>
-      {classes.filter(c => c.status === "Upcoming").map((cls) => (
-        <View key={cls.id} style={styles.classCard}>
-          <View>
-            <Text style={styles.classTitle}>{cls.title}</Text>
-            <Text style={styles.classSub}>{cls.subject} • {new Date(cls.startTime || cls.schedule).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-          </View>
-          <TouchableOpacity style={styles.joinBtn}>
-            <Text style={styles.joinBtnText}>Join</Text>
-          </TouchableOpacity>
-        </View>
-      ))}
-
-      {/* Syllabus Roadmap */}
-      <Text style={styles.sectionTitle}>Syllabus Roadmap</Text>
-      <View style={styles.roadmapContainer}>
-        {syllabus.map((topic, idx) => (
-          <View key={topic.id} style={styles.roadmapItem}>
-            <View style={[styles.timelineDot, topic.status === "Completed" ? styles.dotCompleted : styles.dotPending]} />
-            {idx !== syllabus.length - 1 && <View style={styles.timelineLine} />}
-            <View style={styles.roadmapContent}>
-              <Text style={styles.topicTitle}>Ch {topic.chapterNumber || idx + 1}: {topic.title}</Text>
-              <Text style={styles.topicStatus}>{topic.status} ({topic.progressPercent || 0}%)</Text>
-            </View>
-          </View>
-        ))}
+    <View className="flex-1 bg-surface-primary">
+      <View className="flex-row items-center gap-4 px-6 pt-16 pb-6 bg-white border-b border-border-subtle shadow-sm z-10">
+        <IconButton 
+          icon={<ArrowLeft size={24} color="#1d1b20" />}
+          variant="ghost"
+          size="sm"
+          onPress={onBack}
+        />
+        <Typography variant="title" weight="bold" color="primary">Learning Path</Typography>
       </View>
-    </ScrollView>
+
+      <ScrollView 
+        contentContainerStyle={{ padding: 24, paddingBottom: 48 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4f378a" />}
+      >
+        <Typography variant="heading" weight="bold" color="primary" className="mb-4">Upcoming Classes</Typography>
+        <View className="gap-4 mb-8">
+          {classes.filter(c => c.status === "Upcoming").length > 0 ? (
+            classes.filter(c => c.status === "Upcoming").map((cls) => (
+              <BentoCard key={cls.id} variant="secondary" padding="md" className="flex-row justify-between items-center bg-white border border-border-subtle shadow-sm">
+                <View className="flex-1 mr-4">
+                  <Typography variant="body" weight="bold" color="primary">{cls.title}</Typography>
+                  <View className="flex-row items-center mt-2 gap-2 opacity-80">
+                    <BookOpen size={14} color="#4f378a" />
+                    <Typography variant="caption" color="secondary" className="mr-2">{cls.subject}</Typography>
+                    <Clock size={14} color="#4f378a" />
+                    <Typography variant="caption" color="secondary">
+                      {new Date(cls.startTime || cls.schedule).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Typography>
+                  </View>
+                </View>
+                <Button variant="primary" size="sm" onPress={() => {}}>Join</Button>
+              </BentoCard>
+            ))
+          ) : (
+            <Typography variant="caption" color="secondary" className="italic text-center py-4">No upcoming classes scheduled.</Typography>
+          )}
+        </View>
+
+        <Typography variant="heading" weight="bold" color="primary" className="mb-6">Syllabus Roadmap</Typography>
+        <View className="pl-2">
+          {syllabus.map((topic, idx) => {
+            const isCompleted = topic.status === "Completed";
+            const isLast = idx === syllabus.length - 1;
+            return (
+              <View key={topic.id} className="flex-row mb-6 relative">
+                <View className="items-center mr-4 z-10">
+                  <View className="bg-surface-primary">
+                    {isCompleted ? (
+                      <CheckCircle size={24} color="#10B981" fill="#D1FAE5" />
+                    ) : (
+                      <Circle size={24} color="#9CA3AF" />
+                    )}
+                  </View>
+                  {!isLast && (
+                    <View className="absolute top-6 bottom-[-24px] w-0.5 bg-border-subtle z-0" />
+                  )}
+                </View>
+                
+                <View className="flex-1 bg-white border border-border-subtle rounded-xl p-4 shadow-sm -mt-2">
+                  <Typography variant="body" weight="bold" color={isCompleted ? "primary" : "secondary"}>
+                    Ch {topic.chapterNumber || idx + 1}: {topic.title}
+                  </Typography>
+                  <View className="flex-row justify-between items-center mt-2">
+                    <Typography variant="caption" color="secondary" className="uppercase tracking-wider text-[10px]">
+                      {topic.status}
+                    </Typography>
+                    <Typography variant="caption" weight="bold" className={isCompleted ? "text-emerald-600" : "text-slate-400"}>
+                      {topic.progressPercent || 0}%
+                    </Typography>
+                  </View>
+                  
+                  {/* Progress bar */}
+                  <View className="h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden">
+                    <View 
+                      className="h-full rounded-full" 
+                      style={{ 
+                        width: `${topic.progressPercent || 0}%`,
+                        backgroundColor: isCompleted ? "#10B981" : "#4f378a" 
+                      }} 
+                    />
+                  </View>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#FFFFF0" },
-  backButton: { marginBottom: 16 },
-  backText: { color: "#007AFF", fontSize: 16 },
-  header: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 12, marginTop: 16 },
-  classCard: {
-    backgroundColor: "#FFF",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 4, elevation: 2,
-  },
-  classTitle: { fontSize: 16, fontWeight: "bold" },
-  classSub: { fontSize: 14, color: "#666", marginTop: 4 },
-  joinBtn: { backgroundColor: "#007AFF", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-  joinBtnText: { color: "#FFF", fontWeight: "bold" },
-  roadmapContainer: { paddingLeft: 8, marginTop: 8 },
-  roadmapItem: { flexDirection: "row", marginBottom: 24, position: "relative" },
-  timelineDot: { width: 12, height: 12, borderRadius: 6, marginTop: 4, zIndex: 2 },
-  dotCompleted: { backgroundColor: "#34C759" },
-  dotPending: { backgroundColor: "#D1D1D6" },
-  timelineLine: { position: "absolute", left: 5, top: 16, bottom: -24, width: 2, backgroundColor: "#E5E5EA", zIndex: 1 },
-  roadmapContent: { marginLeft: 16, flex: 1 },
-  topicTitle: { fontSize: 16, fontWeight: "bold" },
-  topicStatus: { fontSize: 14, color: "#666", marginTop: 4 },
-});

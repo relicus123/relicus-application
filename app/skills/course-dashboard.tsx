@@ -1,12 +1,9 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   View,
-  Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Dimensions,
   Linking,
   RefreshControl,
   Image,
@@ -17,21 +14,22 @@ import { MotiView } from "moti";
 import {
   ArrowLeft,
   BookOpen,
-  Video,
   Award,
-  FileText,
-  MessageSquare,
-  HelpCircle,
-  Play,
   Check,
   Send,
   Download,
   Star,
+  Play,
 } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useSkillsStore, Module, Lesson, Assignment, Quiz } from "../../store/skills.store";
+import { Typography } from "../../components/Typography";
+import { BentoCard } from "../../components/BentoCard";
+import { Button } from "../../components/Button";
+import { useSkillsStore, Lesson, Quiz } from "../../store/skills.store";
 import { useAuthStore } from "../../store/auth.store";
-import { CourseCompletionScreen } from "../components/CourseCompletionScreen";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 const DynamicDuration = ({ videoUrl }: { videoUrl: string }) => {
   const [durationText, setDurationText] = useState("Loading...");
@@ -43,10 +41,8 @@ const DynamicDuration = ({ videoUrl }: { videoUrl: string }) => {
     });
   }, [videoUrl, fetchVideoDuration]);
 
-  return <Text style={styles.lessonDuration}>{durationText}</Text>;
+  return <Typography variant="caption" color="secondary" className="text-[11px] mt-0.5">{durationText}</Typography>;
 };
-
-const { width } = Dimensions.get("window");
 
 export default function CourseDashboardScreen() {
   const router = useRouter();
@@ -73,7 +69,6 @@ export default function CourseDashboardScreen() {
   const [showExplanation, setShowExplanation] = useState(false);
   const [score, setScore] = useState(0);
   const [quizFinished, setQuizFinished] = useState(false);
-  const [assignmentUrl, setAssignmentUrl] = useState("");
 
   useFocusEffect(
     useCallback(() => {
@@ -166,11 +161,9 @@ export default function CourseDashboardScreen() {
 
   if (!course) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Course details not found.</Text>
-        <TouchableOpacity onPress={handleBack} style={styles.btn}>
-          <Text style={styles.btnText}>Go Back</Text>
-        </TouchableOpacity>
+      <View className="flex-1 bg-surface-primary items-center justify-center p-8">
+        <Typography variant="body" color="secondary" className="mb-4">Course details not found.</Typography>
+        <Button onPress={handleBack} variant="primary">Go Back</Button>
       </View>
     );
   }
@@ -179,28 +172,34 @@ export default function CourseDashboardScreen() {
   const courseDoubts = store.doubts.filter((d) => d.courseId === courseId);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
+    <View className="flex-1 bg-surface-primary">
       {/* Header */}
       <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
+        colors={["#fdf7ff", "#e9ddff", "#cfbcff"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        className="px-6 pb-6 pt-10"
       >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle} numberOfLines={1}>{course.title}</Text>
-            <Text style={styles.headerSubtitle}>By {course.instructor}</Text>
+        <SafeAreaView edges={["top"]}>
+          <View className="flex-row items-center gap-4">
+            <TouchableOpacity
+              onPress={handleBack}
+              className="w-10 h-10 rounded-full bg-white/40 items-center justify-center border border-white/50"
+              activeOpacity={0.7}
+            >
+              <ArrowLeft color="#4f378a" size={20} />
+            </TouchableOpacity>
+            <View className="flex-1">
+              <Typography variant="heading" weight="bold" color="primary" numberOfLines={1}>{course.title}</Typography>
+              <Typography variant="caption" color="secondary">By {course.instructor}</Typography>
+            </View>
           </View>
-        </View>
+        </SafeAreaView>
       </LinearGradient>
 
       {/* Tabs */}
-      <View style={styles.tabsRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>
+      <View className="bg-white border-b border-border-subtle">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 8 }}>
           {[
             { id: "overview", label: "Overview" },
             { id: "curriculum", label: "Curriculum" },
@@ -213,11 +212,18 @@ export default function CourseDashboardScreen() {
               <TouchableOpacity
                 key={tab.id}
                 onPress={() => store.setActiveDashboardTab(tab.id as any)}
-                style={[styles.tabChip, active && styles.tabChipActive]}
+                className={twMerge(clsx(
+                  "px-4 py-2 rounded-full",
+                  active ? "bg-primary" : "bg-primary/5"
+                ))}
               >
-                <Text style={[styles.tabChipText, active && styles.tabChipTextActive]}>
+                <Typography 
+                  variant="caption" 
+                  weight="bold" 
+                  color={active ? "inverse" : "primary"}
+                >
                   {tab.label}
-                </Text>
+                </Typography>
               </TouchableOpacity>
             );
           })}
@@ -226,33 +232,36 @@ export default function CourseDashboardScreen() {
 
       <ScrollView 
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5F8B70" />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4f378a" />
           }
       >
         {/* Render Active Tab Contents */}
         {activeTab === "overview" && (
-          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Course Description</Text>
-              <Text style={styles.overviewText}>{course.description}</Text>
-            </View>
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-4">
+            <BentoCard variant="secondary" padding="lg" className="bg-white border border-border-subtle shadow-sm">
+              <Typography variant="body" weight="bold" color="primary" className="mb-3">Course Description</Typography>
+              <Typography variant="caption" color="secondary" className="leading-5">{course.description}</Typography>
+            </BentoCard>
 
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>What you will learn</Text>
-              {course.objectives.map((objective, idx) => (
-                <View key={idx} style={styles.bulletRow}>
-                  <Check size={14} color="#5F8B70" style={{ marginTop: 2 }} />
-                  <Text style={styles.bulletText}>{objective}</Text>
-                </View>
-              ))}
-            </View>
+            <BentoCard variant="secondary" padding="lg" className="bg-white border border-border-subtle shadow-sm">
+              <Typography variant="body" weight="bold" color="primary" className="mb-3">What you will learn</Typography>
+              <View className="gap-2">
+                {course.objectives.map((objective, idx) => (
+                  <View key={idx} className="flex-row gap-2">
+                    <Check size={16} color="#6b4fa3" className="mt-0.5" />
+                    <Typography variant="caption" color="secondary" className="flex-1 leading-5">{objective}</Typography>
+                  </View>
+                ))}
+              </View>
+            </BentoCard>
 
             {/* Rate this Course */}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Rate this Course</Text>
-              <Text style={styles.subText}>How would you rate your learning experience?</Text>
-              <View style={{ flexDirection: "row", gap: 12, marginTop: 12 }}>
+            <BentoCard variant="secondary" padding="lg" className="bg-white border border-border-subtle shadow-sm">
+              <Typography variant="body" weight="bold" color="primary">Rate this Course</Typography>
+              <Typography variant="caption" color="secondary" className="mt-1">How would you rate your learning experience?</Typography>
+              <View className="flex-row gap-3 mt-3">
                 {[1, 2, 3, 4, 5].map((starIdx) => {
                   const userReview = store.reviews.find(r => r.courseId === courseId && r.userId === userId);
                   const isFilled = userReview && userReview.rating >= starIdx;
@@ -280,7 +289,7 @@ export default function CourseDashboardScreen() {
                   );
                 })}
               </View>
-            </View>
+            </BentoCard>
           </MotiView>
         )}
 
@@ -288,18 +297,27 @@ export default function CourseDashboardScreen() {
           <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
             {/* Modules picker */}
             {course.modules && course.modules.length > 0 ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16, marginLeft: -16, marginRight: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 -mx-4" contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
                 {course.modules.map((mod, index) => {
                   const active = selectedModuleIdx === index;
                   return (
                     <TouchableOpacity
                       key={mod.id}
                       onPress={() => setSelectedModuleIdx(index)}
-                      style={[styles.modulePickerChip, active && styles.modulePickerChipActive]}
+                      className={twMerge(clsx(
+                        "px-4 py-2 rounded-full border",
+                        active 
+                          ? "bg-[#6b4fa3] border-[#6b4fa3]" 
+                          : "bg-white border-border-subtle"
+                      ))}
                     >
-                      <Text style={[styles.modulePickerChipText, active && styles.modulePickerChipTextActive]}>
+                      <Typography 
+                        variant="caption" 
+                        weight="bold" 
+                        color={active ? "inverse" : "secondary"}
+                      >
                         Module {index + 1}
-                      </Text>
+                      </Typography>
                     </TouchableOpacity>
                   );
                 })}
@@ -308,145 +326,146 @@ export default function CourseDashboardScreen() {
 
             {/* Selected Module Detail */}
             {course.modules && course.modules.length > 0 && course.modules[selectedModuleIdx] ? (
-              <View style={styles.card}>
-                <Text style={styles.cardTitle}>{course.modules[selectedModuleIdx].title}</Text>
-                <Text style={styles.subText}>{course.modules[selectedModuleIdx].description}</Text>
+              <BentoCard variant="secondary" padding="lg" className="bg-white border border-border-subtle shadow-sm">
+                <Typography variant="body" weight="bold" color="primary">{course.modules[selectedModuleIdx].title}</Typography>
+                <Typography variant="caption" color="secondary" className="mt-1">{course.modules[selectedModuleIdx].description}</Typography>
 
-                <Text style={[styles.cardTitle, { marginTop: 20 }]}>Lectures</Text>
-                <View style={{ gap: 12 }}>
+                <Typography variant="body" weight="bold" color="primary" className="mt-5 mb-3">Lectures</Typography>
+                <View className="gap-3">
                   {course.modules[selectedModuleIdx].lessons.map((lesson) => {
                     const progressKey = `${userId}_${courseId}_${lesson.id}`;
                     const isCompleted = store.lessonProgress[progressKey]?.completed;
 
                     return (
-                      <View key={lesson.id} style={styles.lessonItem}>
+                      <View key={lesson.id} className="flex-row items-center bg-white border border-border-subtle rounded-2xl p-3 shadow-sm gap-3">
                         <TouchableOpacity
                           onPress={() => handlePlayLesson(lesson, course.modules[selectedModuleIdx].id)}
-                          style={styles.lessonThumbnailBox}
+                          className="w-24 h-16 rounded-xl overflow-hidden relative"
                         >
                           {lesson.thumbnail && String(lesson.thumbnail).trim().startsWith('http') ? (
-                            <Image source={{ uri: String(lesson.thumbnail).trim() }} style={styles.lessonThumbnailImage} resizeMode="cover" />
+                            <Image source={{ uri: String(lesson.thumbnail).trim() }} className="w-full h-full" resizeMode="cover" />
                           ) : (
-                            <View style={styles.lessonThumbnailPlaceholder} />
+                            <View className="w-full h-full bg-primary/20" />
                           )}
-                          <View style={styles.lessonPlayOverlay}>
+                          <View className="absolute inset-0 bg-black/30 items-center justify-center">
                             <Play size={16} color="white" fill="white" />
                           </View>
                         </TouchableOpacity>
                         
-                        <View style={{ flex: 1, paddingVertical: 4 }}>
-                          <Text style={styles.lessonTitle} numberOfLines={2}>{lesson.title}</Text>
+                        <View className="flex-1 py-1">
+                          <Typography variant="caption" weight="bold" color="primary" numberOfLines={2}>{lesson.title}</Typography>
                           <DynamicDuration videoUrl={lesson.videoUrl} />
                           {/* Mini Progress Bar */}
-                          <View style={{ width: "100%", height: 4, backgroundColor: "#E2E8F0", borderRadius: 2, marginTop: 6, overflow: "hidden" }}>
-                            <View style={{ height: "100%", backgroundColor: "#5F8B70", width: `${store.lessonProgress[progressKey]?.progress || 0}%` }} />
+                          <View className="w-full h-1 bg-surface-secondary rounded-full mt-1.5 overflow-hidden">
+                            <View className="h-full bg-[#6b4fa3]" style={{ width: `${store.lessonProgress[progressKey]?.progress || 0}%` }} />
                           </View>
                         </View>
                         {isCompleted && (
-                          <View style={styles.completedBadge}>
-                            <Text style={styles.completedBadgeText}>Completed</Text>
+                          <View className="bg-[#10B981]/10 px-2 py-1 rounded-md">
+                            <Typography variant="caption" weight="bold" className="text-[#10B981] text-[10px]">Completed</Typography>
                           </View>
                         )}
                       </View>
                     );
                   })}
                 </View>
-              </View>
+              </BentoCard>
             ) : (
-              <View style={[styles.card, { alignItems: 'center', paddingVertical: 40 }]}>
-                <BookOpen size={48} color="#8FBDD7" style={{ marginBottom: 16, opacity: 0.5 }} />
-                <Text style={styles.cardTitle}>Curriculum Coming Soon</Text>
-                <Text style={[styles.subText, { textAlign: 'center', marginTop: 8 }]}>The instructor has not added any modules or lectures to this course yet. Check back later!</Text>
-              </View>
+              <BentoCard variant="secondary" padding="lg" className="bg-white border border-border-subtle shadow-sm items-center py-10">
+                <BookOpen size={48} color="#4f378a" className="mb-4 opacity-50" />
+                <Typography variant="body" weight="bold" color="primary">Curriculum Coming Soon</Typography>
+                <Typography variant="caption" color="secondary" className="text-center mt-2">The instructor has not added any modules or lectures to this course yet. Check back later!</Typography>
+              </BentoCard>
             )}
           </MotiView>
         )}
 
         {activeTab === "assignments" && (
-          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-4">
             {course.modules.flatMap((m) => m.assignments).map((assignment) => {
               const submission = courseSubmissions.find((s) => s.assignmentId === assignment.id);
 
               return (
-                <View key={assignment.id} style={styles.card}>
-                  <Text style={styles.cardTitle}>{assignment.title}</Text>
-                  <Text style={styles.overviewText}>{assignment.instructions}</Text>
+                <BentoCard key={assignment.id} variant="secondary" padding="lg" className="bg-white border border-border-subtle shadow-sm">
+                  <Typography variant="body" weight="bold" color="primary">{assignment.title}</Typography>
+                  <Typography variant="caption" color="secondary" className="mt-1 leading-5">{assignment.instructions}</Typography>
 
                   {assignment.downloadUrl ? (
-                    <TouchableOpacity onPress={() => Linking.openURL(assignment.downloadUrl)} style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center' }}>
-                      <Download size={16} color="#1C4966" />
-                      <Text style={{ marginLeft: 6, color: '#1C4966', fontWeight: 'bold' }}>Download Resources / View Link</Text>
+                    <TouchableOpacity onPress={() => Linking.openURL(assignment.downloadUrl)} className="mt-3 flex-row items-center gap-1.5">
+                      <Download size={16} color="#4f378a" />
+                      <Typography variant="caption" weight="bold" color="primary">Download Resources / View Link</Typography>
                     </TouchableOpacity>
                   ) : null}
 
-                  <View style={styles.cardDivider} />
+                  <View className="h-[1px] bg-border-subtle my-4" />
 
                   {submission ? (
-                    <View style={styles.submissionBox}>
-                      <Text style={styles.submissionStatus}>Status: {submission.status}</Text>
+                    <View className="bg-primary/5 p-3.5 rounded-2xl border border-primary/10">
+                      <Typography variant="caption" weight="bold" color="primary">Status: {submission.status}</Typography>
                       {submission.grade && (
-                        <Text style={styles.submissionGrade}>Grade: {submission.grade}</Text>
+                        <Typography variant="caption" weight="bold" className="text-[#10B981] mt-1.5">Grade: {submission.grade}</Typography>
                       )}
                       {submission.feedback && (
-                        <Text style={styles.submissionFeedback}>Feedback: {submission.feedback}</Text>
+                        <Typography variant="caption" color="secondary" className="mt-1.5 leading-4">Feedback: {submission.feedback}</Typography>
                       )}
                     </View>
                   ) : (
-                    <View style={styles.submissionForm}>
-                      <Text style={styles.metaLabel}>SUBMIT PROJECTS (GITHUB / TEXT LINK)</Text>
+                    <View className="gap-2">
+                      <Typography variant="caption" weight="bold" color="secondary" className="text-[10px]">SUBMIT PROJECTS (GITHUB / TEXT LINK)</Typography>
                       <TextInput
                         placeholder="Enter GitHub URL or project details..."
-                        placeholderTextColor="#8FBDD7"
+                        placeholderTextColor="#79747e"
                         value={githubUrl}
                         onChangeText={setGithubUrl}
-                        style={styles.githubInput}
+                        className="border border-border-subtle rounded-xl px-3 h-11 text-[13px] text-text-primary bg-white"
                       />
-                      <TouchableOpacity
+                      <Button
                         onPress={() => handleSubmitAssignment(assignment.id)}
-                        style={[styles.btn, { marginTop: 12 }]}
+                        variant="primary"
+                        className="mt-1"
                       >
-                        <Text style={styles.btnText}>Submit Assignment</Text>
-                      </TouchableOpacity>
+                        Submit Assignment
+                      </Button>
                     </View>
                   )}
-                </View>
+                </BentoCard>
               );
             })}
           </MotiView>
         )}
 
         {activeTab === "quizzes" && (
-          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-4">
             {activeQuiz ? (
-              <View style={styles.card}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 12 }}>
-                  <Text style={styles.cardTitle}>{activeQuiz.title}</Text>
+              <BentoCard variant="secondary" padding="lg" className="bg-white border border-border-subtle shadow-sm">
+                <View className="flex-row justify-between mb-3">
+                  <Typography variant="body" weight="bold" color="primary">{activeQuiz.title}</Typography>
                   {!quizFinished && (
-                    <Text style={styles.subText}>
+                    <Typography variant="caption" color="secondary">
                       Question {currentQuestionIdx + 1} of {activeQuiz.questions.length}
-                    </Text>
+                    </Typography>
                   )}
                 </View>
 
                 {!quizFinished ? (
                   <View>
-                    <Text style={styles.quizQuestion}>
+                    <Typography variant="body" weight="bold" color="primary" className="leading-5">
                       {activeQuiz.questions[currentQuestionIdx].question}
-                    </Text>
-                    <View style={{ gap: 8, marginTop: 16 }}>
+                    </Typography>
+                    <View className="gap-2 mt-4">
                       {activeQuiz.questions[currentQuestionIdx].options.map((option, index) => {
                         const isSelected = selectedAnswer === index;
                         const isCorrect = index === activeQuiz.questions[currentQuestionIdx].correctAnswerIndex;
-                        let optionStyle: any = styles.optionBtn;
-                        let optionTextStyle: any = styles.optionBtnText;
+                        let optionStyle = "bg-surface-secondary border border-border-subtle";
+                        let optionTextStyle = "text-text-primary";
 
                         if (selectedAnswer !== null) {
                           if (isCorrect) {
-                            optionStyle = [styles.optionBtn, styles.optionBtnCorrect];
-                            optionTextStyle = [styles.optionBtnText, styles.optionBtnTextCorrect];
+                            optionStyle = "bg-[#10B981]/10 border-[#10B981]";
+                            optionTextStyle = "text-[#10B981]";
                           } else if (isSelected) {
-                            optionStyle = [styles.optionBtn, styles.optionBtnIncorrect];
-                            optionTextStyle = [styles.optionBtnText, styles.optionBtnTextIncorrect];
+                            optionStyle = "bg-[#EF4444]/10 border-[#EF4444]";
+                            optionTextStyle = "text-[#EF4444]";
                           }
                         }
 
@@ -455,63 +474,61 @@ export default function CourseDashboardScreen() {
                             key={index}
                             onPress={() => handleAnswerOption(index)}
                             disabled={selectedAnswer !== null}
-                            style={optionStyle}
+                            className={twMerge(clsx("p-3.5 rounded-xl", optionStyle))}
                           >
-                            <Text style={optionTextStyle}>{option}</Text>
+                            <Typography variant="caption" weight="bold" className={optionTextStyle}>{option}</Typography>
                           </TouchableOpacity>
                         );
                       })}
                     </View>
 
                     {showExplanation && (
-                      <View style={styles.explanationBox}>
-                        <Text style={styles.explanationTitle}>Explanation</Text>
-                        <Text style={styles.explanationText}>
+                      <View className="mt-4 bg-primary/5 p-3.5 rounded-2xl border border-primary/10">
+                        <Typography variant="caption" weight="bold" color="primary" className="mb-1">Explanation</Typography>
+                        <Typography variant="caption" color="secondary" className="leading-4">
                           {activeQuiz.questions[currentQuestionIdx].explanation}
-                        </Text>
-                        <TouchableOpacity onPress={handleNextQuestion} style={[styles.btn, { marginTop: 12 }]}>
-                          <Text style={styles.btnText}>
-                            {currentQuestionIdx + 1 < activeQuiz.questions.length ? "Next Question" : "Finish Quiz"}
-                          </Text>
-                        </TouchableOpacity>
+                        </Typography>
+                        <Button onPress={handleNextQuestion} variant="primary" className="mt-3">
+                          {currentQuestionIdx + 1 < activeQuiz.questions.length ? "Next Question" : "Finish Quiz"}
+                        </Button>
                       </View>
                     )}
                   </View>
                 ) : (
-                  <View style={{ alignItems: "center", paddingVertical: 20 }}>
+                  <View className="items-center py-5">
                     <Award size={40} color="#F1C40F" />
-                    <Text style={[styles.cardTitle, { marginTop: 12 }]}>Quiz Completed!</Text>
-                    <Text style={styles.overviewText}>
+                    <Typography variant="body" weight="bold" color="primary" className="mt-3">Quiz Completed!</Typography>
+                    <Typography variant="caption" color="secondary" className="mt-1">
                       Your score: {score} out of {activeQuiz.questions.length} correct.
-                    </Text>
-                    <TouchableOpacity onPress={() => setActiveQuiz(null)} style={[styles.btn, { marginTop: 20, width: 140 }]}>
-                      <Text style={styles.btnText}>Close</Text>
-                    </TouchableOpacity>
+                    </Typography>
+                    <Button onPress={() => setActiveQuiz(null)} variant="primary" className="mt-5 px-8">
+                      Close
+                    </Button>
                   </View>
                 )}
-              </View>
+              </BentoCard>
             ) : (
               course.modules.flatMap((m) => m.quizzes).map((quiz) => {
                 const quizStateKey = `${userId}_${courseId}_${quiz.id}`;
                 const progress = store.quizProgress[quizStateKey];
 
                 return (
-                  <View key={quiz.id} style={styles.card}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text style={styles.cardTitle}>{quiz.title}</Text>
+                  <BentoCard key={quiz.id} variant="secondary" padding="lg" className="bg-white border border-border-subtle shadow-sm">
+                    <View className="flex-row justify-between items-center">
+                      <Typography variant="body" weight="bold" color="primary">{quiz.title}</Typography>
                       {progress && (
-                        <View style={{ backgroundColor: progress.passed ? '#E8F5E9' : '#FFEBEE', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 }}>
-                          <Text style={{ color: progress.passed ? '#2E7D32' : '#C62828', fontSize: 12, fontWeight: 'bold' }}>
+                        <View className={twMerge(clsx("px-3 py-1 rounded-xl", progress.passed ? "bg-[#10B981]/10" : "bg-[#EF4444]/10"))}>
+                          <Typography variant="caption" weight="bold" className={twMerge(clsx("text-[12px]", progress.passed ? "text-[#10B981]" : "text-[#EF4444]"))}>
                             Score: {progress.score}/{quiz.questions.length}
-                          </Text>
+                          </Typography>
                         </View>
                       )}
                     </View>
-                    <Text style={styles.subText}>{quiz.type.toUpperCase()} QUIZ • {quiz.questions.length} questions</Text>
-                    <TouchableOpacity onPress={() => handleStartQuiz(quiz)} style={[styles.btn, { marginTop: 12 }]}>
-                      <Text style={styles.btnText}>{progress ? "Retake Quiz" : "Start Quiz"}</Text>
-                    </TouchableOpacity>
-                  </View>
+                    <Typography variant="caption" color="secondary" className="mt-1">{quiz.type.toUpperCase()} QUIZ • {quiz.questions.length} questions</Typography>
+                    <Button onPress={() => handleStartQuiz(quiz)} variant="primary" className="mt-3">
+                      {progress ? "Retake Quiz" : "Start Quiz"}
+                    </Button>
+                  </BentoCard>
                 );
               })
             )}
@@ -519,402 +536,46 @@ export default function CourseDashboardScreen() {
         )}
 
         {activeTab === "doubt" && (
-          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Doubt Desk Q&A</Text>
-              <Text style={styles.subText}>Submit doubts here to get answers from course instructors.</Text>
-              <View style={styles.doubtInputRow}>
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-4">
+            <BentoCard variant="secondary" padding="lg" className="bg-white border border-border-subtle shadow-sm">
+              <Typography variant="body" weight="bold" color="primary">Doubt Desk Q&A</Typography>
+              <Typography variant="caption" color="secondary" className="mt-1">Submit doubts here to get answers from course instructors.</Typography>
+              <View className="flex-row gap-2 mt-3">
                 <TextInput
                   placeholder="Ask a question..."
-                  placeholderTextColor="#8FBDD7"
+                  placeholderTextColor="#79747e"
                   value={doubtText}
                   onChangeText={setDoubtText}
-                  style={styles.doubtInput}
+                  className="flex-1 border border-border-subtle rounded-xl px-3 h-11 text-[13px] text-text-primary bg-white"
                 />
-                <TouchableOpacity onPress={handleAddDoubt} style={styles.sendDoubtBtn}>
+                <TouchableOpacity onPress={handleAddDoubt} className="w-11 h-11 bg-primary rounded-xl items-center justify-center">
                   <Send size={16} color="white" />
                 </TouchableOpacity>
               </View>
-            </View>
+            </BentoCard>
 
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Questions Queue</Text>
+            <BentoCard variant="secondary" padding="lg" className="bg-white border border-border-subtle shadow-sm">
+              <Typography variant="body" weight="bold" color="primary" className="mb-3">Questions Queue</Typography>
               {courseDoubts.length > 0 ? (
                 courseDoubts.map((d) => (
-                  <View key={d.id} style={styles.doubtItem}>
-                    <Text style={styles.doubtQuestion}>{d.question}</Text>
-                    <Text style={styles.doubtStatusText}>Status: {d.status.toUpperCase()}</Text>
+                  <View key={d.id} className="bg-surface-secondary border border-border-subtle p-3.5 rounded-2xl mb-3">
+                    <Typography variant="caption" weight="bold" color="primary">{d.question}</Typography>
+                    <Typography variant="caption" weight="bold" className="text-[#F59E0B] text-[10px] mt-1.5">Status: {d.status.toUpperCase()}</Typography>
                     {d.responses && d.responses.map((r, idx) => (
-                      <View key={idx} style={styles.doubtResponseBox}>
-                        <Text style={styles.responseAuthor}>{r.author}</Text>
-                        <Text style={styles.responseText}>{r.message}</Text>
+                      <View key={idx} className="bg-white border border-border-subtle p-3 rounded-xl mt-2">
+                        <Typography variant="caption" weight="bold" color="primary" className="text-[11px]">{r.author}</Typography>
+                        <Typography variant="caption" color="secondary" className="mt-1">{r.message}</Typography>
                       </View>
                     ))}
                   </View>
                 ))
               ) : (
-                <Text style={styles.emptyText}>No doubts submitted yet for this course.</Text>
+                <Typography variant="caption" color="secondary" className="text-center py-4">No doubts submitted yet for this course.</Typography>
               )}
-            </View>
+            </BentoCard>
           </MotiView>
         )}
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  header: {
-    padding: 20,
-    paddingTop: 44,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "white",
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.85)",
-  },
-  tabsRow: {
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.08)",
-  },
-  tabsScroll: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  tabChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "rgba(143, 189, 215, 0.1)",
-    marginRight: 8,
-  },
-  tabChipActive: {
-    backgroundColor: "#1C4966",
-  },
-  tabChipText: {
-    fontSize: 12,
-    color: "#1C4966",
-    fontWeight: "bold",
-  },
-  tabChipTextActive: {
-    color: "white",
-  },
-  scrollContent: {
-    padding: 16,
-    gap: 16,
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-    marginBottom: 16,
-  },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 12,
-  },
-  subText: {
-    fontSize: 12,
-    color: "#8FBDD7",
-    marginBottom: 8,
-  },
-  overviewText: {
-    fontSize: 13,
-    color: "#5F8B70",
-    lineHeight: 18,
-  },
-  bulletRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 8,
-  },
-  bulletText: {
-    fontSize: 13,
-    color: "#5F8B70",
-    flex: 1,
-  },
-  modulePickerChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.15)",
-    marginRight: 8,
-  },
-  modulePickerChipActive: {
-    backgroundColor: "#5F8B70",
-    borderColor: "#5F8B70",
-  },
-  modulePickerChipText: {
-    fontSize: 12,
-    color: "#5F8B70",
-    fontWeight: "bold",
-  },
-  modulePickerChipTextActive: {
-    color: "white",
-  },
-  lessonItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.08)",
-    borderRadius: 16,
-    padding: 12,
-    gap: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  lessonThumbnailBox: {
-    width: 100,
-    height: 64,
-    borderRadius: 12,
-    overflow: "hidden",
-    position: "relative",
-  },
-  lessonThumbnailImage: {
-    width: "100%",
-    height: "100%",
-  },
-  lessonThumbnailPlaceholder: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#1C4966",
-  },
-  lessonPlayOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  lessonTitle: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  lessonDuration: {
-    fontSize: 11,
-    color: "#8FBDD7",
-    marginTop: 2,
-  },
-  completedBadge: {
-    backgroundColor: "rgba(92, 184, 92, 0.12)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  completedBadgeText: {
-    color: "#5CB85C",
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  cardDivider: {
-    height: 1,
-    backgroundColor: "#F5F7FA",
-    marginVertical: 12,
-  },
-  submissionBox: {
-    backgroundColor: "rgba(95, 139, 112, 0.06)",
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(95, 139, 112, 0.15)",
-  },
-  submissionStatus: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  submissionGrade: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "#5CB85C",
-    marginTop: 6,
-  },
-  submissionFeedback: {
-    fontSize: 12,
-    color: "#5F8B70",
-    marginTop: 6,
-    lineHeight: 16,
-  },
-  submissionForm: {
-    gap: 8,
-  },
-  metaLabel: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#8FBDD7",
-  },
-  githubInput: {
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.15)",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 44,
-    fontSize: 13,
-    color: "#1C4966",
-  },
-  btn: {
-    backgroundColor: "#1C4966",
-    height: 44,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 13,
-  },
-  doubtInputRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 12,
-  },
-  doubtInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.15)",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 44,
-    fontSize: 13,
-    color: "#1C4966",
-  },
-  sendDoubtBtn: {
-    width: 44,
-    height: 44,
-    backgroundColor: "#1C4966",
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  doubtItem: {
-    backgroundColor: "rgba(28, 73, 102, 0.02)",
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.08)",
-    padding: 14,
-    borderRadius: 16,
-    marginBottom: 12,
-  },
-  doubtQuestion: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#1C4966",
-  },
-  doubtStatusText: {
-    fontSize: 10,
-    color: "#F0AD4E",
-    fontWeight: "bold",
-    marginTop: 6,
-  },
-  doubtResponseBox: {
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-    padding: 12,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  responseAuthor: {
-    fontSize: 11,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  responseText: {
-    fontSize: 12,
-    color: "#5F8B70",
-    marginTop: 4,
-  },
-  quizQuestion: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1C4966",
-    lineHeight: 20,
-  },
-  optionBtn: {
-    backgroundColor: "rgba(143, 189, 215, 0.05)",
-    borderWidth: 1,
-    borderColor: "rgba(143, 189, 215, 0.2)",
-    borderRadius: 12,
-    padding: 14,
-  },
-  optionBtnCorrect: {
-    backgroundColor: "rgba(92, 184, 92, 0.12)",
-    borderColor: "#5CB85C",
-  },
-  optionBtnIncorrect: {
-    backgroundColor: "rgba(217, 83, 79, 0.12)",
-    borderColor: "#D9534F",
-  },
-  optionBtnText: {
-    fontSize: 13,
-    color: "#1C4966",
-    fontWeight: "600",
-  },
-  optionBtnTextCorrect: {
-    color: "#5CB85C",
-  },
-  optionBtnTextIncorrect: {
-    color: "#D9534F",
-  },
-  explanationBox: {
-    marginTop: 16,
-    backgroundColor: "rgba(143, 189, 215, 0.08)",
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(143, 189, 215, 0.15)",
-  },
-  explanationTitle: {
-    fontSize: 11,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 4,
-  },
-  explanationText: {
-    fontSize: 12,
-    color: "#5F8B70",
-    lineHeight: 16,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 32,
-  },
-  emptyText: {
-    fontSize: 13,
-    color: "#8FBDD7",
-    textAlign: "center",
-  },
-});

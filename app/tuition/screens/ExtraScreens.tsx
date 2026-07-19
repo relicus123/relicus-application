@@ -1,6 +1,9 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from "react-native";
+import { View, ScrollView, TextInput } from "react-native";
 import { TuitionView, TuitionNavContext } from "../types";
+import { Typography } from "../../../components/Typography";
+import { IconButton } from "../../../components/IconButton";
+import { ArrowLeft, Sparkles, Send } from "lucide-react-native";
 
 interface ScreenProps {
   context: TuitionNavContext;
@@ -10,38 +13,44 @@ interface ScreenProps {
 
 export function AIAssistant({ onBack }: ScreenProps) {
   return (
-    <View style={styles.container}>
-      <TouchableOpacity onPress={onBack} style={styles.backButton}>
-        <Text style={styles.backText}>← Back</Text>
-      </TouchableOpacity>
-      <Text style={styles.header}>AI Tutor</Text>
+    <View className="flex-1 bg-surface-primary">
+      <View className="flex-row items-center gap-4 px-6 pt-16 pb-6 bg-white border-b border-border-subtle shadow-sm z-10">
+        <IconButton 
+          icon={<ArrowLeft size={24} color="#1d1b20" />}
+          variant="ghost"
+          size="sm"
+          onPress={onBack}
+        />
+        <View className="flex-row items-center gap-2">
+          <Sparkles size={20} color="#4f378a" />
+          <Typography variant="title" weight="bold" color="primary">AI Tutor</Typography>
+        </View>
+      </View>
       
-      <ScrollView style={styles.chatContainer}>
-        <View style={styles.aiBubble}>
-          <Text style={styles.chatText}>Hi there! I am your AI Tutor. Need help understanding a concept or solving a problem?</Text>
+      <ScrollView 
+        className="flex-1"
+        contentContainerStyle={{ padding: 24, paddingBottom: 48 }}
+      >
+        <View className="bg-primary/10 p-4 rounded-2xl rounded-tl-sm max-w-[85%] self-start border border-primary/20 shadow-sm">
+          <Typography variant="body" color="primary">
+            Hi there! I am your AI Tutor. Need help understanding a concept or solving a problem?
+          </Typography>
         </View>
       </ScrollView>
       
-      <View style={styles.inputArea}>
-        <TextInput style={styles.input} placeholder="Ask a question..." placeholderTextColor="#999" />
-        <TouchableOpacity style={styles.sendBtn}>
-          <Text style={styles.sendBtnText}>Send</Text>
-        </TouchableOpacity>
+      <View className="flex-row items-center p-4 bg-white border-t border-border-subtle shadow-lg">
+        <TextInput 
+          className="flex-1 bg-surface-primary px-4 py-3 rounded-full border border-border-subtle text-[#1d1b20] mr-3"
+          placeholder="Ask a question..." 
+          placeholderTextColor="#79747e" 
+        />
+        <IconButton 
+          icon={<Send size={20} color="#FFF" className="ml-1" />}
+          variant="flat"
+          className="w-12 h-12 bg-[#4f378a]"
+          onPress={() => {}}
+        />
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#FFFFF0" },
-  backButton: { marginBottom: 16 },
-  backText: { color: "#007AFF", fontSize: 16 },
-  header: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
-  chatContainer: { flex: 1, marginBottom: 16 },
-  aiBubble: { backgroundColor: "#E3F2FD", padding: 16, borderRadius: 12, maxWidth: "80%", alignSelf: "flex-start" },
-  chatText: { color: "#333", fontSize: 16 },
-  inputArea: { flexDirection: "row", alignItems: "center" },
-  input: { flex: 1, backgroundColor: "#FFF", padding: 12, borderRadius: 8, borderWidth: 1, borderColor: "#DDD", marginRight: 12 },
-  sendBtn: { backgroundColor: "#007AFF", paddingHorizontal: 16, paddingVertical: 12, borderRadius: 8 },
-  sendBtnText: { color: "#FFF", fontWeight: "bold" },
-});

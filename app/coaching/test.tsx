@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView } from "react-native";
+import { View, TouchableOpacity, ScrollView } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MotiView } from "moti";
 import { ArrowLeft, Clock, ChevronLeft, ChevronRight, Flag } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Button } from "../../components/Button";
 
-const { width } = Dimensions.get("window");
+import { Typography } from "../../components/Typography";
+import { BentoCard } from "../../components/BentoCard";
+import { Button } from "../../components/Button";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export default function MockTest() {
   const router = useRouter();
@@ -76,78 +79,95 @@ export default function MockTest() {
   const progressPercentage = ((currentQuestion + 1) / questions.length) * 100;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View style={styles.timerBadge}>
-            <Clock color="white" size={18} />
-            <Text style={styles.timerText}>{formatTime(timeRemaining)}</Text>
+    <View className="flex-1 bg-surface-primary">
+      <LinearGradient 
+        colors={["#fdf7ff", "#e9ddff", "#cfbcff"]} 
+        start={{ x: 0, y: 0 }} 
+        end={{ x: 1, y: 1 }}
+        className="px-6 pb-6 pt-8 rounded-b-[40px]"
+      >
+        <SafeAreaView edges={["top"]}>
+          <View className="flex-row justify-between items-center mb-6">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="w-10 h-10 rounded-full bg-white/40 items-center justify-center border border-white/50"
+            >
+              <ArrowLeft color="#4f378a" size={20} />
+            </TouchableOpacity>
+            
+            <View className="flex-row items-center gap-2 bg-white/40 px-4 py-2 rounded-full border border-white/50">
+              <Clock color="#4f378a" size={16} />
+              <Typography variant="body" weight="bold" color="primary">{formatTime(timeRemaining)}</Typography>
+            </View>
           </View>
-        </View>
 
-        <View style={styles.progressCard}>
-          <View style={styles.progressLabelRow}>
-            <Text style={styles.progressLabelText}>
-              Question {currentQuestion + 1} of {questions.length}
-            </Text>
-            <Text style={styles.progressSubjectText}>
-              {questions[currentQuestion].subject}
-            </Text>
-          </View>
-          <View style={styles.progressBar}>
-            <MotiView
-              from={{ width: 0 }}
-              animate={{ width: `${progressPercentage}%` }}
-              transition={{ type: "timing", duration: 300 }}
-              style={styles.progressFill}
-            />
-          </View>
-        </View>
-      </View>
+          <BentoCard variant="secondary" padding="md" className="border border-white/50 bg-white/30 backdrop-blur-md">
+            <View className="flex-row justify-between items-center mb-2">
+              <Typography variant="caption" weight="bold" color="secondary" className="uppercase tracking-wider">
+                Question {currentQuestion + 1} of {questions.length}
+              </Typography>
+              <Typography variant="caption" weight="bold" color="primary">
+                {questions[currentQuestion].subject}
+              </Typography>
+            </View>
+            <View className="h-2 bg-white/40 rounded-full overflow-hidden">
+              <MotiView
+                from={{ width: '0%' }}
+                animate={{ width: `${progressPercentage}%` }}
+                transition={{ type: "timing", duration: 300 }}
+                className="h-full bg-primary rounded-full"
+              />
+            </View>
+          </BentoCard>
+        </SafeAreaView>
+      </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ padding: 24 }} showsVerticalScrollIndicator={false}>
         <MotiView
           key={currentQuestion}
           from={{ opacity: 0, translateX: 20 }}
           animate={{ opacity: 1, translateX: 0 }}
-          style={styles.questionCard}
         >
-          <Text style={styles.questionText}>
-            {questions[currentQuestion].question}
-          </Text>
+          <BentoCard variant="secondary" padding="lg" className="border border-border-subtle mb-6 bg-white shadow-sm">
+            <Typography variant="title" weight="bold" color="primary" className="mb-2">
+              {questions[currentQuestion].question}
+            </Typography>
+          </BentoCard>
 
-          <View style={styles.optionsList}>
+          <View className="gap-3">
             {questions[currentQuestion].options.map((option, index) => {
               const isSelected = selectedAnswer === index;
               return (
                 <TouchableOpacity
                   key={index}
                   onPress={() => setSelectedAnswer(index)}
-                  style={[
-                    styles.optionBtn,
-                    isSelected ? styles.optionBtnSelected : styles.optionBtnUnselected,
-                  ]}
-                  activeOpacity={0.8}
+                  className={twMerge(clsx(
+                    "w-full p-4 rounded-2xl flex-row items-center gap-4 border-2 transition-colors",
+                    isSelected 
+                      ? "border-primary bg-primary/5" 
+                      : "border-border-subtle bg-white"
+                  ))}
+                  activeOpacity={0.7}
                 >
-                  <View style={[
-                    styles.optionCircle,
-                    isSelected ? styles.optionCircleSelected : styles.optionCircleUnselected,
-                  ]}>
-                    <Text style={[
-                      styles.optionIndexText,
-                      isSelected ? styles.textWhite : styles.textSecondary,
-                    ]}>
+                  <View className={twMerge(clsx(
+                    "w-10 h-10 rounded-full items-center justify-center transition-colors",
+                    isSelected ? "bg-primary" : "bg-surface-secondary"
+                  ))}>
+                    <Typography 
+                      weight="bold" 
+                      color={isSelected ? "inverse" : "primary"}
+                    >
                       {String.fromCharCode(65 + index)}
-                    </Text>
+                    </Typography>
                   </View>
-                  <Text style={styles.optionContentText}>{option}</Text>
+                  <Typography 
+                    variant="body"
+                    weight={isSelected ? "bold" : "regular"}
+                    color="primary" 
+                    className="flex-1"
+                  >
+                    {option}
+                  </Typography>
                 </TouchableOpacity>
               );
             })}
@@ -155,42 +175,50 @@ export default function MockTest() {
         </MotiView>
       </ScrollView>
 
-      {/* Footer controls */}
-      <View style={styles.footer}>
-        <View style={styles.navButtonsRow}>
+      <View className="bg-white border-t border-border-subtle px-6 py-4 pb-8 shadow-sm">
+        <View className="flex-row gap-3 mb-4">
           <Button
             onPress={handlePrevious}
             disabled={currentQuestion === 0}
             variant="outline"
-            style={styles.navBtn}
+            className="flex-1"
           >
-            <ChevronLeft color="#1C4966" size={20} />
-            <Text style={{ marginLeft: 4 }}>Prev</Text>
+            <View className="flex-row items-center justify-center gap-1">
+              <ChevronLeft color={currentQuestion === 0 ? "#cac4d0" : "#4f378a"} size={20} />
+              <Typography weight="bold" color={currentQuestion === 0 ? "secondary" : "primary"}>Prev</Typography>
+            </View>
           </Button>
 
           {currentQuestion < questions.length - 1 ? (
             <Button
               onPress={handleNext}
-              style={styles.navBtn}
+              variant="primary"
+              className="flex-1"
             >
-              <Text style={{ marginRight: 4 }}>Next</Text>
-              <ChevronRight color="white" size={20} />
+              <View className="flex-row items-center justify-center gap-1">
+                <Typography weight="bold" color="inverse">Next</Typography>
+                <ChevronRight color="white" size={20} />
+              </View>
             </Button>
           ) : (
             <Button
-               onPress={handleSubmit}
-               style={StyleSheet.flatten([styles.navBtn, styles.submitBtn])}
-             >
-              <Flag color="white" size={18} />
-              <Text style={{ marginLeft: 6, color: "white" }}>Submit</Text>
+              onPress={handleSubmit}
+              variant="primary"
+              className="flex-1 !bg-green-600"
+            >
+              <View className="flex-row items-center justify-center gap-2">
+                <Flag color="white" size={18} />
+                <Typography weight="bold" color="inverse">Submit</Typography>
+              </View>
             </Button>
           )}
         </View>
 
-        <View style={styles.dotIndicatorsRow}>
+        <View className="flex-row justify-center gap-2 flex-wrap">
           {questions.map((_, index) => {
             const isCurrent = index === currentQuestion;
-            const isCompleted = index <= currentQuestion;
+            const isCompleted = index < currentQuestion || (index === currentQuestion && selectedAnswer !== null);
+            
             return (
               <TouchableOpacity
                 key={index}
@@ -198,223 +226,27 @@ export default function MockTest() {
                   setCurrentQuestion(index);
                   setSelectedAnswer(null);
                 }}
-                style={[
-                  styles.dotBtn,
-                  isCurrent
-                    ? styles.dotBtnCurrent
-                    : isCompleted
-                    ? styles.dotBtnCompleted
-                    : styles.dotBtnRemaining,
-                ]}
+                className={twMerge(clsx(
+                  "w-10 h-10 rounded-xl items-center justify-center transition-colors border",
+                  isCurrent 
+                    ? "bg-primary border-primary" 
+                    : isCompleted 
+                    ? "bg-primary/20 border-primary/30" 
+                    : "bg-surface-secondary border-transparent"
+                ))}
               >
-                <Text
-                  style={[
-                    styles.dotText,
-                    isCurrent
-                      ? styles.textWhite
-                      : isCompleted
-                      ? styles.textPrimary
-                      : styles.textSecondary,
-                  ]}
+                <Typography 
+                  variant="caption"
+                  weight="bold" 
+                  color={isCurrent ? "inverse" : (isCompleted ? "primary" : "secondary")}
                 >
                   {index + 1}
-                </Text>
+                </Typography>
               </TouchableOpacity>
             );
           })}
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFF0",
-  },
-  header: {
-    backgroundColor: "#1C4966",
-    padding: 24,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  timerBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  timerText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 15,
-  },
-  progressCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
-  },
-  progressLabelRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  progressLabelText: {
-    color: "rgba(255, 255, 255, 0.8)",
-    fontSize: 12,
-  },
-  progressSubjectText: {
-    color: "rgba(255, 255, 255, 0.8)",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "white",
-    borderRadius: 4,
-  },
-  scrollContent: {
-    padding: 24,
-  },
-  questionCard: {
-    backgroundColor: "white",
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 6,
-  },
-  questionText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1C4966",
-    lineHeight: 28,
-    marginBottom: 24,
-  },
-  optionsList: {
-    gap: 12,
-  },
-  optionBtn: {
-    width: "100%",
-    padding: 16,
-    borderRadius: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    borderWidth: 2,
-  },
-  optionBtnSelected: {
-    borderColor: "#1C4966",
-    backgroundColor: "rgba(28, 73, 102, 0.05)",
-  },
-  optionBtnUnselected: {
-    borderColor: "rgba(28, 73, 102, 0.1)",
-    backgroundColor: "white",
-  },
-  optionCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  optionCircleSelected: {
-    backgroundColor: "#1C4966",
-  },
-  optionCircleUnselected: {
-    backgroundColor: "#F5F7FA",
-  },
-  optionIndexText: {
-    fontSize: 14,
-    fontWeight: "bold",
-  },
-  optionContentText: {
-    fontSize: 15,
-    color: "#1C4966",
-    fontWeight: "500",
-    flex: 1,
-  },
-  textWhite: {
-    color: "white",
-  },
-  textSecondary: {
-    color: "#5F8B70",
-  },
-  textPrimary: {
-    color: "#1C4966",
-  },
-  footer: {
-    padding: 24,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(28, 73, 102, 0.1)",
-    backgroundColor: "white",
-  },
-  navButtonsRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
-  },
-  navBtn: {
-    flex: 1,
-    flexDirection: "row",
-  },
-  submitBtn: {
-    backgroundColor: "#5CB85C",
-  },
-  dotIndicatorsRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-  },
-  dotBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dotBtnCurrent: {
-    backgroundColor: "#1C4966",
-  },
-  dotBtnCompleted: {
-    backgroundColor: "rgba(143, 189, 215, 0.2)",
-  },
-  dotBtnRemaining: {
-    backgroundColor: "#F5F7FA",
-  },
-  dotText: {
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-});

@@ -1,10 +1,9 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { View, StyleSheet, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { MotiView } from "moti";
 import { LinearGradient } from "expo-linear-gradient";
-import { SafeAreaView } from "react-native-safe-area-context";
-
+import { Typography } from "../components/Typography";
 import { useAuthStore } from "../store/auth.store";
 
 const { width, height } = Dimensions.get("window");
@@ -25,10 +24,10 @@ export default function Splash() {
   }, [currentUser, router]);
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#1C4966", "#5F8B70", "#8FBDD7"]}
-        style={styles.gradient}
+        colors={["#fdf7ff", "#e9ddff", "#cfbcff"]}
+        style={StyleSheet.absoluteFill}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
@@ -37,17 +36,16 @@ export default function Splash() {
           {[...Array(12)].map((_, i) => (
             <MotiView
               key={i}
-              style={[
-                styles.particle,
-                {
-                  left: `${Math.random() * 90}%`,
-                  top: `${Math.random() * 90}%`,
-                },
-              ]}
+              className="absolute w-2 h-2 rounded-full bg-primary/20"
+              style={{
+                left: `${Math.random() * 90}%`,
+                top: `${Math.random() * 90}%`,
+              }}
               from={{ opacity: 0, scale: 0 }}
               animate={{ opacity: [0, 1, 0], scale: [0, 1, 0] }}
               transition={{
-                duration: 2000,
+                type: 'timing',
+                duration: 3000,
                 loop: true,
                 delay: Math.random() * 2000,
               }}
@@ -55,13 +53,15 @@ export default function Splash() {
           ))}
         </View>
 
-        <View style={styles.logoContainer}>
+        <View className="flex-1 items-center justify-center">
           <MotiView
-            from={{ opacity: 0, scale: 0.5, rotate: "-180deg" }}
-            animate={{ opacity: 1, scale: 1, rotate: "0deg" }}
+            from={{ opacity: 0, scale: 0.8, translateY: 20 }}
+            animate={{ opacity: 1, scale: 1, translateY: 0 }}
             transition={{ type: "timing", duration: 1200 }}
           >
-            <Text style={styles.logoText}>Relicus</Text>
+            <Typography variant="display" weight="bold" color="primary" className="tracking-tighter">
+              Relicus
+            </Typography>
           </MotiView>
 
           {/* Loader bar */}
@@ -69,11 +69,11 @@ export default function Splash() {
             from={{ width: 0 }}
             animate={{ width: 180 }}
             transition={{ type: "timing", duration: 2000, delay: 500 }}
-            style={styles.loaderBar}
+            className="h-1 bg-white/40 rounded-full overflow-hidden mt-8"
           >
             <LinearGradient
-              colors={["#ffffff", "#8FBDD7"]}
-              style={styles.loaderFill}
+              colors={["#6750A4", "#cfbcff"]}
+              style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             />
@@ -83,46 +83,3 @@ export default function Splash() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#1C4966",
-  },
-  gradient: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  particle: {
-    position: "absolute",
-    width: 6,
-    height: 6,
-    backgroundColor: "white",
-    borderRadius: 3,
-  },
-  logoContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoText: {
-    fontSize: 60,
-    fontWeight: "bold",
-    color: "white",
-    letterSpacing: -1.5,
-    marginBottom: 24,
-    textShadowColor: "rgba(0, 0, 0, 0.15)",
-    textShadowOffset: { width: 0, height: 4 },
-    textShadowRadius: 8,
-  },
-  loaderBar: {
-    height: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  loaderFill: {
-    height: "100%",
-    width: "100%",
-  },
-});

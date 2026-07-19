@@ -1,8 +1,12 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, RefreshControl } from "react-native";
+import { View, ScrollView, TouchableOpacity, Image, RefreshControl } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { TuitionView, TuitionNavContext } from "../types";
 import { supabase } from "../../../lib/supabase";
+import { Typography } from "../../../components/Typography";
+import { BentoCard } from "../../../components/BentoCard";
+import { IconButton } from "../../../components/IconButton";
+import { ArrowLeft, MessageCircle, Star } from "lucide-react-native";
 
 interface ScreenProps {
   context: TuitionNavContext;
@@ -34,30 +38,47 @@ export function TeacherHub({ onNavigate, onBack }: ScreenProps) {
   };
 
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#007AFF" />}
-    >
-      <TouchableOpacity onPress={onBack} style={styles.backButton}>
-        <Text style={styles.backText}>← Back</Text>
-      </TouchableOpacity>
+    <View className="flex-1 bg-surface-primary">
+      <View className="flex-row items-center gap-4 px-6 pt-16 pb-6 bg-white border-b border-border-subtle">
+        <IconButton 
+          icon={<ArrowLeft size={24} color="#1d1b20" />}
+          variant="ghost"
+          size="sm"
+          onPress={onBack}
+        />
+        <Typography variant="title" weight="bold" color="primary">My Teachers</Typography>
+      </View>
 
-      <Text style={styles.header}>My Teachers</Text>
-
-      {teachers.map((teacher) => (
-        <View key={teacher.id} style={styles.card}>
-          <Image source={{ uri: teacher.avatar }} style={styles.avatar} />
-          <View style={styles.info}>
-            <Text style={styles.name}>{teacher.name}</Text>
-            <Text style={styles.subjects}>{teacher.subjects.join(", ")}</Text>
-            <Text style={styles.details}>⭐ {teacher.rating} • {teacher.experienceYears} Yrs Exp</Text>
-          </View>
-          <TouchableOpacity style={styles.chatBtn} onPress={() => onNavigate("teacherChat", { selectedTeacherId: teacher.id })}>
-            <Text style={styles.chatBtnText}>Chat</Text>
-          </TouchableOpacity>
+      <ScrollView 
+        contentContainerStyle={{ padding: 24, paddingBottom: 48 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4f378a" />}
+      >
+        <View className="gap-4">
+          {teachers.map((teacher) => (
+            <BentoCard key={teacher.id} variant="secondary" className="flex-row items-center border border-border-subtle bg-white p-4">
+              <Image source={{ uri: teacher.avatar }} className="w-14 h-14 rounded-full bg-slate-200 mr-4" />
+              <View className="flex-1">
+                <Typography variant="body" weight="bold" color="primary">{teacher.name}</Typography>
+                <Typography variant="caption" color="secondary" className="mt-0.5">{teacher.subjects.join(", ")}</Typography>
+                <View className="flex-row items-center mt-2 gap-2">
+                  <View className="flex-row items-center bg-orange-100 px-2 py-0.5 rounded">
+                    <Star size={12} color="#F59E0B" fill="#F59E0B" />
+                    <Typography variant="caption" weight="bold" className="text-orange-600 ml-1">{teacher.rating}</Typography>
+                  </View>
+                  <Typography variant="caption" color="secondary">• {teacher.experienceYears} Yrs Exp</Typography>
+                </View>
+              </View>
+              <IconButton 
+                icon={<MessageCircle size={20} color="#4f378a" />}
+                variant="flat"
+                className="bg-primary/10 border-primary/20 ml-2"
+                onPress={() => onNavigate("teacherChat", { selectedTeacherId: teacher.id })}
+              />
+            </BentoCard>
+          ))}
         </View>
-      ))}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -74,40 +95,26 @@ export function TeacherChat({ context, onBack }: ScreenProps) {
   }, [context.selectedTeacherId]);
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity onPress={onBack} style={styles.backButton}>
-        <Text style={styles.backText}>← Back</Text>
-      </TouchableOpacity>
-      <Text style={styles.header}>Chat with {teacher?.name || "Teacher"}</Text>
+    <View className="flex-1 bg-surface-primary">
+      <View className="flex-row items-center gap-4 px-6 pt-16 pb-6 bg-white border-b border-border-subtle shadow-sm z-10">
+        <IconButton 
+          icon={<ArrowLeft size={24} color="#1d1b20" />}
+          variant="ghost"
+          size="sm"
+          onPress={onBack}
+        />
+        <View className="flex-1 flex-row items-center gap-3">
+          {teacher?.avatar && <Image source={{ uri: teacher.avatar }} className="w-10 h-10 rounded-full" />}
+          <View>
+            <Typography variant="body" weight="bold" color="primary">{teacher?.name || "Teacher"}</Typography>
+            <Typography variant="caption" color="secondary">Online</Typography>
+          </View>
+        </View>
+      </View>
       
-      <View style={styles.chatArea}>
-        <Text style={styles.placeholderText}>Chat interface mockup goes here...</Text>
+      <View className="flex-1 justify-center items-center bg-[#F9FAFB]">
+        <Typography color="secondary" className="italic opacity-60">Chat interface mockup goes here...</Typography>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#FFFFF0" },
-  backButton: { marginBottom: 16 },
-  backText: { color: "#007AFF", fontSize: 16 },
-  header: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
-  card: {
-    backgroundColor: "#FFF",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 4, elevation: 2,
-  },
-  avatar: { width: 50, height: 50, borderRadius: 25, marginRight: 16 },
-  info: { flex: 1 },
-  name: { fontSize: 16, fontWeight: "bold", color: "#333" },
-  subjects: { fontSize: 14, color: "#666", marginTop: 2 },
-  details: { fontSize: 12, color: "#888", marginTop: 4 },
-  chatBtn: { backgroundColor: "#E3F2FD", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-  chatBtnText: { color: "#007AFF", fontWeight: "bold" },
-  chatArea: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#FFF", borderRadius: 12, padding: 20 },
-  placeholderText: { color: "#999", fontStyle: "italic" },
-});

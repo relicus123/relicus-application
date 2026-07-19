@@ -1,10 +1,16 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, RefreshControl } from "react-native";
+import { View, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, ArrowRight, CheckCircle, Info, List, Star, Briefcase } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../lib/supabase";
+
+import { Typography } from "../../components/Typography";
+import { BentoCard } from "../../components/BentoCard";
+import { Button } from "../../components/Button";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export default function ExamInfoScreen() {
   const router = useRouter();
@@ -13,7 +19,6 @@ export default function ExamInfoScreen() {
 
   const [exam, setExam] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchExam = useCallback(async () => {
@@ -21,7 +26,7 @@ export default function ExamInfoScreen() {
       const { data, error } = await supabase
         .from("coaching_exams")
         .select("*")
-        .eq("id", examType) // Using id since learning.tsx passes exam.id as examType
+        .eq("id", examType)
         .single();
       
       if (data) setExam(data);
@@ -53,147 +58,140 @@ export default function ExamInfoScreen() {
 
   if (loading) {
     return (
-      <View style={styles.emptyContainer}>
-        <ActivityIndicator size="large" color="#1C4966" />
+      <View className="flex-1 bg-surface-primary justify-center items-center">
+        <ActivityIndicator size="large" color="#4f378a" />
       </View>
     );
   }
 
   if (!exam) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Exam details not found.</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.btn}>
-          <Text style={styles.btnText}>Go Back</Text>
-        </TouchableOpacity>
+      <View className="flex-1 bg-surface-primary justify-center items-center px-6">
+        <Typography color="secondary" className="mb-4">Exam details not found.</Typography>
+        <Button onPress={() => router.back()} variant="primary" className="w-full">
+          Go Back
+        </Button>
       </View>
     );
   }
 
-  // Parse JSON fields from DB if they are stored as strings
   const eligibility = Array.isArray(exam.eligibility) ? exam.eligibility : JSON.parse(exam.eligibility || '[]');
   const examPattern = Array.isArray(exam.pattern) ? exam.pattern : JSON.parse(exam.pattern || '[]');
   const careers = Array.isArray(exam.careers) ? exam.careers : JSON.parse(exam.careers || '[]');
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View className="flex-1 bg-surface-primary">
       <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5F8B70" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4f378a" />}
       >
-        <LinearGradient colors={["#1C4966", "#5F8B70"]} style={styles.header} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-          <View style={styles.headerBar}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-              <ArrowLeft color="white" size={24} />
-            </TouchableOpacity>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.headerSubtitle}>Exam Overview</Text>
-              <Text style={styles.headerTitle} numberOfLines={1}>{exam.name}</Text>
+        <LinearGradient 
+          colors={["#fdf7ff", "#e9ddff", "#cfbcff"]} 
+          start={{ x: 0, y: 0 }} 
+          end={{ x: 1, y: 1 }}
+          className="px-6 pb-12 pt-8 rounded-b-[40px]"
+        >
+          <SafeAreaView edges={["top"]}>
+            <View className="flex-row items-center gap-4 mb-4">
+              <TouchableOpacity 
+                onPress={() => router.back()}
+                className="w-10 h-10 rounded-full bg-white/40 items-center justify-center border border-white/50"
+              >
+                <ArrowLeft color="#4f378a" size={20} />
+              </TouchableOpacity>
+              <View className="flex-1">
+                <Typography variant="caption" weight="bold" color="secondary" className="uppercase tracking-wider opacity-80">Exam Overview</Typography>
+                <Typography variant="title" weight="bold" color="primary" numberOfLines={1}>{exam.name}</Typography>
+              </View>
             </View>
-          </View>
-          <View style={styles.difficultyRow}>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} size={14} color={i < (exam.difficulty || 3) ? "#F1C40F" : "rgba(255, 255, 255, 0.3)"} fill={i < (exam.difficulty || 3) ? "#F1C40F" : "transparent"} />
-            ))}
-          </View>
+            <View className="flex-row items-center gap-1.5 ml-14">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star 
+                  key={i} 
+                  size={16} 
+                  color={i < (exam.difficulty || 3) ? "#F59E0B" : "rgba(79, 55, 138, 0.2)"} 
+                  fill={i < (exam.difficulty || 3) ? "#F59E0B" : "transparent"} 
+                />
+              ))}
+            </View>
+          </SafeAreaView>
         </LinearGradient>
 
-        <View style={styles.contentContainer}>
-          <View style={styles.card}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <Info size={18} color="#1C4966" />
-              <Text style={styles.cardHeaderTitle}>About the Exam</Text>
+        <View className="px-6 pb-10 -mt-6 gap-4">
+          <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white">
+            <View className="flex-row items-center gap-2.5 mb-3">
+              <Info size={20} color="#4f378a" />
+              <Typography variant="heading" weight="bold" color="primary">About the Exam</Typography>
             </View>
-            <Text style={styles.tagline}>{exam.tagline || 'National Level Entrance Exam'}</Text>
-            <Text style={styles.overviewText}>{exam.description || 'Description not available.'}</Text>
-          </View>
+            <Typography weight="bold" color="primary" className="mb-2 text-accent-primary">
+              {exam.tagline || 'National Level Entrance Exam'}
+            </Typography>
+            <Typography color="secondary" className="leading-relaxed">
+              {exam.description || 'Description not available.'}
+            </Typography>
+          </BentoCard>
 
-          <View style={styles.card}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <CheckCircle size={18} color="#5F8B70" />
-              <Text style={styles.cardHeaderTitle}>Eligibility Criteria</Text>
+          <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white">
+            <View className="flex-row items-center gap-2.5 mb-4">
+              <CheckCircle size={20} color="#10B981" />
+              <Typography variant="heading" weight="bold" color="primary">Eligibility Criteria</Typography>
             </View>
             {eligibility.map((crit: string, idx: number) => (
-              <View key={idx} style={styles.bulletItem}>
-                <Text style={styles.bulletDot}>✔</Text>
-                <Text style={styles.bulletText}>{crit}</Text>
+              <View key={idx} className="flex-row gap-3 mb-2.5">
+                <Typography weight="bold" className="text-green-500">✓</Typography>
+                <Typography color="secondary" className="flex-1">{crit}</Typography>
               </View>
             ))}
-          </View>
+          </BentoCard>
 
-          <View style={styles.card}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <List size={18} color="#1C4966" />
-              <Text style={styles.cardHeaderTitle}>Exam Pattern</Text>
+          <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white">
+            <View className="flex-row items-center gap-2.5 mb-4">
+              <List size={20} color="#3B82F6" />
+              <Typography variant="heading" weight="bold" color="primary">Exam Pattern</Typography>
             </View>
             {examPattern.map((pattern: any, idx: number) => (
-              <View key={idx} style={styles.patternBox}>
-                <Text style={styles.patternSectionTitle}>{pattern.section}</Text>
-                <View style={styles.patternGrid}>
-                  <View style={styles.patternStat}>
-                    <Text style={styles.patternStatVal}>{pattern.questions}</Text>
-                    <Text style={styles.patternStatLabel}>Questions</Text>
+              <View key={idx} className="bg-primary/5 rounded-2xl p-4 border border-primary/10 mb-3">
+                <Typography weight="bold" color="primary" className="mb-3">{pattern.section}</Typography>
+                <View className="flex-row justify-around">
+                  <View className="items-center">
+                    <Typography variant="heading" weight="bold" className="text-accent-primary">{pattern.questions}</Typography>
+                    <Typography variant="caption" color="secondary">Questions</Typography>
                   </View>
-                  <View style={styles.patternStat}>
-                    <Text style={styles.patternStatVal}>{pattern.marks}</Text>
-                    <Text style={styles.patternStatLabel}>Marks</Text>
+                  <View className="w-[1px] h-full bg-border-subtle" />
+                  <View className="items-center">
+                    <Typography variant="heading" weight="bold" className="text-accent-primary">{pattern.marks}</Typography>
+                    <Typography variant="caption" color="secondary">Marks</Typography>
                   </View>
                 </View>
               </View>
             ))}
-          </View>
+          </BentoCard>
 
-          <View style={styles.card}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <Briefcase size={18} color="#1C4966" />
-              <Text style={styles.cardHeaderTitle}>Career Scope</Text>
+          <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white">
+            <View className="flex-row items-center gap-2.5 mb-4">
+              <Briefcase size={20} color="#F59E0B" />
+              <Typography variant="heading" weight="bold" color="primary">Career Scope</Typography>
             </View>
             {careers.map((op: string, idx: number) => (
-              <View key={idx} style={styles.bulletItem}>
-                <Text style={styles.bulletDot}>✦</Text>
-                <Text style={styles.bulletText}>{op}</Text>
+              <View key={idx} className="flex-row gap-3 mb-2.5">
+                <Typography weight="bold" className="text-orange-500">✦</Typography>
+                <Typography color="secondary" className="flex-1">{op}</Typography>
               </View>
             ))}
-          </View>
+          </BentoCard>
 
-          <TouchableOpacity onPress={handleStart} style={styles.btn}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Text style={styles.btnText}>Start Preparation</Text>
-              <ArrowRight size={16} color="white" />
+          <Button 
+            onPress={handleStart} 
+            variant="primary" 
+            className="w-full mt-2"
+          >
+            <View className="flex-row items-center justify-center gap-2">
+              <Typography weight="bold" color="inverse">Start Preparation</Typography>
+              <ArrowRight size={18} color="white" />
             </View>
-          </TouchableOpacity>
+          </Button>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FFFFF0" },
-  scrollContent: { paddingBottom: 40 },
-  header: { padding: 24, paddingBottom: 40, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
-  headerBar: { flexDirection: "row", alignItems: "center", gap: 12 },
-  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255, 255, 255, 0.2)", alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 20, fontWeight: "bold", color: "white" },
-  headerSubtitle: { fontSize: 12, color: "rgba(255, 255, 255, 0.8)" },
-  difficultyRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 16, marginLeft: 52 },
-  contentContainer: { padding: 24, marginTop: -20, gap: 16 },
-  card: { backgroundColor: "white", borderRadius: 24, padding: 20, borderWidth: 1, borderColor: "rgba(28, 73, 102, 0.05)" },
-  cardHeaderTitle: { fontSize: 15, fontWeight: "bold", color: "#1C4966" },
-  tagline: { fontSize: 14, fontWeight: "bold", color: "#1C4966", marginBottom: 8 },
-  overviewText: { fontSize: 13, color: "#5F8B70", lineHeight: 18 },
-  bulletItem: { flexDirection: "row", gap: 8, marginBottom: 8 },
-  bulletDot: { color: "#5F8B70" },
-  bulletText: { fontSize: 13, color: "#5F8B70", flex: 1 },
-  patternBox: { backgroundColor: "rgba(143, 189, 215, 0.05)", borderRadius: 16, padding: 16, borderWidth: 1, borderColor: "rgba(143, 189, 215, 0.15)", marginBottom: 10 },
-  patternSectionTitle: { fontSize: 13, fontWeight: "bold", color: "#1C4966", marginBottom: 10 },
-  patternGrid: { flexDirection: "row", justifyContent: "space-between" },
-  patternStat: { alignItems: "center" },
-  patternStatVal: { fontSize: 14, fontWeight: "bold", color: "#1C4966" },
-  patternStatLabel: { fontSize: 10, color: "#8FBDD7", marginTop: 2 },
-  btn: { backgroundColor: "#1C4966", height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  btnText: { color: "white", fontWeight: "bold", fontSize: 14 },
-  emptyContainer: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32 },
-  emptyText: { fontSize: 14, color: "#8FBDD7", textAlign: "center", marginBottom: 16 },
-});

@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from "react";
 import {
   View,
-  Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   TextInput,
@@ -15,24 +13,27 @@ import { MotiView } from "moti";
 import {
   ArrowLeft,
   Search,
-  BookOpen,
   Bookmark,
   Check,
   Plus,
   Scale,
-  GraduationCap,
-  Sparkles,
   ChevronRight,
   TrendingUp,
 } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useKnowNextStore } from "../../../store/knownext.store";
 import { supabase } from "../../../lib/supabase";
-const ROADMAPS = [] as any[];
-const CAREER_CATEGORIES = ["Engineering", "Medical", "Design", "Management", "Arts"];
 import { Career, CareerStage, KnowNextView, NavContext } from "../types";
 
+import { Typography } from "../../../components/Typography";
+import { BentoCard, BentoCardPressable } from "../../../components/BentoCard";
+import { IconButton } from "../../../components/IconButton";
+import { Button } from "../../../components/Button";
+
 const { width } = Dimensions.get("window");
+const ROADMAPS = [] as any[];
+const CAREER_CATEGORIES = ["Engineering", "Medical", "Design", "Management", "Arts"];
 
 // ── Shared Sub-Components ───────────────────────────
 
@@ -48,18 +49,18 @@ export function CareerStageFilter() {
   ];
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stageFilterScroll}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingBottom: 4 }}>
       {stages.map((stage) => {
         const active = activeStage === stage.id;
         return (
           <TouchableOpacity
             key={stage.id}
             onPress={() => setActiveStage(stage.id)}
-            style={[styles.stageChip, active && styles.stageChipActive]}
+            className={`px-4 py-2 rounded-full border mr-2 ${active ? "bg-[#4f378a] border-[#4f378a]" : "bg-white border-border-subtle"}`}
           >
-            <Text style={[styles.stageChipText, active && styles.stageChipTextActive]}>
+            <Typography variant="caption" weight="bold" className={active ? "text-white" : "text-slate-600"}>
               {stage.label}
-            </Text>
+            </Typography>
           </TouchableOpacity>
         );
       })}
@@ -79,72 +80,67 @@ export function CareerCard({ career, onSelect }: CareerCardProps) {
   const isComparing = compareCareerIds.includes(career.id);
 
   return (
-    <TouchableOpacity
+    <BentoCardPressable
       activeOpacity={0.9}
       onPress={() => onSelect(career)}
-      style={styles.card}
+      variant="secondary"
+      className="bg-white border border-border-subtle shadow-sm mb-3 p-4"
     >
-      <View style={styles.cardRow}>
-        <View style={styles.iconBox}>
-          <Text style={styles.iconText}>{career.icon}</Text>
+      <View className="flex-row items-center gap-3">
+        <View className="w-12 h-12 rounded-xl bg-primary/10 items-center justify-center">
+          <Typography className="text-2xl">{career.icon}</Typography>
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.cardCategory}>{career.category}</Text>
-          <Text style={styles.cardTitle}>{career.title}</Text>
-          <Text style={styles.cardTagline} numberOfLines={1}>
-            {career.tagline}
-          </Text>
+        <View className="flex-1">
+          <Typography variant="caption" weight="bold" color="secondary" className="mb-0.5">{career.category}</Typography>
+          <Typography variant="body" weight="bold" color="primary">{career.title}</Typography>
+          <Typography variant="caption" color="secondary" numberOfLines={1}>{career.tagline}</Typography>
         </View>
       </View>
 
-      <View style={styles.cardStats}>
-        <View style={styles.statChip}>
-          <TrendingUp size={12} color="#5F8B70" />
-          <Text style={styles.statChipText}>{career.industryDemand || career.industry_demand || 'High'} Demand</Text>
+      <View className="flex-row gap-2 mt-3">
+        <View className="flex-row items-center gap-1 bg-emerald-50 px-2 py-1 rounded">
+          <TrendingUp size={12} color="#059669" />
+          <Typography variant="caption" weight="bold" className="text-emerald-700">{career.industryDemand || (career as any).industry_demand || 'High'} Demand</Typography>
         </View>
-        <View style={styles.statChip}>
-          <Text style={styles.statChipText}>
+        <View className="flex-row items-center gap-1 bg-slate-100 px-2 py-1 rounded">
+          <Typography variant="caption" weight="bold" className="text-slate-700">
             ₹{(() => {
               try {
-                const sr = career.salaryRange || career.salary_range;
+                const sr = career.salaryRange || (career as any).salary_range;
                 const parsed = typeof sr === 'string' ? JSON.parse(sr) : sr;
                 return `${parsed?.min ?? 0}-${parsed?.max ?? 0}`;
               } catch (e) {
                 return "0-0";
               }
             })()} LPA
-          </Text>
+          </Typography>
         </View>
       </View>
 
-      <View style={styles.cardDivider} />
+      <View className="h-px bg-border-subtle my-3" />
 
-      <View style={styles.cardActions}>
+      <View className="flex-row justify-between">
         <TouchableOpacity
           onPress={() => toggleSaveCareer(career.id)}
-          style={styles.cardActionBtn}
+          className="flex-row items-center gap-1.5 p-1"
         >
-          <Bookmark
-            size={16}
-            color={isSaved ? "#5F8B70" : "#8FBDD7"}
-            fill={isSaved ? "#5F8B70" : "transparent"}
-          />
-          <Text style={[styles.actionBtnText, isSaved && { color: "#5F8B70" }]}>
+          <Bookmark size={16} color={isSaved ? "#4f378a" : "#79747e"} fill={isSaved ? "#4f378a" : "transparent"} />
+          <Typography variant="caption" weight="bold" className={isSaved ? "text-[#4f378a]" : "text-slate-500"}>
             {isSaved ? "Saved" : "Save"}
-          </Text>
+          </Typography>
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => toggleCompareCareer(career.id)}
-          style={styles.cardActionBtn}
+          className="flex-row items-center gap-1.5 p-1"
         >
-          <Scale size={16} color={isComparing ? "#1C4966" : "#8FBDD7"} />
-          <Text style={[styles.actionBtnText, isComparing && { color: "#1C4966", fontWeight: "bold" }]}>
+          <Scale size={16} color={isComparing ? "#4f378a" : "#79747e"} />
+          <Typography variant="caption" weight="bold" className={isComparing ? "text-[#4f378a]" : "text-slate-500"}>
             {isComparing ? "Added" : "Compare"}
-          </Text>
+          </Typography>
         </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </BentoCardPressable>
   );
 }
 
@@ -158,16 +154,16 @@ interface CompareDrawerProps {
 export function CompareDrawer({ count, onCompare, onClear }: CompareDrawerProps) {
   if (count < 2) return null;
   return (
-    <View style={styles.drawerContainer}>
-      <Text style={styles.drawerText}>
+    <View className="absolute bottom-6 left-6 right-6 bg-[#1d1b20] rounded-2xl p-4 flex-row items-center shadow-lg">
+      <Typography variant="body" weight="bold" className="text-white flex-1">
         {count} items selected for comparison
-      </Text>
-      <View style={styles.drawerActions}>
-        <TouchableOpacity onPress={onClear} style={styles.drawerClearBtn}>
-          <Text style={styles.drawerClearText}>Clear</Text>
+      </Typography>
+      <View className="flex-row gap-2">
+        <TouchableOpacity onPress={onClear} className="px-3 py-2 rounded-lg bg-white/20">
+          <Typography variant="caption" weight="bold" className="text-white">Clear</Typography>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onCompare} style={styles.drawerCompareBtn}>
-          <Text style={styles.drawerCompareText}>Compare Now</Text>
+        <TouchableOpacity onPress={onCompare} className="px-3 py-2 rounded-lg bg-[#d0bcff]">
+          <Typography variant="caption" weight="bold" className="text-[#381e72]">Compare Now</Typography>
         </TouchableOpacity>
       </View>
     </View>
@@ -226,64 +222,69 @@ export const CareerExplorer: React.FC<CareerExplorerProps> = ({ onNavigate, onBa
   }, [query, selectedCategory, activeStage, careers]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
+    <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
+        colors={["#4f378a", "#6750a4"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        className="px-6 pb-6 pt-16 rounded-b-[40px] shadow-sm z-10"
       >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View>
-            <Text style={styles.headerTitle}>Career Explorer</Text>
-            <Text style={styles.headerSubtitle}>{careers.length} career paths</Text>
+        <SafeAreaView edges={["top"]} className="gap-4">
+          <View className="flex-row items-center gap-3">
+            <IconButton 
+              icon={<ArrowLeft color="#FFF" size={24} />} 
+              variant="ghost" 
+              size="sm" 
+              onPress={onBack} 
+            />
+            <View>
+              <Typography variant="title" weight="bold" className="text-white">Career Explorer</Typography>
+              <Typography variant="caption" className="text-white/80">{careers.length} career paths</Typography>
+            </View>
           </View>
-        </View>
 
-        <View style={styles.searchContainer}>
-          <Search color="#8FBDD7" size={18} style={styles.searchIcon} />
-          <TextInput
-            placeholder="Search careers, skills, industries..."
-            placeholderTextColor="#8FBDD7"
-            value={query}
-            onChangeText={setQuery}
-            style={styles.searchInput}
-          />
-        </View>
+          <View className="flex-row items-center bg-white/20 rounded-2xl px-4 h-12 gap-2 border border-white/30">
+            <Search color="#FFF" size={18} />
+            <TextInput
+              placeholder="Search careers, skills, industries..."
+              placeholderTextColor="rgba(255,255,255,0.7)"
+              value={query}
+              onChangeText={setQuery}
+              className="flex-1 text-white"
+            />
+          </View>
+        </SafeAreaView>
       </LinearGradient>
 
-      <View style={styles.filterSection}>
+      <View className="py-4 bg-white border-b border-border-subtle shadow-sm z-0">
         <CareerStageFilter />
       </View>
 
       <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5F8B70" />}
+        contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4f378a" />}
       >
         {/* Category horizontal scrolling tabs */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6 -mx-6 px-6">
           {["All", ...CAREER_CATEGORIES].map((category) => {
             const active = selectedCategory === category;
             return (
               <TouchableOpacity
                 key={category}
                 onPress={() => setSelectedCategory(category)}
-                style={[styles.categoryChip, active && styles.categoryChipActive]}
+                className={`px-4 py-2 rounded-full mr-2 border ${active ? "bg-[#e8def8] border-[#e8def8]" : "bg-white border-border-subtle"}`}
               >
-                <Text style={[styles.categoryChipText, active && styles.categoryChipTextActive]}>
+                <Typography variant="caption" weight="bold" className={active ? "text-[#1d192b]" : "text-slate-600"}>
                   {category}
-                </Text>
+                </Typography>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
 
-        <Text style={styles.resultsText}>
+        <Typography variant="caption" weight="bold" color="primary" className="mb-4 uppercase tracking-wider">
           {filtered.length} careers matching filters
-        </Text>
+        </Typography>
 
         {filtered.map((career, index) => (
           <MotiView
@@ -300,8 +301,8 @@ export const CareerExplorer: React.FC<CareerExplorerProps> = ({ onNavigate, onBa
         ))}
 
         {filtered.length === 0 && (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No careers matches found.</Text>
+          <View className="py-12 items-center justify-center">
+            <Typography variant="body" color="secondary">No careers matches found.</Typography>
           </View>
         )}
       </ScrollView>
@@ -346,59 +347,55 @@ export const CareerDetails: React.FC<CareerDetailsProps> = ({ careerId, onNaviga
 
   if (!career) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Career details not found.</Text>
-        <TouchableOpacity onPress={onBack} style={styles.btn}>
-          <Text style={styles.btnText}>Go Back</Text>
-        </TouchableOpacity>
+      <View className="flex-1 items-center justify-center bg-surface-primary">
+        <Typography variant="body" color="secondary" className="mb-4">Career details not found.</Typography>
+        <Button variant="outline" onPress={onBack}>Go Back</Button>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
+    <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
+        colors={["#4f378a", "#6750a4"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        className="px-6 pb-6 pt-16 rounded-b-[32px] shadow-sm z-10"
       >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle} numberOfLines={1}>{career.title}</Text>
-            <Text style={styles.headerSubtitle}>{career.category}</Text>
+        <View className="flex-row items-center gap-3">
+          <IconButton 
+            icon={<ArrowLeft color="#FFF" size={24} />} 
+            variant="ghost" 
+            size="sm" 
+            onPress={onBack} 
+          />
+          <View className="flex-1">
+            <Typography variant="title" weight="bold" className="text-white" numberOfLines={1}>{career.title}</Typography>
+            <Typography variant="caption" className="text-white/80">{career.category}</Typography>
           </View>
-          <TouchableOpacity
+          <IconButton 
+            icon={<Bookmark color="#FFF" fill={isSaved ? "#FFF" : "transparent"} size={22} />}
+            variant="ghost"
             onPress={() => toggleSaveCareer(career.id)}
-            style={styles.bookmarkHeaderBtn}
-          >
-            <Bookmark
-              size={22}
-              color="white"
-              fill={isSaved ? "white" : "transparent"}
-            />
-          </TouchableOpacity>
+          />
         </View>
       </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.detailsScrollContent}>
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
         {/* Card Overview */}
-        <View style={styles.detailCard}>
-          <View style={styles.overviewHeaderRow}>
-            <Text style={styles.overviewEmoji}>{career.icon}</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.overviewTagline}>{career.tagline}</Text>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm mb-4">
+          <View className="flex-row gap-3 items-center mb-3">
+            <Typography className="text-4xl">{career.icon}</Typography>
+            <View className="flex-1">
+              <Typography variant="body" weight="bold" color="primary">{career.tagline}</Typography>
             </View>
           </View>
-          <Text style={styles.overviewText}>{career.overview}</Text>
+          <Typography variant="body" color="secondary" className="leading-relaxed mb-4">{career.overview}</Typography>
 
-          <View style={styles.metaRow}>
-            <View style={styles.metaCol}>
-              <Text style={styles.metaLabel}>SALARY RANGE</Text>
-              <Text style={styles.metaValue}>
+          <View className="flex-row gap-3 mb-6 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+            <View className="flex-1">
+              <Typography variant="caption" weight="bold" color="secondary" className="uppercase tracking-wider text-[10px] mb-1">Salary Range</Typography>
+              <Typography variant="body" weight="bold" color="primary">
                 ₹{(() => {
                   try {
                     const sr = career.salaryRange || career.salary_range;
@@ -408,99 +405,107 @@ export const CareerDetails: React.FC<CareerDetailsProps> = ({ careerId, onNaviga
                     return "0-0";
                   }
                 })()} LPA
-              </Text>
+              </Typography>
             </View>
-            <View style={styles.metaCol}>
-              <Text style={styles.metaLabel}>INDUSTRY DEMAND</Text>
-              <Text style={styles.metaValue}>{career.industryDemand || career.industry_demand || 'High'}</Text>
+            <View className="flex-1">
+              <Typography variant="caption" weight="bold" color="secondary" className="uppercase tracking-wider text-[10px] mb-1">Industry Demand</Typography>
+              <Typography variant="body" weight="bold" color="primary">{career.industryDemand || career.industry_demand || 'High'}</Typography>
             </View>
           </View>
 
           {/* Set Goal / Start Roadmap CTAs */}
-          <View style={styles.goalCtaRow}>
-            <TouchableOpacity
-              onPress={() => {
-                setCareerGoal(career.id);
-                alert(`${career.title} has been set as your Career Goal!`);
-              }}
-              style={[styles.btn, { flex: 1, backgroundColor: "#5F8B70" }]}
-            >
-              <Text style={styles.btnText}>Set as Goal</Text>
-            </TouchableOpacity>
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Button
+                variant="outline"
+                onPress={() => {
+                  setCareerGoal(career.id);
+                  alert(`${career.title} has been set as your Career Goal!`);
+                }}
+              >
+                Set as Goal
+              </Button>
+            </View>
 
             {roadmap && (
-              <TouchableOpacity
-                onPress={() => {
-                  setActiveRoadmap(roadmap.id);
-                  onNavigate("learningPath", { selectedRoadmapId: roadmap.id });
-                }}
-                style={[styles.btn, { flex: 1 }]}
-              >
-                <Text style={styles.btnText}>Start Roadmap</Text>
-              </TouchableOpacity>
+              <View className="flex-1">
+                <Button
+                  variant="primary"
+                  onPress={() => {
+                    setActiveRoadmap(roadmap.id);
+                    onNavigate("learningPath", { selectedRoadmapId: roadmap.id });
+                  }}
+                >
+                  Start Roadmap
+                </Button>
+              </View>
             )}
           </View>
-        </View>
+        </BentoCard>
 
         {/* Section: Educational Path */}
-        <View style={styles.detailCard}>
-          <Text style={styles.sectionHeaderTitle}>Educational Path</Text>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm mb-4">
+          <Typography variant="heading" weight="bold" color="primary" className="mb-4">Educational Path</Typography>
           {(Array.isArray(career.educationalPath) ? career.educationalPath : JSON.parse(career.educationalPath || '[]')).map((step: any, idx: number) => (
-            <View key={idx} style={styles.eduStepItem}>
-              <View style={styles.stepNumCircle}>
-                <Text style={styles.stepNumText}>{idx + 1}</Text>
+            <View key={idx} className="flex-row gap-4 mb-4 last:mb-0">
+              <View className="w-8 h-8 rounded-full bg-primary/10 items-center justify-center">
+                <Typography variant="caption" weight="bold" color="primary">{idx + 1}</Typography>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.eduStepLevel}>{step.level}</Text>
-                <Text style={styles.eduStepDuration}>{step.duration}</Text>
-                <Text style={styles.eduStepColleges}>Colleges: {step.institutions.join(", ")}</Text>
+              <View className="flex-1 pt-1">
+                <Typography variant="body" weight="bold" color="primary">{step.level}</Typography>
+                <Typography variant="caption" color="secondary" className="mt-0.5">{step.duration}</Typography>
+                <Typography variant="caption" className="text-slate-500 mt-1">Colleges: {step.institutions.join(", ")}</Typography>
               </View>
             </View>
           ))}
-        </View>
+        </BentoCard>
 
         {/* Section: Skills & Entrance Exams */}
-        <View style={styles.detailCard}>
-          <Text style={styles.sectionHeaderTitle}>Required Skills</Text>
-          <View style={styles.skillsTagWrap}>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm mb-4">
+          <Typography variant="heading" weight="bold" color="primary" className="mb-3">Required Skills</Typography>
+          <View className="flex-row flex-wrap gap-2 mb-6">
             {(Array.isArray(career.requiredSkills) ? career.requiredSkills : JSON.parse(career.requiredSkills || '[]')).map((skill: string) => (
-              <View key={skill} style={styles.skillTag}>
-                <Text style={styles.skillTagText}>{skill}</Text>
+              <View key={skill} className="bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
+                <Typography variant="caption" weight="bold" color="primary">{skill}</Typography>
               </View>
             ))}
           </View>
 
-          <Text style={[styles.sectionHeaderTitle, { marginTop: 20 }]}>Entrance Exams</Text>
-          <View style={styles.skillsTagWrap}>
+          <Typography variant="heading" weight="bold" color="primary" className="mb-3">Entrance Exams</Typography>
+          <View className="flex-row flex-wrap gap-2">
           {(Array.isArray(career.entranceExams) ? career.entranceExams : JSON.parse(career.entranceExams || '[]')).map((exam: string) => (
-              <View key={exam} style={[styles.skillTag, { backgroundColor: "#F0F4F8" }]}>
-                <Text style={[styles.skillTagText, { color: "#1C4966" }]}>{exam}</Text>
+              <View key={exam} className="bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
+                <Typography variant="caption" weight="bold" color="primary">{exam}</Typography>
               </View>
             ))}
           </View>
-        </View>
+        </BentoCard>
 
         {/* Section: Job Roles & Growth */}
-        <View style={styles.detailCard}>
-          <Text style={styles.sectionHeaderTitle}>Future Scope & Growth</Text>
-          <Text style={styles.overviewText}>{career.futureScope}</Text>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm">
+          <Typography variant="heading" weight="bold" color="primary" className="mb-3">Future Scope & Growth</Typography>
+          <Typography variant="body" color="secondary" className="leading-relaxed mb-6">{career.futureScope}</Typography>
 
-          <Text style={[styles.sectionHeaderTitle, { marginTop: 20 }]}>Top Job Roles</Text>
-          {(Array.isArray(career.jobRoles) ? career.jobRoles : JSON.parse(career.jobRoles || '[]')).map((role: string) => (
-            <View key={role} style={styles.bulletItem}>
-              <Text style={styles.bulletDot}>✦</Text>
-              <Text style={styles.bulletText}>{role}</Text>
-            </View>
-          ))}
+          <Typography variant="heading" weight="bold" color="primary" className="mb-3">Top Job Roles</Typography>
+          <View className="gap-2 mb-6">
+            {(Array.isArray(career.jobRoles) ? career.jobRoles : JSON.parse(career.jobRoles || '[]')).map((role: string) => (
+              <View key={role} className="flex-row items-center gap-2">
+                <View className="w-1.5 h-1.5 rounded-full bg-[#4f378a]" />
+                <Typography variant="body" color="secondary">{role}</Typography>
+              </View>
+            ))}
+          </View>
 
-          <Text style={[styles.sectionHeaderTitle, { marginTop: 20 }]}>Growth Opportunities</Text>
-          {(Array.isArray(career.growthOpportunities) ? career.growthOpportunities : JSON.parse(career.growthOpportunities || '[]')).map((opportunity: string) => (
-            <View key={opportunity} style={styles.bulletItem}>
-              <Text style={styles.bulletDot}>✦</Text>
-              <Text style={styles.bulletText}>{opportunity}</Text>
-            </View>
-          ))}
-        </View>
+          <Typography variant="heading" weight="bold" color="primary" className="mb-3">Growth Opportunities</Typography>
+          <View className="gap-2">
+            {(Array.isArray(career.growthOpportunities) ? career.growthOpportunities : JSON.parse(career.growthOpportunities || '[]')).map((opportunity: string) => (
+              <View key={opportunity} className="flex-row items-center gap-2">
+                <View className="w-1.5 h-1.5 rounded-full bg-[#4f378a]" />
+                <Typography variant="body" color="secondary">{opportunity}</Typography>
+              </View>
+            ))}
+          </View>
+        </BentoCard>
       </ScrollView>
     </View>
   );
@@ -536,50 +541,53 @@ export const CareerComparison: React.FC<CareerComparisonProps> = ({ compareIds, 
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
+    <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
+        colors={["#4f378a", "#6750a4"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        className="px-6 pb-6 pt-16 rounded-b-[32px] shadow-sm z-10"
       >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>Compare Careers</Text>
-            <Text style={styles.headerSubtitle}>{careers.length} selected</Text>
+        <View className="flex-row items-center gap-3">
+          <IconButton 
+            icon={<ArrowLeft color="#FFF" size={24} />} 
+            variant="ghost" 
+            size="sm" 
+            onPress={onBack} 
+          />
+          <View className="flex-1">
+            <Typography variant="title" weight="bold" className="text-white">Compare Careers</Typography>
+            <Typography variant="caption" className="text-white/80">{careers.length} selected</Typography>
           </View>
           <TouchableOpacity onPress={handleClear}>
-            <Text style={{ color: "white", fontSize: 13, fontWeight: "bold" }}>Reset</Text>
+            <Typography variant="caption" weight="bold" className="text-white">Reset</Typography>
           </TouchableOpacity>
         </View>
       </LinearGradient>
 
-      <ScrollView horizontal contentContainerStyle={{ padding: 16 }}>
-        <View style={styles.compareTableColumnLabels}>
-          <View style={styles.compareLabelCell}><Text style={styles.compareLabelText}>Career</Text></View>
-          <View style={styles.compareLabelCell}><Text style={styles.compareLabelText}>Industry</Text></View>
-          <View style={styles.compareLabelCell}><Text style={styles.compareLabelText}>Avg Salary</Text></View>
-          <View style={styles.compareLabelCell}><Text style={styles.compareLabelText}>Demand</Text></View>
-          <View style={styles.compareLabelCell}><Text style={styles.compareLabelText}>Growth %</Text></View>
-          <View style={styles.compareLabelCell}><Text style={styles.compareLabelText}>Exams</Text></View>
-          <View style={styles.compareLabelCell}><Text style={styles.compareLabelText}>Skills</Text></View>
+      <ScrollView horizontal contentContainerStyle={{ padding: 24 }}>
+        <View className="w-24 mr-4 gap-y-4">
+          <View className="h-16 justify-center border-b border-transparent"><Typography variant="caption" weight="bold" color="secondary">Career</Typography></View>
+          <View className="h-12 justify-center border-b border-transparent"><Typography variant="caption" weight="bold" color="secondary">Industry</Typography></View>
+          <View className="h-12 justify-center border-b border-transparent"><Typography variant="caption" weight="bold" color="secondary">Avg Salary</Typography></View>
+          <View className="h-12 justify-center border-b border-transparent"><Typography variant="caption" weight="bold" color="secondary">Demand</Typography></View>
+          <View className="h-12 justify-center border-b border-transparent"><Typography variant="caption" weight="bold" color="secondary">Growth %</Typography></View>
+          <View className="h-12 justify-center border-b border-transparent"><Typography variant="caption" weight="bold" color="secondary">Exams</Typography></View>
+          <View className="h-16 justify-center border-b border-transparent"><Typography variant="caption" weight="bold" color="secondary">Skills</Typography></View>
         </View>
 
         {careers.map((career) => (
-          <View key={career.id} style={styles.compareTableColumnData}>
-            <View style={styles.compareDataCellHeader}>
-              <Text style={styles.compareEmoji}>{career.icon}</Text>
-              <Text style={styles.compareNameText} numberOfLines={1}>{career.title}</Text>
+          <View key={career.id} className="w-40 mr-4 gap-y-4 bg-white rounded-2xl p-4 border border-border-subtle shadow-sm">
+            <View className="h-16 justify-center border-b border-border-subtle">
+              <Typography className="text-2xl mb-1">{career.icon}</Typography>
+              <Typography variant="body" weight="bold" color="primary" numberOfLines={1}>{career.title}</Typography>
             </View>
-            <View style={styles.compareDataCell}><Text style={styles.compareValueText} numberOfLines={1}>{career.industry}</Text></View>
-            <View style={styles.compareDataCell}><Text style={styles.compareValueTextBold}>₹{career.avgSalary} LPA</Text></View>
-            <View style={styles.compareDataCell}><Text style={styles.compareValueText}>{career.industryDemand}</Text></View>
-            <View style={styles.compareDataCell}><Text style={styles.compareValueText}>{career.growthPercent}%</Text></View>
-            <View style={styles.compareDataCell}><Text style={styles.compareValueText} numberOfLines={1}>{(Array.isArray(career.entranceExams) ? career.entranceExams : JSON.parse(career.entranceExams || '[]')).join(", ")}</Text></View>
-            <View style={styles.compareDataCell}><Text style={styles.compareValueText} numberOfLines={2}>{(Array.isArray(career.requiredSkills) ? career.requiredSkills : JSON.parse(career.requiredSkills || '[]')).slice(0, 3).join(", ")}</Text></View>
+            <View className="h-12 justify-center border-b border-border-subtle"><Typography variant="caption" color="primary" numberOfLines={1}>{career.industry}</Typography></View>
+            <View className="h-12 justify-center border-b border-border-subtle"><Typography variant="caption" weight="bold" color="primary">₹{career.avgSalary || 0} LPA</Typography></View>
+            <View className="h-12 justify-center border-b border-border-subtle"><Typography variant="caption" color="primary">{career.industryDemand || 'High'}</Typography></View>
+            <View className="h-12 justify-center border-b border-border-subtle"><Typography variant="caption" color="primary">{career.growthPercent || 0}%</Typography></View>
+            <View className="h-12 justify-center border-b border-border-subtle"><Typography variant="caption" color="primary" numberOfLines={1}>{(Array.isArray(career.entranceExams) ? career.entranceExams : JSON.parse(career.entranceExams || '[]')).join(", ")}</Typography></View>
+            <View className="h-16 justify-center"><Typography variant="caption" color="primary" numberOfLines={2}>{(Array.isArray(career.requiredSkills) ? career.requiredSkills : JSON.parse(career.requiredSkills || '[]')).slice(0, 3).join(", ")}</Typography></View>
           </View>
         ))}
       </ScrollView>
@@ -603,49 +611,56 @@ export const CareerRoadmaps: React.FC<CareerRoadmapsProps> = ({ onNavigate, onBa
   }, [activeStage]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
+    <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
+        colors={["#4f378a", "#6750a4"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        className="px-6 pb-6 pt-16 rounded-b-[32px] shadow-sm z-10"
       >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
+        <View className="flex-row items-center gap-3">
+          <IconButton 
+            icon={<ArrowLeft color="#FFF" size={24} />} 
+            variant="ghost" 
+            size="sm" 
+            onPress={onBack} 
+          />
           <View>
-            <Text style={styles.headerTitle}>Career Roadmaps</Text>
-            <Text style={styles.headerSubtitle}>{ROADMAPS.length} milestones journeys</Text>
+            <Typography variant="title" weight="bold" className="text-white">Career Roadmaps</Typography>
+            <Typography variant="caption" className="text-white/80">{ROADMAPS.length} milestones journeys</Typography>
           </View>
         </View>
       </LinearGradient>
 
-      <View style={styles.filterSection}>
+      <View className="py-4 bg-white border-b border-border-subtle shadow-sm z-0">
         <CareerStageFilter />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {filteredRoadmaps.map((roadmap) => (
-          <TouchableOpacity
-            key={roadmap.id}
-            onPress={() => onNavigate("learningPath", { selectedRoadmapId: roadmap.id })}
-            style={styles.card}
-          >
-            <View style={styles.cardRow}>
-              <View style={styles.iconBox}>
-                <Text style={styles.iconText}>{roadmap.icon}</Text>
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
+        <View className="gap-4">
+          {filteredRoadmaps.map((roadmap) => (
+            <BentoCardPressable
+              key={roadmap.id}
+              onPress={() => onNavigate("learningPath", { selectedRoadmapId: roadmap.id })}
+              variant="secondary"
+              className="flex-row items-center p-4 bg-white border border-border-subtle shadow-sm gap-4"
+            >
+              <View className="w-12 h-12 rounded-xl bg-primary/10 items-center justify-center">
+                <Typography className="text-2xl">{roadmap.icon}</Typography>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>{roadmap.careerTitle} Path</Text>
-                <Text style={styles.cardTagline}>
+              <View className="flex-1">
+                <Typography variant="body" weight="bold" color="primary">{roadmap.careerTitle} Path</Typography>
+                <Typography variant="caption" color="secondary" className="mt-0.5">
                   {roadmap.totalSteps} Milestones • {roadmap.estimatedDuration}
-                </Text>
+                </Typography>
               </View>
-              <ChevronRight size={20} color="#8FBDD7" />
-            </View>
-          </TouchableOpacity>
-        ))}
+              <ChevronRight size={20} color="#79747e" />
+            </BentoCardPressable>
+          ))}
+          {filteredRoadmaps.length === 0 && (
+             <Typography variant="caption" color="secondary" className="italic text-center py-4">No roadmaps found for this stage.</Typography>
+          )}
+        </View>
       </ScrollView>
     </View>
   );
@@ -669,75 +684,75 @@ export const LearningPath: React.FC<LearningPathProps> = ({ roadmapId, onBack })
 
   if (!roadmap) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Please select a career path first.</Text>
-        <TouchableOpacity onPress={onBack} style={styles.btn}>
-          <Text style={styles.btnText}>Go Back</Text>
-        </TouchableOpacity>
+      <View className="flex-1 items-center justify-center bg-surface-primary">
+        <Typography variant="body" color="secondary" className="mb-4">Please select a career path first.</Typography>
+        <Button variant="outline" onPress={onBack}>Go Back</Button>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
+    <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
+        colors={["#4f378a", "#6750a4"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        className="px-6 pb-6 pt-16 rounded-b-[32px] shadow-sm z-10"
       >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle} numberOfLines={1}>{roadmap.careerTitle} Path</Text>
-            <Text style={styles.headerSubtitle}>{roadmap.estimatedDuration} estimated</Text>
+        <View className="flex-row items-center gap-3">
+          <IconButton 
+            icon={<ArrowLeft color="#FFF" size={24} />} 
+            variant="ghost" 
+            size="sm" 
+            onPress={onBack} 
+          />
+          <View className="flex-1">
+            <Typography variant="title" weight="bold" className="text-white" numberOfLines={1}>{roadmap.careerTitle} Path</Typography>
+            <Typography variant="caption" className="text-white/80">{roadmap.estimatedDuration} estimated</Typography>
           </View>
-          <View style={styles.progressRingBadge}>
-            <Text style={styles.progressRingText}>{progressPercent}%</Text>
+          <View className="w-12 h-12 rounded-full border-4 border-white/20 items-center justify-center bg-white/10">
+            <Typography variant="caption" weight="bold" className="text-white">{progressPercent}%</Typography>
           </View>
         </View>
       </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.timelineContainer}>
-          {roadmap.steps.map((step, idx) => {
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
+        <View className="ml-4 border-l-2 border-slate-200">
+          {roadmap.steps.map((step: any, idx: number) => {
             const isCompleted = completedSteps.includes(step.id);
             return (
-              <View key={step.id} style={styles.timelineItem}>
-                <View style={styles.timelineConnectorCol}>
-                  <TouchableOpacity
-                    onPress={() => completeRoadmapStep(roadmap.id, step.id)}
-                    style={[styles.timelineNodeCircle, isCompleted && styles.timelineNodeCircleCompleted]}
-                  >
-                    {isCompleted ? (
-                      <Check size={14} color="white" />
-                    ) : (
-                      <Plus size={14} color="#1C4966" />
-                    )}
-                  </TouchableOpacity>
-                  {idx < roadmap.steps.length - 1 && <View style={styles.timelineLine} />}
-                </View>
+              <View key={step.id} className="mb-8 pl-6 relative">
+                {/* Node */}
+                <TouchableOpacity
+                  onPress={() => completeRoadmapStep(roadmap.id, step.id)}
+                  className={`absolute -left-3.5 top-0 w-7 h-7 rounded-full border-4 border-white items-center justify-center z-10 ${isCompleted ? 'bg-[#4f378a]' : 'bg-slate-200'}`}
+                >
+                  {isCompleted ? (
+                    <Check size={12} color="white" />
+                  ) : (
+                    <Plus size={12} color="#475569" />
+                  )}
+                </TouchableOpacity>
 
-                <View style={[styles.timelineCard, isCompleted && styles.timelineCardCompleted]}>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <Text style={styles.timelineStepNum}>Step {step.order}</Text>
-                    <Text style={styles.timelineDuration}>{step.duration}</Text>
+                {/* Card */}
+                <BentoCard variant="secondary" padding="md" className={`bg-white border shadow-sm ${isCompleted ? 'border-[#4f378a]/30' : 'border-border-subtle'}`}>
+                  <View className="flex-row justify-between items-center mb-1">
+                    <Typography variant="caption" weight="bold" className="text-[#4f378a] uppercase tracking-wider text-[10px]">Step {step.order}</Typography>
+                    <Typography variant="caption" color="secondary">{step.duration}</Typography>
                   </View>
-                  <Text style={styles.timelineTitle}>{step.title}</Text>
-                  <Text style={styles.timelineDesc}>{step.description}</Text>
+                  <Typography variant="body" weight="bold" color="primary" className="mb-2">{step.title}</Typography>
+                  <Typography variant="caption" color="secondary" className="leading-relaxed mb-4">{step.description}</Typography>
 
-                  {step.skillsRequired.length > 0 && (
-                    <View style={styles.timelineTagWrap}>
-                      {step.skillsRequired.map((s) => (
-                        <View key={s} style={styles.timelineTag}>
-                          <Text style={styles.timelineTagText}>{s}</Text>
+                  {step.skillsRequired?.length > 0 && (
+                    <View className="flex-row flex-wrap gap-2">
+                      {step.skillsRequired.map((s: string) => (
+                        <View key={s} className="bg-slate-50 px-2 py-1 rounded border border-slate-200">
+                          <Typography variant="caption" className="text-slate-600 text-[10px]">{s}</Typography>
                         </View>
                       ))}
                     </View>
                   )}
-                </View>
+                </BentoCard>
               </View>
             );
           })}
@@ -746,551 +761,3 @@ export const LearningPath: React.FC<LearningPathProps> = ({ roadmapId, onBack })
     </View>
   );
 };
-
-// ── Styles ──────────────────────────────────────────
-const styles = StyleSheet.create({
-  header: {
-    padding: 20,
-    paddingTop: 44,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "white",
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.8)",
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: 20,
-    marginTop: 16,
-    paddingHorizontal: 12,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    height: 44,
-    fontSize: 14,
-    color: "#1C4966",
-  },
-  filterSection: {
-    backgroundColor: "white",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-  },
-  stageFilterScroll: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  stageChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "rgba(143, 189, 215, 0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(143, 189, 215, 0.2)",
-    marginRight: 8,
-  },
-  stageChipActive: {
-    backgroundColor: "#1C4966",
-    borderColor: "#1C4966",
-  },
-  stageChipText: {
-    fontSize: 12,
-    color: "#1C4966",
-    fontWeight: "600",
-  },
-  stageChipTextActive: {
-    color: "white",
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  categoryScroll: {
-    marginBottom: 16,
-  },
-  categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#DDEEE3",
-    marginRight: 8,
-  },
-  categoryChipActive: {
-    backgroundColor: "#5F8B70",
-    borderColor: "#5F8B70",
-  },
-  categoryChipText: {
-    fontSize: 12,
-    color: "#5F8B70",
-    fontWeight: "bold",
-  },
-  categoryChipTextActive: {
-    color: "white",
-  },
-  resultsText: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 12,
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.06)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-  },
-  cardRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "rgba(143, 189, 215, 0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconText: {
-    fontSize: 24,
-  },
-  cardCategory: {
-    fontSize: 10,
-    color: "#5F8B70",
-    fontWeight: "bold",
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  cardTagline: {
-    fontSize: 12,
-    color: "#8FBDD7",
-    marginTop: 2,
-  },
-  cardStats: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 12,
-  },
-  statChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(95, 139, 112, 0.08)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statChipText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#1C4966",
-  },
-  cardDivider: {
-    height: 1,
-    backgroundColor: "#F5F7FA",
-    marginVertical: 12,
-  },
-  cardActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  cardActionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  actionBtnText: {
-    fontSize: 12,
-    color: "#8FBDD7",
-  },
-  emptyContainer: {
-    padding: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyText: {
-    fontSize: 14,
-    color: "#8FBDD7",
-    textAlign: "center",
-  },
-  bookmarkHeaderBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  detailsScrollContent: {
-    padding: 16,
-    gap: 16,
-  },
-  detailCard: {
-    backgroundColor: "white",
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-  },
-  overviewHeaderRow: {
-    flexDirection: "row",
-    gap: 12,
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  overviewEmoji: {
-    fontSize: 32,
-  },
-  overviewTagline: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  overviewText: {
-    fontSize: 14,
-    color: "#5F8B70",
-    lineHeight: 20,
-  },
-  metaRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 16,
-    backgroundColor: "rgba(143, 189, 215, 0.06)",
-    padding: 12,
-    borderRadius: 12,
-  },
-  metaCol: {
-    flex: 1,
-  },
-  metaLabel: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#8FBDD7",
-  },
-  metaValue: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginTop: 2,
-  },
-  goalCtaRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 20,
-  },
-  btn: {
-    backgroundColor: "#1C4966",
-    height: 44,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  sectionHeaderTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 16,
-  },
-  eduStepItem: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
-  },
-  stepNumCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#1C4966",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 2,
-  },
-  stepNumText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  eduStepLevel: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  eduStepDuration: {
-    fontSize: 12,
-    color: "#8FBDD7",
-    marginTop: 2,
-  },
-  eduStepColleges: {
-    fontSize: 12,
-    color: "#5F8B70",
-    marginTop: 4,
-  },
-  skillsTagWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  skillTag: {
-    backgroundColor: "rgba(95, 139, 112, 0.1)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  skillTagText: {
-    fontSize: 12,
-    color: "#5F8B70",
-    fontWeight: "bold",
-  },
-  bulletItem: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 8,
-  },
-  bulletDot: {
-    color: "#5F8B70",
-  },
-  bulletText: {
-    fontSize: 14,
-    color: "#5F8B70",
-    flex: 1,
-  },
-  compareTableColumnLabels: {
-    width: 90,
-    gap: 1,
-  },
-  compareLabelCell: {
-    height: 60,
-    justifyContent: "center",
-    paddingHorizontal: 8,
-    backgroundColor: "rgba(28, 73, 102, 0.05)",
-  },
-  compareLabelText: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  compareTableColumnData: {
-    width: 150,
-    borderLeftWidth: 1,
-    borderColor: "#E6E6D5",
-    gap: 1,
-  },
-  compareDataCellHeader: {
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 8,
-    backgroundColor: "rgba(28, 73, 102, 0.08)",
-  },
-  compareEmoji: {
-    fontSize: 18,
-  },
-  compareNameText: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginTop: 2,
-  },
-  compareDataCell: {
-    height: 60,
-    justifyContent: "center",
-    paddingHorizontal: 8,
-    backgroundColor: "white",
-  },
-  compareValueText: {
-    fontSize: 12,
-    color: "#5F8B70",
-  },
-  compareValueTextBold: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  progressRingBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 3,
-    borderColor: "#5F8B70",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.1)",
-  },
-  progressRingText: {
-    fontSize: 11,
-    fontWeight: "bold",
-    color: "white",
-  },
-  timelineContainer: {
-    padding: 20,
-  },
-  timelineItem: {
-    flexDirection: "row",
-    gap: 16,
-  },
-  timelineConnectorCol: {
-    alignItems: "center",
-    width: 28,
-  },
-  timelineNodeCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(143, 189, 215, 0.2)",
-    borderWidth: 2,
-    borderColor: "#1C4966",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 2,
-  },
-  timelineNodeCircleCompleted: {
-    backgroundColor: "#5F8B70",
-    borderColor: "#5F8B70",
-  },
-  timelineLine: {
-    width: 2,
-    flex: 1,
-    backgroundColor: "#1C4966",
-    marginVertical: 4,
-  },
-  timelineCard: {
-    flex: 1,
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-  },
-  timelineCardCompleted: {
-    backgroundColor: "rgba(95, 139, 112, 0.02)",
-    borderColor: "rgba(95, 139, 112, 0.15)",
-  },
-  timelineStepNum: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#8FBDD7",
-  },
-  timelineDuration: {
-    fontSize: 10,
-    color: "#5F8B70",
-  },
-  timelineTitle: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginTop: 4,
-  },
-  timelineDesc: {
-    fontSize: 13,
-    color: "#5F8B70",
-    marginTop: 6,
-    lineHeight: 18,
-  },
-  timelineTagWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    marginTop: 10,
-  },
-  timelineTag: {
-    backgroundColor: "rgba(143, 189, 215, 0.12)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  timelineTagText: {
-    fontSize: 10,
-    color: "#1C4966",
-    fontWeight: "600",
-  },
-  drawerContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "white",
-    padding: 16,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  drawerText: {
-    fontSize: 13,
-    color: "#1C4966",
-    fontWeight: "600",
-  },
-  drawerActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  drawerClearBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#8FBDD7",
-  },
-  drawerClearText: {
-    fontSize: 12,
-    color: "#1C4966",
-  },
-  drawerCompareBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: "#1C4966",
-  },
-  drawerCompareText: {
-    fontSize: 12,
-    color: "white",
-    fontWeight: "bold",
-  },
-});

@@ -120,11 +120,11 @@ export default function TuitionMain() {
   };
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-surface-primary">
       {store.isLoading && !store.student ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1C4966" />
-          <Text style={styles.loadingText}>Loading Profile...</Text>
+        <View className="flex-1 justify-center items-center bg-surface-primary">
+          <ActivityIndicator size="large" color="#4f378a" />
+          <Text className="mt-4 text-primary font-semibold text-base">Loading Profile...</Text>
         </View>
       ) : !store.student ? (
         <SetupScreen />
@@ -134,22 +134,3 @@ export default function TuitionMain() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFF0",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#FFFFF0",
-  },
-  loadingText: {
-    marginTop: 16,
-    color: "#1C4966",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-});

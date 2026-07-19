@@ -19,10 +19,6 @@ export interface TestResult {
 }
 
 interface AppContextType {
-  name: string;
-  email: string;
-  phone: string;
-  updateProfile: (name: string, email: string, phone: string) => void;
   bookings: Booking[];
   addBooking: (booking: Omit<Booking, "id" | "status">) => void;
   testResults: TestResult[];
@@ -32,10 +28,6 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [name, setName] = useState("User Name");
-  const [email, setEmail] = useState("user@example.com");
-  const [phone, setPhone] = useState("+91 98765 43210");
-  
   const [bookings, setBookings] = useState<Booking[]>([
     { id: "b1", practitioner: "Dr. Sarah Johnson", specialty: "Anxiety & Trauma", date: "Today", time: "3:00 PM", mode: "Video Session", status: "Upcoming", type: "counselling" },
     { id: "b2", practitioner: "Dr. Rajesh Kumar", specialty: "Stress Management", date: "May 28, 2026", time: "11:00 AM", mode: "Chat Session", status: "Completed", type: "counselling" },
@@ -46,12 +38,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [testResults, setTestResults] = useState<TestResult[]>([
     { testId: "2", name: "JEE Main Practice", score: 85, date: "May 28, 2026" }
   ]);
-
-  const updateProfile = (newName: string, newEmail: string, newPhone: string) => {
-    setName(newName);
-    setEmail(newEmail);
-    setPhone(newPhone);
-  };
 
   const addBooking = (booking: Omit<Booking, "id" | "status">) => {
     const newBooking: Booking = {
@@ -77,10 +63,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider
       value={{
-        name,
-        email,
-        phone,
-        updateProfile,
         bookings,
         addBooking,
         testResults,

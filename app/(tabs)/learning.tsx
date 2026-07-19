@@ -1,21 +1,22 @@
 import React, { useState, useCallback } from "react";
 import {
   View,
-  Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
   RefreshControl,
+  ActivityIndicator
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { MotiView } from "moti";
-import { ChevronDown, ChevronUp, ChevronRight, Award } from "lucide-react-native";
+import { ChevronDown, ChevronUp, ChevronRight, GraduationCap } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useCoachingStore } from "../../store/coaching.store";
 import { supabase } from "../../lib/supabase";
+import { Typography } from "../../components/Typography";
+import { GlassSurface } from "../../components/GlassSurface";
+import { BentoCardPressable, BentoCard } from "../../components/BentoCard";
 
 export default function LearningScreen() {
   const router = useRouter();
@@ -29,7 +30,6 @@ export default function LearningScreen() {
   const [categories, setCategories] = useState<any[]>([]);
   const [exams, setExams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -59,8 +59,6 @@ export default function LearningScreen() {
     setRefreshing(false);
   };
 
-
-
   const toggleCategory = (id: string) => {
     setCollapsedCategories((prev) => ({
       ...prev,
@@ -77,175 +75,100 @@ export default function LearningScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5F8B70" />}
+    <View className="flex-1 bg-surface-primary">
+      <LinearGradient
+        colors={["#fdf7ff", "#e9ddff", "#cfbcff"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        className="px-6 pb-12 rounded-b-[40px] pt-8"
       >
-        <LinearGradient
-          colors={["#1C4966", "#5F8B70"]}
-          style={styles.header}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Text style={styles.headerTitle}>Entrance Coaching</Text>
-          <Text style={styles.headerSubtitle}>Select an exam category to start preparation</Text>
-        </LinearGradient>
+        <SafeAreaView edges={["top"]}>
+          <View className="flex-row items-center gap-4 mb-4 mt-2">
+            <GlassSurface rounded="full" intensity={40} className="w-12 h-12 items-center justify-center border-white/30 bg-primary/10">
+              <GraduationCap color="#4f378a" size={24} strokeWidth={2.5} />
+            </GlassSurface>
+            <View>
+              <Typography variant="title" weight="bold" color="primary">Entrance Coaching</Typography>
+              <Typography variant="caption" color="secondary">Select an exam category to start</Typography>
+            </View>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
 
-        <View style={styles.contentContainer}>
+      <ScrollView 
+        contentContainerStyle={{ padding: 24, paddingBottom: 48, marginTop: -32 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4f378a" />}
+      >
+        <View className="gap-4">
           {loading ? (
-            <Text style={{ textAlign: 'center', color: '#1C4966', padding: 20 }}>Loading Exams...</Text>
-          ) : categories.map((category) => {
+            <View className="py-12 items-center">
+              <ActivityIndicator size="large" color="#4f378a" />
+              <Typography color="secondary" className="mt-4">Loading Exams...</Typography>
+            </View>
+          ) : categories.map((category, index) => {
             const isCollapsed = collapsedCategories[category.id];
             const categoryExams = exams.filter(e => e.category_id === category.id);
             if (categoryExams.length === 0) return null;
             return (
-              <View key={category.id} style={styles.categoryCard}>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => toggleCategory(category.id)}
-                  style={styles.categoryHeader}
-                >
-                  <Text style={styles.categoryIcon}>{category.icon}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.categoryTitle}>{category.title}</Text>
-                    <Text style={styles.categoryDesc} numberOfLines={1}>{category.description}</Text>
-                  </View>
-                  {isCollapsed ? (
-                    <ChevronDown size={20} color="#8FBDD7" />
-                  ) : (
-                    <ChevronUp size={20} color="#8FBDD7" />
-                  )}
-                </TouchableOpacity>
+              <MotiView
+                key={category.id}
+                from={{ opacity: 0, translateY: 10 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ delay: index * 50 }}
+              >
+                <BentoCard variant="primary" padding="none" className="overflow-hidden">
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => toggleCategory(category.id)}
+                    className="flex-row items-center p-4 bg-primary/5"
+                  >
+                    <View className="w-10 h-10 items-center justify-center bg-white rounded-xl shadow-sm border border-black/5 mr-3">
+                      <Typography variant="heading">{category.icon}</Typography>
+                    </View>
+                    <View className="flex-1">
+                      <Typography weight="bold" color="primary">{category.title}</Typography>
+                      <Typography variant="caption" color="secondary" numberOfLines={1}>{category.description}</Typography>
+                    </View>
+                    {isCollapsed ? (
+                      <ChevronDown size={20} color="#79747e" />
+                    ) : (
+                      <ChevronUp size={20} color="#79747e" />
+                    )}
+                  </TouchableOpacity>
 
-                {!isCollapsed && (
-                  <View style={styles.examsList}>
-                    {categoryExams.map((exam) => {
-                      const examType = exam.id;
-                      return (
-                        <TouchableOpacity
-                          key={examType}
-                          activeOpacity={0.7}
-                          onPress={() => handleSelectExam(examType)}
-                          style={styles.examItem}
-                        >
-                          <View style={styles.examIconBox}>
-                            <Text style={styles.examIcon}>{exam.icon || "📝"}</Text>
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            <Text style={styles.examName}>{exam.full_name}</Text>
-                            <Text style={styles.examDesc}>{exam.tagline || exam.overview}</Text>
-                          </View>
-                          <ChevronRight size={18} color="#8FBDD7" />
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                )}
-              </View>
+                  {!isCollapsed && (
+                    <View className="p-4 pt-2 gap-3 bg-white">
+                      {categoryExams.map((exam) => {
+                        const examType = exam.id;
+                        return (
+                          <TouchableOpacity
+                            key={examType}
+                            activeOpacity={0.7}
+                            onPress={() => handleSelectExam(examType)}
+                            className="flex-row items-center p-3 rounded-2xl border border-border-subtle bg-surface-primary"
+                          >
+                            <View className="w-10 h-10 items-center justify-center bg-primary/5 rounded-xl mr-3">
+                              <Typography variant="title">{exam.icon || "📝"}</Typography>
+                            </View>
+                            <View className="flex-1">
+                              <Typography weight="bold" color="primary">{exam.full_name}</Typography>
+                              <Typography variant="caption" color="secondary" numberOfLines={1}>{exam.tagline || exam.overview}</Typography>
+                            </View>
+                            <View className="w-8 h-8 rounded-full bg-primary/5 items-center justify-center">
+                              <ChevronRight size={18} color="#4f378a" />
+                            </View>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  )}
+                </BentoCard>
+              </MotiView>
             );
           })}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFF0",
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  header: {
-    padding: 24,
-    paddingBottom: 40,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.85)",
-    marginTop: 6,
-  },
-  contentContainer: {
-    padding: 24,
-    marginTop: -20,
-    gap: 16,
-  },
-  categoryCard: {
-    backgroundColor: "white",
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-    overflow: "hidden",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 6,
-  },
-  categoryHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: "rgba(143, 189, 215, 0.05)",
-    gap: 12,
-  },
-  categoryIcon: {
-    fontSize: 22,
-  },
-  categoryTitle: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  categoryDesc: {
-    fontSize: 11,
-    color: "#8FBDD7",
-    marginTop: 2,
-  },
-  examsList: {
-    padding: 16,
-    gap: 12,
-  },
-  examItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(143, 189, 215, 0.03)",
-    borderWidth: 1,
-    borderColor: "rgba(143, 189, 215, 0.15)",
-    borderRadius: 16,
-    padding: 12,
-    gap: 12,
-  },
-  examIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: "rgba(143, 189, 215, 0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  examIcon: {
-    fontSize: 20,
-  },
-  examName: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  examDesc: {
-    fontSize: 12,
-    color: "#5F8B70",
-    marginTop: 2,
-  },
-});

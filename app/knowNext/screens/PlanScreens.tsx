@@ -1,45 +1,37 @@
 import React, { useState, useMemo } from "react";
 import {
   View,
-  Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   TextInput,
   Dimensions,
   Modal,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { MotiView } from "moti";
 import {
   ArrowLeft,
   Search,
-  BookOpen,
-  MapPin,
-  Award,
-  DollarSign,
   Star,
   Activity,
-  Briefcase,
-  Layers,
-  Sparkles,
-  TrendingUp,
   X,
-  Compass,
-  Map,
   Calendar,
   ChevronRight,
+  TrendingUp,
 } from "lucide-react-native";
 
 import { useKnowNextStore } from "../../../store/knownext.store";
 import { supabase } from "../../../lib/supabase";
-const ROADMAPS = [] as any[];
-const INDUSTRIES = [] as any[];
 import { Industry, CareerStage, KnowNextView, NavContext } from "../types";
 import { CareerStageFilter } from "./ExplorerScreens";
+import { Typography } from "../../../components/Typography";
+import { BentoCard, BentoCardPressable } from "../../../components/BentoCard";
+import { IconButton } from "../../../components/IconButton";
+import { Button } from "../../../components/Button";
 
 const { width } = Dimensions.get("window");
+const ROADMAPS = [] as any[];
+const INDUSTRIES = [] as any[];
 
 // ── Global Search Sub-Component ─────────────────────
 interface GlobalSearchProps {
@@ -49,8 +41,8 @@ interface GlobalSearchProps {
 export function GlobalSearch({ onNavigate }: GlobalSearchProps) {
   const [query, setQuery] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
-
   const [results, setResults] = useState<any[]>([]);
+
   React.useEffect(() => {
     async function doSearch() {
       if (query.trim().length < 2) { setResults([]); return; }
@@ -85,10 +77,10 @@ export function GlobalSearch({ onNavigate }: GlobalSearchProps) {
     <View>
       <TouchableOpacity
         onPress={() => setModalVisible(true)}
-        style={styles.searchBarBox}
+        className="flex-row items-center bg-white/20 rounded-2xl mt-4 px-4 h-12 gap-2 border border-white/30"
       >
-        <Search color="#8FBDD7" size={18} />
-        <Text style={styles.searchBarText}>Search careers, colleges, scholarships...</Text>
+        <Search color="#FFF" size={20} />
+        <Typography variant="body" className="text-white/80">Search careers, colleges...</Typography>
       </TouchableOpacity>
 
       <Modal
@@ -96,23 +88,29 @@ export function GlobalSearch({ onNavigate }: GlobalSearchProps) {
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalCloseBtn}>
-              <ArrowLeft color="#1C4966" size={24} />
-            </TouchableOpacity>
+        <SafeAreaView className="flex-1 bg-surface-primary">
+          <View className="flex-row items-center p-4 border-b border-border-subtle gap-3">
+            <IconButton 
+              icon={<ArrowLeft color="#1d1b20" size={24} />} 
+              variant="ghost" 
+              size="sm" 
+              onPress={() => setModalVisible(false)} 
+            />
             <TextInput
               placeholder="Type to search..."
-              placeholderTextColor="#8FBDD7"
+              placeholderTextColor="#79747e"
               value={query}
               onChangeText={setQuery}
               autoFocus
-              style={styles.modalSearchInput}
+              className="flex-1 h-10 text-base text-[#1d1b20]"
             />
             {query.length > 0 && (
-              <TouchableOpacity onPress={() => setQuery("")}>
-                <X color="#1C4966" size={20} />
-              </TouchableOpacity>
+              <IconButton 
+                icon={<X color="#49454f" size={20} />} 
+                variant="ghost" 
+                size="sm" 
+                onPress={() => setQuery("")} 
+              />
             )}
           </View>
 
@@ -122,19 +120,21 @@ export function GlobalSearch({ onNavigate }: GlobalSearchProps) {
                 <TouchableOpacity
                   key={`${item.type}-${item.id}`}
                   onPress={() => handleSelect(item)}
-                  style={styles.searchResultItem}
+                  className="flex-row items-center py-3 border-b border-border-subtle gap-3"
                 >
-                  <Text style={styles.searchResultEmoji}>{item.icon}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.searchResultTitle}>{item.title}</Text>
-                    <Text style={styles.searchResultSub}>{item.type.toUpperCase()} • {item.subtitle}</Text>
+                  <Typography className="text-[22px]">{item.icon}</Typography>
+                  <View className="flex-1">
+                    <Typography variant="body" weight="bold" color="primary">{item.title}</Typography>
+                    <Typography variant="caption" color="secondary" className="mt-0.5 uppercase tracking-wider text-[10px]">
+                      {item.type} • {item.subtitle}
+                    </Typography>
                   </View>
                 </TouchableOpacity>
               ))
             ) : query.length >= 2 ? (
-              <Text style={styles.noResultsText}>No results matching "{query}" found.</Text>
+              <Typography variant="body" color="secondary" className="text-center mt-10">No results matching "{query}" found.</Typography>
             ) : (
-              <Text style={styles.noResultsText}>Start typing to search across all services...</Text>
+              <Typography variant="body" color="secondary" className="text-center mt-10">Start typing to search across all services...</Typography>
             )}
           </ScrollView>
         </SafeAreaView>
@@ -150,8 +150,7 @@ interface LandingHubProps {
 }
 
 export const LandingHub: React.FC<LandingHubProps> = ({ onNavigate, onBack }) => {
-  const { savedCareerIds, savedCollegeIds, savedScholarshipIds, activeRoadmapId, recentActivity } = useKnowNextStore();
-
+  const { savedCareerIds, savedCollegeIds, savedScholarshipIds, recentActivity } = useKnowNextStore();
   const totalSaved = savedCareerIds.length + savedCollegeIds.length + savedScholarshipIds.length;
 
   const [stats, setStats] = useState([
@@ -188,79 +187,81 @@ export const LandingHub: React.FC<LandingHubProps> = ({ onNavigate, onBack }) =>
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
+    <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
+        colors={["#4f378a", "#6750a4"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        className="px-6 pb-8 pt-16 rounded-b-[40px] shadow-sm"
       >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View>
-            <Text style={styles.headerSubtitle}>Relicus Guidance</Text>
-            <Text style={styles.headerTitle}>KnowNext</Text>
+        <SafeAreaView edges={["top"]} className="gap-2">
+          <View className="flex-row items-center gap-3">
+            <IconButton 
+              icon={<ArrowLeft color="#FFF" size={24} />} 
+              variant="ghost" 
+              size="sm" 
+              onPress={onBack} 
+            />
+            <View>
+              <Typography variant="caption" className="text-white/80">Relicus Guidance</Typography>
+              <Typography variant="title" weight="bold" className="text-white">KnowNext</Typography>
+            </View>
           </View>
-        </View>
-
-        <GlobalSearch onNavigate={onNavigate} />
+          <GlobalSearch onNavigate={onNavigate} />
+        </SafeAreaView>
       </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
         {/* Stats Grid */}
-        <View style={styles.statsRow}>
+        <View className="flex-row gap-2 mb-6">
           {stats.map((stat) => (
-            <View key={stat.label} style={styles.statBox}>
-              <Text style={styles.statEmoji}>{stat.icon}</Text>
-              <Text style={styles.statValue}>{stat.value}</Text>
-              <Text style={styles.statLabel}>{stat.label}</Text>
-            </View>
+            <BentoCard key={stat.label} variant="secondary" className="flex-1 p-3 items-center justify-center bg-white border border-border-subtle shadow-sm">
+              <Typography className="text-lg">{stat.icon}</Typography>
+              <Typography variant="body" weight="bold" color="primary" className="mt-1">{stat.value}</Typography>
+              <Typography variant="caption" color="secondary" className="text-[10px] text-center">{stat.label}</Typography>
+            </BentoCard>
           ))}
         </View>
 
         {/* Global Stage Filter */}
-        <View style={styles.stageCard}>
-          <Text style={styles.stageCardTitle}>I want to explore paths suitable for:</Text>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm mb-6">
+          <Typography variant="body" weight="bold" color="primary" className="mb-3">I want to explore paths suitable for:</Typography>
           <CareerStageFilter />
-        </View>
+        </BentoCard>
 
         {/* Saved Summary Alert */}
         {totalSaved > 0 && (
-          <TouchableOpacity
+          <BentoCardPressable 
+            variant="secondary" 
+            padding="md"
+            className="flex-row items-center bg-[#FFFDF0] border border-[#FFFBE6] shadow-sm mb-6 gap-3"
             onPress={() => onNavigate("careerPlan")}
-            style={styles.savedAlertCard}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-              <View style={styles.savedAlertIcon}>
-                <Star size={18} color="#F0AD4E" fill="#F0AD4E" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.savedAlertTitle}>My Career Plan Workspace</Text>
-                <Text style={styles.savedAlertDesc}>
-                  You have {totalSaved} saved items to plan & track.
-                </Text>
-              </View>
-              <Text style={styles.savedAlertArrow}>→</Text>
+            <View className="w-10 h-10 rounded-xl bg-orange-100 items-center justify-center">
+              <Star size={20} color="#F59E0B" fill="#F59E0B" />
             </View>
-          </TouchableOpacity>
+            <View className="flex-1">
+              <Typography variant="body" weight="bold" className="text-orange-900">My Career Plan Workspace</Typography>
+              <Typography variant="caption" className="text-orange-700 mt-0.5">You have {totalSaved} saved items to plan & track.</Typography>
+            </View>
+            <ChevronRight size={20} color="#F59E0B" />
+          </BentoCardPressable>
         )}
 
         {/* Explore Categories Grid */}
-        <Text style={styles.sectionTitle}>Explore Pathways</Text>
-        <View style={styles.categoryGrid}>
-          {categories.map((cat, idx) => (
+        <Typography variant="heading" weight="bold" color="primary" className="mb-4">Explore Pathways</Typography>
+        <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
+          {categories.map((cat) => (
             <TouchableOpacity
               key={cat.id}
               activeOpacity={0.8}
               onPress={() => onNavigate(cat.id as KnowNextView)}
-              style={styles.categoryGridCard}
+              style={{ width: (width - 48 - 12) / 2 }}
             >
-              <LinearGradient colors={cat.color} style={styles.categoryGradient}>
-                <Text style={styles.categoryIconText}>{cat.icon}</Text>
-                <Text style={styles.categoryTitleText}>{cat.label}</Text>
-                <Text style={styles.categoryDescText}>{cat.desc}</Text>
+              <LinearGradient colors={cat.color as [string, string]} className="p-4 min-h-[120px] rounded-2xl border border-border-subtle/50">
+                <Typography className="text-[24px]">{cat.icon}</Typography>
+                <Typography variant="body" weight="bold" color="primary" className="mt-2">{cat.label}</Typography>
+                <Typography variant="caption" color="secondary" className="mt-1 leading-tight">{cat.desc}</Typography>
               </LinearGradient>
             </TouchableOpacity>
           ))}
@@ -268,18 +269,18 @@ export const LandingHub: React.FC<LandingHubProps> = ({ onNavigate, onBack }) =>
 
         {/* Recent Activity */}
         {recentActivity.length > 0 && (
-          <View style={styles.activityCard}>
-            <Text style={styles.sectionTitle}>Recent Activity</Text>
+          <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm">
+            <Typography variant="heading" weight="bold" color="primary" className="mb-4">Recent Activity</Typography>
             {recentActivity.slice(0, 4).map((activity) => (
-              <View key={activity.id} style={styles.activityItem}>
-                <Activity size={16} color="#5F8B70" />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.activityItemTitle}>{activity.title}</Text>
-                  <Text style={styles.activityItemSubtitle}>{activity.subtitle}</Text>
+              <View key={activity.id} className="flex-row items-center gap-3 py-2 border-b border-border-subtle/50 last:border-b-0">
+                <Activity size={16} color="#4f378a" />
+                <View className="flex-1">
+                  <Typography variant="body" weight="bold" color="primary" className="text-sm">{activity.title}</Typography>
+                  <Typography variant="caption" color="secondary">{activity.subtitle}</Typography>
                 </View>
               </View>
             ))}
-          </View>
+          </BentoCard>
         )}
       </ScrollView>
     </View>
@@ -318,95 +319,87 @@ export const CareerPlan: React.FC<CareerPlanProps> = ({ onNavigate, onBack }) =>
   }, [activeRoadmap, getRoadmapProgressPercent]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
-      <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View>
-            <Text style={styles.headerTitle}>My Career Plan</Text>
-            <Text style={styles.headerSubtitle}>Workspace Dashboard</Text>
-          </View>
+    <View className="flex-1 bg-surface-primary">
+      <View className="flex-row items-center gap-4 px-6 pt-16 pb-6 bg-white border-b border-border-subtle shadow-sm z-10">
+        <IconButton 
+          icon={<ArrowLeft size={24} color="#1d1b20" />}
+          variant="ghost"
+          size="sm"
+          onPress={onBack}
+        />
+        <View>
+          <Typography variant="title" weight="bold" color="primary">My Career Plan</Typography>
+          <Typography variant="caption" color="secondary">Workspace Dashboard</Typography>
         </View>
-      </LinearGradient>
+      </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
         {/* Goal Card */}
-        <View style={styles.goalDetailCard}>
-          <Text style={styles.goalLabel}>🎯 CURRENT GOAL</Text>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm mb-4">
+          <Typography variant="caption" weight="bold" className="text-[#4f378a] tracking-wider uppercase mb-3">🎯 Current Goal</Typography>
           {careerGoal ? (
-            <View style={styles.goalValueRow}>
-              <Text style={styles.goalEmoji}>{careerGoal.icon}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.goalTitle}>{careerGoal.title}</Text>
-                <Text style={styles.goalCategory}>{careerGoal.category}</Text>
+            <View className="flex-row items-center gap-3">
+              <Typography className="text-3xl">{careerGoal.icon}</Typography>
+              <View className="flex-1">
+                <Typography variant="body" weight="bold" color="primary">{careerGoal.title}</Typography>
+                <Typography variant="caption" color="secondary">{careerGoal.category}</Typography>
               </View>
-              <TouchableOpacity onPress={() => onNavigate("careerExplorer")} style={styles.changeGoalBtn}>
-                <Text style={styles.changeGoalText}>Change</Text>
-              </TouchableOpacity>
+              <Button variant="outline" size="sm" onPress={() => onNavigate("careerExplorer")}>Change</Button>
             </View>
           ) : (
-            <View style={styles.noGoalRow}>
-              <Text style={styles.noGoalText}>You haven't set a career goal yet.</Text>
-              <TouchableOpacity onPress={() => onNavigate("careerExplorer")} style={styles.setGoalBtn}>
-                <Text style={styles.setGoalText}>Set Goal</Text>
-              </TouchableOpacity>
+            <View className="flex-row justify-between items-center">
+              <Typography variant="body" color="secondary">You haven't set a career goal yet.</Typography>
+              <Button variant="primary" size="sm" onPress={() => onNavigate("careerExplorer")}>Set Goal</Button>
             </View>
           )}
-        </View>
+        </BentoCard>
 
         {/* Roadmap Progress */}
         {activeRoadmap && (
-          <View style={styles.goalDetailCard}>
-            <Text style={styles.goalLabel}>🗺 ACTIVE ROADMAP</Text>
-            <Text style={styles.roadmapTitle}>{activeRoadmap.careerTitle} Path</Text>
-            <View style={styles.progressBarWrapper}>
-              <View style={styles.progressBarBg}>
-                <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
+          <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm mb-4">
+            <Typography variant="caption" weight="bold" className="text-[#4f378a] tracking-wider uppercase mb-3">🗺 Active Roadmap</Typography>
+            <Typography variant="body" weight="bold" color="primary">{activeRoadmap.careerTitle} Path</Typography>
+            <View className="mt-3 mb-1">
+              <View className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <View className="h-full bg-[#4f378a]" style={{ width: `${progressPercent}%` }} />
               </View>
-              <Text style={styles.progressPercentText}>{progressPercent}% Complete</Text>
+              <Typography variant="caption" weight="bold" color="secondary" className="mt-2">{progressPercent}% Complete</Typography>
             </View>
-            <TouchableOpacity
-              onPress={() => onNavigate("learningPath", { selectedRoadmapId: activeRoadmap.id })}
-              style={[styles.btn, { marginTop: 12 }]}
-            >
-              <Text style={styles.btnText}>Continue Journey</Text>
-            </TouchableOpacity>
-          </View>
+            <View className="mt-4">
+              <Button variant="primary" onPress={() => onNavigate("learningPath", { selectedRoadmapId: activeRoadmap.id })}>
+                Continue Journey
+              </Button>
+            </View>
+          </BentoCard>
         )}
 
         {/* Saved Counters */}
-        <View style={styles.countersCard}>
-          <TouchableOpacity onPress={() => onNavigate("savedItems")} style={styles.counterBox}>
-            <Text style={styles.counterNum}>{savedCareerIds.length}</Text>
-            <Text style={styles.counterLabel}>Saved Careers</Text>
+        <View className="flex-row gap-2 mb-6">
+          <TouchableOpacity onPress={() => onNavigate("savedItems")} className="flex-1 bg-white border border-border-subtle rounded-2xl p-3 items-center shadow-sm">
+            <Typography variant="heading" weight="bold" color="primary">{savedCareerIds.length}</Typography>
+            <Typography variant="caption" color="secondary" className="text-center mt-1">Saved Careers</Typography>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => onNavigate("savedItems")} style={styles.counterBox}>
-            <Text style={styles.counterNum}>{savedCollegeIds.length}</Text>
-            <Text style={styles.counterLabel}>Saved Colleges</Text>
+          <TouchableOpacity onPress={() => onNavigate("savedItems")} className="flex-1 bg-white border border-border-subtle rounded-2xl p-3 items-center shadow-sm">
+            <Typography variant="heading" weight="bold" color="primary">{savedCollegeIds.length}</Typography>
+            <Typography variant="caption" color="secondary" className="text-center mt-1">Saved Colleges</Typography>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => onNavigate("savedItems")} style={styles.counterBox}>
-            <Text style={styles.counterNum}>{savedScholarshipIds.length}</Text>
-            <Text style={styles.counterLabel}>Saved Scholarships</Text>
+          <TouchableOpacity onPress={() => onNavigate("savedItems")} className="flex-1 bg-white border border-border-subtle rounded-2xl p-3 items-center shadow-sm">
+            <Typography variant="heading" weight="bold" color="primary">{savedScholarshipIds.length}</Typography>
+            <Typography variant="caption" color="secondary" className="text-center mt-1">Saved Scholarships</Typography>
           </TouchableOpacity>
         </View>
 
         {/* Deadline Tracker CTA */}
         {savedScholarshipIds.length > 0 && (
-          <TouchableOpacity
+          <BentoCardPressable 
+            variant="secondary"
+            className="flex-row items-center bg-red-50 border border-red-100 p-4 gap-3 shadow-sm"
             onPress={() => onNavigate("deadlineTracker")}
-            style={styles.deadlineTrackerCta}
           >
-            <Calendar size={18} color="#D9534F" />
-            <Text style={styles.deadlineCtaText}>View Scholarship Deadlines</Text>
-            <ChevronRight size={16} color="#D9534F" />
-          </TouchableOpacity>
+            <Calendar size={20} color="#DC2626" />
+            <Typography variant="body" weight="bold" className="text-red-600 flex-1">View Scholarship Deadlines</Typography>
+            <ChevronRight size={20} color="#DC2626" />
+          </BentoCardPressable>
         )}
       </ScrollView>
     </View>
@@ -449,111 +442,112 @@ export const SavedItems: React.FC<SavedItemsProps> = ({ onNavigate, onBack }) =>
   }, [savedCareerIds, savedCollegeIds, savedScholarshipIds]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
-      <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View>
-            <Text style={styles.headerTitle}>Saved Items</Text>
-            <Text style={styles.headerSubtitle}>Bookmarks manager</Text>
-          </View>
+    <View className="flex-1 bg-surface-primary">
+      <View className="flex-row items-center gap-4 px-6 pt-16 pb-4 bg-white border-b border-border-subtle z-10">
+        <IconButton 
+          icon={<ArrowLeft size={24} color="#1d1b20" />}
+          variant="ghost"
+          size="sm"
+          onPress={onBack}
+        />
+        <View>
+          <Typography variant="title" weight="bold" color="primary">Saved Items</Typography>
+          <Typography variant="caption" color="secondary">Bookmarks manager</Typography>
         </View>
-      </LinearGradient>
+      </View>
 
       {/* Tabs list */}
-      <View style={styles.tabsContainer}>
+      <View className="flex-row bg-white border-b border-border-subtle">
         <TouchableOpacity
           onPress={() => setActiveTab("careers")}
-          style={[styles.tabButton, activeTab === "careers" && styles.tabButtonActive]}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "careers" ? "border-[#4f378a]" : "border-transparent"}`}
         >
-          <Text style={[styles.tabButtonText, activeTab === "careers" && styles.tabButtonTextActive]}>
+          <Typography variant="caption" weight="bold" className={activeTab === "careers" ? "text-[#4f378a]" : "text-slate-500"}>
             Careers ({careers.length})
-          </Text>
+          </Typography>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setActiveTab("colleges")}
-          style={[styles.tabButton, activeTab === "colleges" && styles.tabButtonActive]}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "colleges" ? "border-[#4f378a]" : "border-transparent"}`}
         >
-          <Text style={[styles.tabButtonText, activeTab === "colleges" && styles.tabButtonTextActive]}>
+          <Typography variant="caption" weight="bold" className={activeTab === "colleges" ? "text-[#4f378a]" : "text-slate-500"}>
             Colleges ({colleges.length})
-          </Text>
+          </Typography>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setActiveTab("scholarships")}
-          style={[styles.tabButton, activeTab === "scholarships" && styles.tabButtonActive]}
+          className={`flex-1 py-3 items-center border-b-2 ${activeTab === "scholarships" ? "border-[#4f378a]" : "border-transparent"}`}
         >
-          <Text style={[styles.tabButtonText, activeTab === "scholarships" && styles.tabButtonTextActive]}>
-            Scholarships ({scholarships.length})
-          </Text>
+          <Typography variant="caption" weight="bold" className={activeTab === "scholarships" ? "text-[#4f378a]" : "text-slate-500"}>
+            Awards ({scholarships.length})
+          </Typography>
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {activeTab === "careers" && (
-          careers.map((career) => (
-            <TouchableOpacity
-              key={career.id}
-              onPress={() => onNavigate("careerDetails", { selectedCareerId: career.id })}
-              style={styles.savedListItem}
-            >
-              <Text style={styles.savedListEmoji}>{career.icon}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.savedListTitle}>{career.title}</Text>
-                <Text style={styles.savedListCategory}>{career.category}</Text>
-              </View>
-              <ChevronRight size={18} color="#8FBDD7" />
-            </TouchableOpacity>
-          ))
-        )}
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
+        <View className="gap-3">
+          {activeTab === "careers" && (
+            careers.map((career) => (
+              <BentoCardPressable
+                key={career.id}
+                onPress={() => onNavigate("careerDetails", { selectedCareerId: career.id })}
+                variant="secondary"
+                className="flex-row items-center p-4 bg-white border border-border-subtle shadow-sm gap-3"
+              >
+                <Typography className="text-2xl">{career.icon}</Typography>
+                <View className="flex-1">
+                  <Typography variant="body" weight="bold" color="primary">{career.title}</Typography>
+                  <Typography variant="caption" color="secondary" className="mt-0.5">{career.category}</Typography>
+                </View>
+                <ChevronRight size={20} color="#79747e" />
+              </BentoCardPressable>
+            ))
+          )}
 
-        {activeTab === "colleges" && (
-          colleges.map((college) => (
-            <TouchableOpacity
-              key={college.id}
-              onPress={() => onNavigate("collegeDetails", { selectedCollegeId: college.id })}
-              style={styles.savedListItem}
-            >
-              <Text style={styles.savedListEmoji}>{college.icon || "🏛️"}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.savedListTitle}>{college.name}</Text>
-                <Text style={styles.savedListCategory}>{college.location}</Text>
-              </View>
-              <ChevronRight size={18} color="#8FBDD7" />
-            </TouchableOpacity>
-          ))
-        )}
+          {activeTab === "colleges" && (
+            colleges.map((college) => (
+              <BentoCardPressable
+                key={college.id}
+                onPress={() => onNavigate("collegeDetails", { selectedCollegeId: college.id })}
+                variant="secondary"
+                className="flex-row items-center p-4 bg-white border border-border-subtle shadow-sm gap-3"
+              >
+                <Typography className="text-2xl">{college.icon || "🏛️"}</Typography>
+                <View className="flex-1">
+                  <Typography variant="body" weight="bold" color="primary">{college.name}</Typography>
+                  <Typography variant="caption" color="secondary" className="mt-0.5">{college.location}</Typography>
+                </View>
+                <ChevronRight size={20} color="#79747e" />
+              </BentoCardPressable>
+            ))
+          )}
 
-        {activeTab === "scholarships" && (
-          scholarships.map((s) => (
-            <TouchableOpacity
-              key={s.id}
-              onPress={() => onNavigate("scholarshipDetails", { selectedScholarshipId: s.id })}
-              style={styles.savedListItem}
-            >
-              <Text style={styles.savedListEmoji}>🎓</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.savedListTitle}>{s.name}</Text>
-                <Text style={styles.savedListCategory}>{s.provider}</Text>
-              </View>
-              <ChevronRight size={18} color="#8FBDD7" />
-            </TouchableOpacity>
-          ))
-        )}
+          {activeTab === "scholarships" && (
+            scholarships.map((s) => (
+              <BentoCardPressable
+                key={s.id}
+                onPress={() => onNavigate("scholarshipDetails", { selectedScholarshipId: s.id })}
+                variant="secondary"
+                className="flex-row items-center p-4 bg-white border border-border-subtle shadow-sm gap-3"
+              >
+                <Typography className="text-2xl">🎓</Typography>
+                <View className="flex-1">
+                  <Typography variant="body" weight="bold" color="primary">{s.name}</Typography>
+                  <Typography variant="caption" color="secondary" className="mt-0.5">{s.provider}</Typography>
+                </View>
+                <ChevronRight size={20} color="#79747e" />
+              </BentoCardPressable>
+            ))
+          )}
 
-        {((activeTab === "careers" && careers.length === 0) ||
-          (activeTab === "colleges" && colleges.length === 0) ||
-          (activeTab === "scholarships" && scholarships.length === 0)) && (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No saved items in this category yet.</Text>
-          </View>
-        )}
+          {((activeTab === "careers" && careers.length === 0) ||
+            (activeTab === "colleges" && colleges.length === 0) ||
+            (activeTab === "scholarships" && scholarships.length === 0)) && (
+            <View className="py-12 items-center justify-center">
+              <Typography variant="body" color="secondary">No saved items in this category yet.</Typography>
+            </View>
+          )}
+        </View>
       </ScrollView>
     </View>
   );
@@ -567,47 +561,50 @@ interface IndustryInsightsProps {
 
 export const IndustryInsights: React.FC<IndustryInsightsProps> = ({ onNavigate, onBack }) => {
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
-      <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View>
-            <Text style={styles.headerTitle}>Industry Insights</Text>
-            <Text style={styles.headerSubtitle}>Market demands & hiring growth</Text>
-          </View>
+    <View className="flex-1 bg-surface-primary">
+      <View className="flex-row items-center gap-4 px-6 pt-16 pb-6 bg-white border-b border-border-subtle shadow-sm z-10">
+        <IconButton 
+          icon={<ArrowLeft size={24} color="#1d1b20" />}
+          variant="ghost"
+          size="sm"
+          onPress={onBack}
+        />
+        <View>
+          <Typography variant="title" weight="bold" color="primary">Industry Insights</Typography>
+          <Typography variant="caption" color="secondary">Market demands & hiring growth</Typography>
         </View>
-      </LinearGradient>
+      </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {INDUSTRIES.map((industry) => (
-          <TouchableOpacity
-            key={industry.id}
-            onPress={() => onNavigate("marketTrends", { selectedIndustryId: industry.id })}
-            style={styles.card}
-          >
-            <View style={styles.cardRow}>
-              <View style={styles.iconBox}>
-                <Text style={styles.iconText}>{industry.icon}</Text>
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
+        <View className="gap-4">
+          {INDUSTRIES.map((industry) => (
+            <BentoCardPressable
+              key={industry.id}
+              onPress={() => onNavigate("marketTrends", { selectedIndustryId: industry.id })}
+              variant="secondary"
+              className="flex-row items-center bg-white border border-border-subtle shadow-sm p-4 gap-4"
+            >
+              <View className="w-12 h-12 rounded-xl bg-primary/10 items-center justify-center">
+                <Typography className="text-2xl">{industry.icon}</Typography>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>{industry.name}</Text>
-                <Text style={styles.cardTagline} numberOfLines={1}>{industry.description}</Text>
-                <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
-                  <Text style={styles.industryStatVal}>📈 {industry.growthPercent}% YoY</Text>
-                  <Text style={styles.industryStatVal}>₹ {industry.avgSalaryLPA} LPA Avg</Text>
+              <View className="flex-1">
+                <Typography variant="body" weight="bold" color="primary">{industry.name}</Typography>
+                <Typography variant="caption" color="secondary" className="mt-0.5 mb-2" numberOfLines={1}>{industry.description}</Typography>
+                <View className="flex-row items-center gap-3">
+                  <View className="flex-row items-center bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                    <TrendingUp size={12} color="#059669" />
+                    <Typography variant="caption" weight="bold" className="text-emerald-700 ml-1">{industry.growthPercent}% YoY</Typography>
+                  </View>
+                  <Typography variant="caption" weight="bold" color="primary">₹ {industry.avgSalaryLPA} LPA Avg</Typography>
                 </View>
               </View>
-              <ChevronRight size={20} color="#8FBDD7" />
-            </View>
-          </TouchableOpacity>
-        ))}
+              <ChevronRight size={20} color="#79747e" />
+            </BentoCardPressable>
+          ))}
+          {INDUSTRIES.length === 0 && (
+             <Typography variant="caption" color="secondary" className="italic text-center py-4">No industry data available.</Typography>
+          )}
+        </View>
       </ScrollView>
     </View>
   );
@@ -625,636 +622,72 @@ export const MarketTrends: React.FC<MarketTrendsProps> = ({ industryId, onNaviga
 
   if (!industry) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Industry details not found.</Text>
-        <TouchableOpacity onPress={onBack} style={styles.btn}>
-          <Text style={styles.btnText}>Go Back</Text>
-        </TouchableOpacity>
+      <View className="flex-1 items-center justify-center bg-surface-primary p-6">
+        <Typography variant="body" color="secondary" className="mb-4">Industry details not found.</Typography>
+        <Button variant="primary" onPress={onBack}>Go Back</Button>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
-      <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View>
-            <Text style={styles.headerTitle}>{industry.name} Trends</Text>
-            <Text style={styles.headerSubtitle}>Growth scope & requirements</Text>
-          </View>
+    <View className="flex-1 bg-surface-primary">
+      <View className="flex-row items-center gap-4 px-6 pt-16 pb-6 bg-white border-b border-border-subtle shadow-sm z-10">
+        <IconButton 
+          icon={<ArrowLeft size={24} color="#1d1b20" />}
+          variant="ghost"
+          size="sm"
+          onPress={onBack}
+        />
+        <View className="flex-1 pr-6">
+          <Typography variant="title" weight="bold" color="primary" numberOfLines={1}>{industry.name} Trends</Typography>
+          <Typography variant="caption" color="secondary">Growth scope & requirements</Typography>
         </View>
-      </LinearGradient>
+      </View>
 
-      <ScrollView contentContainerStyle={styles.detailsScrollContent}>
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
         {/* Industry summary */}
-        <View style={styles.detailCard}>
-          <View style={{ flexDirection: "row", gap: 12, alignItems: "center", marginBottom: 12 }}>
-            <Text style={styles.overviewEmoji}>{industry.icon}</Text>
-            <Text style={styles.overviewTagline}>{industry.growthPercent}% Annual Growth Rate</Text>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm mb-4">
+          <View className="flex-row items-center gap-3 mb-3">
+            <Typography className="text-3xl">{industry.icon}</Typography>
+            <Typography variant="body" weight="bold" color="primary">{industry.growthPercent}% Annual Growth Rate</Typography>
           </View>
-          <Text style={styles.overviewText}>{industry.description}</Text>
-        </View>
+          <Typography variant="body" color="secondary" className="leading-relaxed">{industry.description}</Typography>
+        </BentoCard>
 
         {/* Future Skills & Emerging Technologies */}
-        <View style={styles.detailCard}>
-          <Text style={styles.sectionHeaderTitle}>Emerging Technologies</Text>
-          <View style={styles.skillsTagWrap}>
-            {industry.marketTrends.emergingTechnologies.map((tech) => (
-              <View key={tech} style={styles.skillTag}>
-                <Text style={styles.skillTagText}>{tech}</Text>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm mb-4">
+          <Typography variant="body" weight="bold" color="primary" className="mb-3">Emerging Technologies</Typography>
+          <View className="flex-row flex-wrap gap-2 mb-6">
+            {industry.marketTrends?.emergingTechnologies?.map((tech: string) => (
+              <View key={tech} className="bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
+                <Typography variant="caption" weight="bold" color="primary">{tech}</Typography>
               </View>
             ))}
           </View>
 
-          <Text style={[styles.sectionHeaderTitle, { marginTop: 20 }]}>Future Skills Needed</Text>
-          <View style={styles.skillsTagWrap}>
-            {industry.marketTrends.futureSkills.map((skill) => (
-              <View key={skill} style={[styles.skillTag, { backgroundColor: "#F0FDFA" }]}>
-                <Text style={[styles.skillTagText, { color: "#0D9488" }]}>{skill}</Text>
+          <Typography variant="body" weight="bold" color="primary" className="mb-3">Future Skills Needed</Typography>
+          <View className="flex-row flex-wrap gap-2">
+            {industry.marketTrends?.futureSkills?.map((skill: string) => (
+              <View key={skill} className="bg-teal-50 px-3 py-1.5 rounded-full border border-teal-100">
+                <Typography variant="caption" weight="bold" className="text-teal-700">{skill}</Typography>
               </View>
             ))}
           </View>
-        </View>
+        </BentoCard>
 
         {/* Top Recruiters */}
-        <View style={styles.detailCard}>
-          <Text style={styles.sectionHeaderTitle}>Top Recruiters in India</Text>
-          {industry.topRecruiters.map((recruiter) => (
-            <View key={recruiter} style={styles.bulletItem}>
-              <Text style={styles.bulletDot}>🏢</Text>
-              <Text style={styles.bulletText}>{recruiter}</Text>
-            </View>
-          ))}
-        </View>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm">
+          <Typography variant="body" weight="bold" color="primary" className="mb-3">Top Recruiters in India</Typography>
+          <View className="gap-2">
+            {industry.topRecruiters?.map((recruiter: string) => (
+              <View key={recruiter} className="flex-row items-center gap-3">
+                <Typography className="text-base">🏢</Typography>
+                <Typography variant="body" color="secondary">{recruiter}</Typography>
+              </View>
+            ))}
+          </View>
+        </BentoCard>
       </ScrollView>
     </View>
   );
 };
-
-// ── Styles ──────────────────────────────────────────
-const styles = StyleSheet.create({
-  header: {
-    padding: 20,
-    paddingTop: 44,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "white",
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.8)",
-  },
-  searchBarBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: 20,
-    marginTop: 16,
-    paddingHorizontal: 12,
-    height: 44,
-    gap: 8,
-  },
-  searchBarText: {
-    fontSize: 13,
-    color: "#8FBDD7",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.08)",
-    gap: 12,
-  },
-  modalCloseBtn: {
-    padding: 4,
-  },
-  modalSearchInput: {
-    flex: 1,
-    height: 40,
-    fontSize: 16,
-    color: "#1C4966",
-  },
-  searchResultItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-    gap: 12,
-  },
-  searchResultEmoji: {
-    fontSize: 22,
-  },
-  searchResultTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  searchResultSub: {
-    fontSize: 11,
-    color: "#8FBDD7",
-    marginTop: 2,
-  },
-  noResultsText: {
-    fontSize: 14,
-    color: "#8FBDD7",
-    textAlign: "center",
-    marginTop: 40,
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  statsRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 16,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-  },
-  statEmoji: {
-    fontSize: 18,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginTop: 4,
-  },
-  statLabel: {
-    fontSize: 10,
-    color: "#8FBDD7",
-    marginTop: 2,
-  },
-  stageCard: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-  },
-  stageCardTitle: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 12,
-  },
-  savedAlertCard: {
-    backgroundColor: "#FFFDF0",
-    borderWidth: 1,
-    borderColor: "#FFFBE6",
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
-  },
-  savedAlertIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: "#FFFBE6",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  savedAlertTitle: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "#7C2D12",
-  },
-  savedAlertDesc: {
-    fontSize: 11,
-    color: "#D97706",
-    marginTop: 2,
-  },
-  savedAlertArrow: {
-    fontSize: 18,
-    color: "#F59E0B",
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 12,
-  },
-  categoryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginBottom: 16,
-  },
-  categoryGridCard: {
-    width: (width - 42) / 2,
-    borderRadius: 20,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-  },
-  categoryGradient: {
-    padding: 16,
-    minHeight: 120,
-  },
-  categoryIconText: {
-    fontSize: 22,
-  },
-  categoryTitleText: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginTop: 8,
-  },
-  categoryDescText: {
-    fontSize: 10,
-    color: "#5F8B70",
-    marginTop: 4,
-    lineHeight: 14,
-  },
-  activityCard: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-  },
-  activityItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderColor: "#F5F7FA",
-  },
-  activityItemTitle: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  activityItemSubtitle: {
-    fontSize: 10,
-    color: "#8FBDD7",
-    marginTop: 1,
-  },
-  goalDetailCard: {
-    backgroundColor: "white",
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-    marginBottom: 16,
-  },
-  goalLabel: {
-    fontSize: 11,
-    fontWeight: "bold",
-    color: "#8FBDD7",
-    marginBottom: 12,
-  },
-  goalValueRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  goalEmoji: {
-    fontSize: 28,
-  },
-  goalTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  goalCategory: {
-    fontSize: 12,
-    color: "#5F8B70",
-    marginTop: 2,
-  },
-  changeGoalBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#5F8B70",
-  },
-  changeGoalText: {
-    fontSize: 11,
-    color: "#5F8B70",
-    fontWeight: "bold",
-  },
-  noGoalRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  noGoalText: {
-    fontSize: 13,
-    color: "#8FBDD7",
-  },
-  setGoalBtn: {
-    backgroundColor: "#1C4966",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  setGoalText: {
-    fontSize: 11,
-    color: "white",
-    fontWeight: "bold",
-  },
-  progressBarWrapper: {
-    marginTop: 8,
-  },
-  progressBarBg: {
-    height: 8,
-    backgroundColor: "#F5F7FA",
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  progressBarFill: {
-    height: "100%",
-    backgroundColor: "#1C4966",
-    borderRadius: 4,
-  },
-  progressPercentText: {
-    fontSize: 11,
-    color: "#8FBDD7",
-    marginTop: 6,
-    fontWeight: "bold",
-  },
-  countersCard: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 16,
-  },
-  counterBox: {
-    flex: 1,
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-  },
-  counterNum: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  counterLabel: {
-    fontSize: 10,
-    color: "#8FBDD7",
-    marginTop: 4,
-    textAlign: "center",
-  },
-  deadlineTrackerCta: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(217, 83, 79, 0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(217, 83, 79, 0.15)",
-    borderRadius: 16,
-    padding: 16,
-    gap: 12,
-  },
-  deadlineCtaText: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "#D9534F",
-  },
-  tabsContainer: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.08)",
-    backgroundColor: "white",
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 14,
-    alignItems: "center",
-    borderBottomWidth: 2,
-    borderColor: "transparent",
-  },
-  tabButtonActive: {
-    borderColor: "#1C4966",
-  },
-  tabButtonText: {
-    fontSize: 12,
-    color: "#8FBDD7",
-    fontWeight: "600",
-  },
-  tabButtonTextActive: {
-    color: "#1C4966",
-    fontWeight: "bold",
-  },
-  savedListItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 10,
-    gap: 12,
-  },
-  savedListEmoji: {
-    fontSize: 22,
-  },
-  savedListTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  savedListCategory: {
-    fontSize: 11,
-    color: "#5F8B70",
-    marginTop: 2,
-  },
-  emptyContainer: {
-    padding: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyText: {
-    fontSize: 14,
-    color: "#8FBDD7",
-    textAlign: "center",
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.06)",
-  },
-  cardRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "rgba(143, 189, 215, 0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconText: {
-    fontSize: 24,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  cardTagline: {
-    fontSize: 12,
-    color: "#8FBDD7",
-    marginTop: 2,
-  },
-  industryStatVal: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#1C4966",
-  },
-  detailsScrollContent: {
-    padding: 16,
-    gap: 16,
-  },
-  detailCard: {
-    backgroundColor: "white",
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-  },
-  overviewEmoji: {
-    fontSize: 32,
-  },
-  overviewTagline: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  overviewText: {
-    fontSize: 14,
-    color: "#5F8B70",
-    lineHeight: 20,
-  },
-  sectionHeaderTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 16,
-  },
-  skillsTagWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 8,
-  },
-  skillTag: {
-    backgroundColor: "rgba(28, 73, 102, 0.06)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  skillTagText: {
-    fontSize: 12,
-    color: "#1C4966",
-    fontWeight: "bold",
-  },
-  bulletItem: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 8,
-  },
-  bulletDot: {
-    color: "#5F8B70",
-  },
-  bulletText: {
-    fontSize: 14,
-    color: "#5F8B70",
-    flex: 1,
-  },
-  btn: {
-    backgroundColor: "#1C4966",
-    height: 44,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  roadmapTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  bookmarkHeaderBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  metaRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 16,
-    backgroundColor: "rgba(143, 189, 215, 0.06)",
-    padding: 12,
-    borderRadius: 12,
-  },
-  metaCol: {
-    flex: 1,
-  },
-  metaLabel: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#8FBDD7",
-  },
-  metaValue: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginTop: 2,
-  },
-});

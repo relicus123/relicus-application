@@ -1,15 +1,18 @@
 import React, { useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, TextInput, RefreshControl } from "react-native";
+import { View, ScrollView, TouchableOpacity, TextInput, RefreshControl } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { MotiView } from "moti";
 import { Wind, Heart, Activity, BookOpen, Smile, CheckSquare, Play, Pause, ArrowLeft } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { Typography } from "../../components/Typography";
+import { BentoCard } from "../../components/BentoCard";
 import { Button } from "../../components/Button";
 import { supabase } from "../../lib/supabase";
 import { useMindfulnessStore } from "../../store/mindfulness.store";
-
-const { width } = Dimensions.get("window");
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export default function Mindfulness() {
   const router = useRouter();
@@ -36,7 +39,7 @@ export default function Mindfulness() {
         setActivities(actsRes.data.map((a: any) => {
           const iconMatch = a.icon_type;
           const icon = iconMatch === "Wind" ? Wind : iconMatch === "Heart" ? Heart : Activity;
-          let colors = ["#8FBDD7", "#DDEEE3"];
+          let colors = ["#a584ef", "#d3c3f7"];
           if (a.gradient) {
             const matched = a.gradient.match(/\[(.*?)\]/g);
             if (matched && matched.length >= 2) {
@@ -90,111 +93,110 @@ export default function Mindfulness() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View className="flex-1 bg-surface-primary">
       <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
+        contentContainerStyle={{ paddingBottom: 40 }} 
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8FBDD7" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4f378a" />}
       >
         <LinearGradient
-          colors={["#8FBDD7", "#DDEEE3"]}
-          style={styles.header}
+          colors={["#fdf7ff", "#e9ddff", "#cfbcff"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
+          className="px-6 pb-12 pt-10 rounded-b-[40px]"
         >
-          <View style={styles.headerBar}>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={styles.backButton}
-              activeOpacity={0.7}
-            >
-              <ArrowLeft color="#1C4966" size={24} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Mindfulness</Text>
-          </View>
-          <Text style={styles.headerSubtitle}>Find your inner peace</Text>
+          <SafeAreaView edges={["top"]}>
+            <View className="flex-row items-center gap-4 mb-2">
+              <TouchableOpacity
+                onPress={() => router.back()}
+                className="w-10 h-10 rounded-full bg-white/40 items-center justify-center border border-white/50"
+                activeOpacity={0.7}
+              >
+                <ArrowLeft color="#4f378a" size={20} />
+              </TouchableOpacity>
+              <Typography variant="heading" weight="bold" color="primary">Mindfulness</Typography>
+            </View>
+            <Typography variant="body" color="secondary" className="ml-14">
+              Find your inner peace
+            </Typography>
+          </SafeAreaView>
         </LinearGradient>
 
-        <View style={styles.contentContainer}>
+        <View className="px-6 -mt-6 gap-5">
           {/* Audio Player Card */}
           <MotiView
             from={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            style={styles.playerCard}
           >
-            <View style={styles.playerContent}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.playerLabel}>Currently Playing</Text>
-                <Text style={styles.playerTitle}>Ocean Waves</Text>
-                <View style={styles.progressBarRow}>
-                  <Text style={styles.progressTimeText}>12:34</Text>
-                  <View style={styles.progressBar}>
-                    <View style={styles.progressBarFill} />
+            <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white shadow-sm flex-row items-center">
+              <View className="flex-1">
+                <Typography variant="caption" color="secondary" className="mb-1">Currently Playing</Typography>
+                <Typography variant="title" weight="bold" color="primary" className="mb-3">Ocean Waves</Typography>
+                <View className="flex-row items-center gap-2 pr-4">
+                  <Typography variant="caption" color="secondary" className="text-[10px]">12:34</Typography>
+                  <View className="flex-1 h-1.5 bg-surface-secondary rounded-full overflow-hidden">
+                    <View className="w-1/2 h-full bg-primary rounded-full" />
                   </View>
-                  <Text style={styles.progressTimeText}>20:00</Text>
+                  <Typography variant="caption" color="secondary" className="text-[10px]">20:00</Typography>
                 </View>
               </View>
 
               <TouchableOpacity
                 onPress={() => setIsPlaying(!isPlaying)}
-                style={styles.playBtn}
+                className="w-14 h-14 rounded-full overflow-hidden shadow-sm border border-white/20"
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={["#8FBDD7", "#5F8B70"]}
-                  style={styles.playGradient}
+                  colors={["#4f378a", "#6b4fa3"]}
+                  className="flex-1 items-center justify-center"
                 >
                   {isPlaying ? (
-                    <Pause color="white" size={28} fill="white" />
+                    <Pause color="white" size={24} fill="white" />
                   ) : (
-                    <Play color="white" size={28} fill="white" />
+                    <Play color="white" size={24} fill="white" className="ml-1" />
                   )}
                 </LinearGradient>
               </TouchableOpacity>
-            </View>
+            </BentoCard>
           </MotiView>
 
           {/* Daily Activities */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Daily Activities</Text>
-            <View style={styles.activitiesList}>
+          <View className="gap-3">
+            <Typography variant="title" weight="bold" color="primary" className="px-1">Daily Activities</Typography>
+            <View className="gap-3">
               {activities.map((activity, index) => {
                 const Icon = activity.icon;
-                const isDarkText = activity.colors[0] === "#8FBDD7" || activity.colors[0] === "#DDEEE3";
                 return (
                   <MotiView
                     key={activity.title}
                     from={{ opacity: 0, translateY: 15 }}
                     animate={{ opacity: 1, translateY: 0 }}
                     transition={{ delay: index * 100 }}
-                    style={styles.activityCol}
+                    className="rounded-[24px] overflow-hidden shadow-sm"
                   >
                     <LinearGradient
-                      colors={activity.colors}
-                      style={styles.activityGradient}
+                      colors={["#f4effa", "#e9ddff"]}
+                      className="p-4 border border-border-subtle"
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                     >
-                      <View style={styles.activityRow}>
-                        <View style={styles.activityIconBox}>
-                          <Icon color="#1C4966" size={24} />
+                      <View className="flex-row items-center gap-3">
+                        <View className="w-12 h-12 bg-white/60 rounded-[16px] items-center justify-center border border-white/40">
+                          <Icon color="#4f378a" size={22} />
                         </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={[styles.activityTitle, { color: "#1C4966" }]}>
+                        <View className="flex-1">
+                          <Typography variant="body" weight="bold" color="primary">
                             {activity.title}
-                          </Text>
-                          <Text style={[styles.activityDesc, { color: "rgba(28, 73, 102, 0.85)" }]}>
+                          </Typography>
+                          <Typography variant="caption" color="secondary" className="mt-0.5 opacity-80">
                             {activity.description}
-                          </Text>
+                          </Typography>
                         </View>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onPress={() => {}}
-                          style={styles.durationBtn}
-                        >
-                          {activity.duration}
-                        </Button>
+                        <View className="bg-white/80 px-3 py-1.5 rounded-full border border-border-subtle">
+                          <Typography variant="caption" weight="bold" color="primary">
+                            {activity.duration}
+                          </Typography>
+                        </View>
                       </View>
                     </LinearGradient>
                   </MotiView>
@@ -208,19 +210,24 @@ export default function Mindfulness() {
             from={{ opacity: 0, translateY: 15 }}
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ delay: 350 }}
-            style={styles.card}
           >
-            <View style={styles.cardHeader}>
-              <Smile color="#5F8B70" size={20} />
-              <Text style={styles.cardTitleInline}>Daily Affirmations</Text>
-            </View>
-            <View style={styles.affirmationsList}>
-              {affirmations.map((affirmation, index) => (
-                <View key={index} style={styles.affirmationItem}>
-                  <Text style={styles.affirmationText}>{affirmation}</Text>
+            <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white shadow-sm">
+              <View className="flex-row items-center gap-2 mb-4">
+                <View className="w-8 h-8 rounded-full bg-primary/10 items-center justify-center">
+                  <Smile color="#4f378a" size={18} />
                 </View>
-              ))}
-            </View>
+                <Typography variant="body" weight="bold" color="primary">Daily Affirmations</Typography>
+              </View>
+              <View className="gap-2.5">
+                {affirmations.map((affirmation, index) => (
+                  <View key={index} className="p-3 bg-surface-secondary rounded-xl border border-border-subtle">
+                    <Typography variant="caption" weight="bold" color="primary" className="text-center text-[#4f378a]">
+                      "{affirmation}"
+                    </Typography>
+                  </View>
+                ))}
+              </View>
+            </BentoCard>
           </MotiView>
 
           {/* Mood Journal */}
@@ -228,35 +235,39 @@ export default function Mindfulness() {
             from={{ opacity: 0, translateY: 15 }}
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ delay: 450 }}
-            style={styles.card}
           >
-            <View style={styles.cardHeader}>
-              <BookOpen color="#5F8B70" size={20} />
-              <Text style={styles.cardTitleInline}>Mood Journal</Text>
-            </View>
-            <TextInput
-              value={moodText}
-              onChangeText={setMoodText}
-              placeholder="How are you feeling today?"
-              placeholderTextColor="#8FBDD7"
-              multiline
-              numberOfLines={4}
-              style={styles.journalInput}
-            />
-            <Button
-              onPress={async () => {
-                if (!moodText.trim()) return;
-                await store.addJournalEntry({
-                  content: moodText,
-                  mood: "neutral"
-                });
-                setMoodText("");
-                alert("Journal entry saved successfully!");
-              }}
-              style={styles.saveBtn}
-            >
-              Save Entry
-            </Button>
+            <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white shadow-sm">
+              <View className="flex-row items-center gap-2 mb-4">
+                <View className="w-8 h-8 rounded-full bg-primary/10 items-center justify-center">
+                  <BookOpen color="#4f378a" size={18} />
+                </View>
+                <Typography variant="body" weight="bold" color="primary">Mood Journal</Typography>
+              </View>
+              <TextInput
+                value={moodText}
+                onChangeText={setMoodText}
+                placeholder="How are you feeling today?"
+                placeholderTextColor="#79747e"
+                multiline
+                numberOfLines={4}
+                className="bg-surface-secondary border-2 border-border-subtle rounded-2xl p-4 min-h-[100px] text-[15px] text-[#1d1b20] mb-3 font-sans text-left align-top"
+              />
+              <Button
+                onPress={async () => {
+                  if (!moodText.trim()) return;
+                  await store.addJournalEntry({
+                    content: moodText,
+                    mood: "neutral"
+                  });
+                  setMoodText("");
+                  alert("Journal entry saved successfully!");
+                }}
+                variant="primary"
+                className="w-full"
+              >
+                Save Entry
+              </Button>
+            </BentoCard>
           </MotiView>
 
           {/* Today's Tasks */}
@@ -264,293 +275,51 @@ export default function Mindfulness() {
             from={{ opacity: 0, translateY: 15 }}
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ delay: 550 }}
-            style={styles.card}
           >
-            <View style={styles.cardHeaderSpace}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <CheckSquare color="#5F8B70" size={20} />
-                <Text style={styles.cardTitleInline}>Today's Tasks</Text>
+            <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white shadow-sm mb-6">
+              <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center gap-2">
+                  <View className="w-8 h-8 rounded-full bg-primary/10 items-center justify-center">
+                    <CheckSquare color="#4f378a" size={18} />
+                  </View>
+                  <Typography variant="body" weight="bold" color="primary">Today's Tasks</Typography>
+                </View>
+                <View className="bg-primary/10 px-2 py-1 rounded-full">
+                  <Typography variant="caption" weight="bold" color="primary">
+                    {todoItems.filter((i) => i.completed).length}/{todoItems.length}
+                  </Typography>
+                </View>
               </View>
-              <Text style={styles.todoCounter}>
-                {todoItems.filter((i) => i.completed).length}/{todoItems.length}
-              </Text>
-            </View>
 
-            <View style={styles.todoList}>
-              {todoItems.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.todoItem}
-                  activeOpacity={0.8}
-                  onPress={() => toggleTodo(item.id)}
-                >
-                  <View style={[styles.todoCheck, item.completed && styles.todoChecked]} />
-                  <Text style={[styles.todoText, item.completed && styles.todoTextCompleted]}>
-                    {item.text}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+              <View className="gap-3">
+                {todoItems.map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    className="flex-row items-center p-3 bg-surface-secondary rounded-xl border border-border-subtle gap-3"
+                    activeOpacity={0.7}
+                    onPress={() => toggleTodo(item.id)}
+                  >
+                    <View className={twMerge(clsx(
+                      "w-5 h-5 rounded-[6px] border-2 flex items-center justify-center",
+                      item.completed ? "bg-primary border-primary" : "border-[#4f378a]"
+                    ))}>
+                      {item.completed && <CheckSquare color="white" size={12} />}
+                    </View>
+                    <Typography 
+                      variant="caption" 
+                      weight={item.completed ? "medium" : "bold"}
+                      color={item.completed ? "secondary" : "primary"}
+                      className={twMerge(clsx("flex-1", item.completed && "line-through opacity-70"))}
+                    >
+                      {item.text}
+                    </Typography>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </BentoCard>
           </MotiView>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFF0",
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  header: {
-    padding: 24,
-    paddingBottom: 40,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-    marginBottom: 8,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: "rgba(28, 73, 102, 0.8)",
-    marginLeft: 60,
-  },
-  contentContainer: {
-    padding: 24,
-    marginTop: -20,
-    gap: 16,
-  },
-  playerCard: {
-    backgroundColor: "white",
-    borderRadius: 24,
-    padding: 20,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-  },
-  playerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  playerLabel: {
-    fontSize: 12,
-    color: "rgba(28, 73, 102, 0.6)",
-    marginBottom: 4,
-  },
-  playerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 12,
-  },
-  progressBarRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  progressTimeText: {
-    fontSize: 11,
-    color: "rgba(28, 73, 102, 0.6)",
-  },
-  progressBar: {
-    flex: 1,
-    height: 4,
-    backgroundColor: "#DDEEE3",
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  progressBarFill: {
-    width: "50%",
-    height: "100%",
-    backgroundColor: "#8FBDD7",
-    borderRadius: 2,
-  },
-  playBtn: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    overflow: "hidden",
-    marginLeft: 16,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-  },
-  playGradient: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  section: {
-    gap: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1C4966",
-    paddingHorizontal: 4,
-  },
-  activitiesList: {
-    gap: 12,
-  },
-  activityCol: {
-    borderRadius: 20,
-    overflow: "hidden",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-  },
-  activityGradient: {
-    padding: 16,
-  },
-  activityRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  activityIconBox: {
-    width: 48,
-    height: 48,
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  activityTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  activityDesc: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  durationBtn: {
-    backgroundColor: "white",
-    borderColor: "transparent",
-    paddingHorizontal: 12,
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 6,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 16,
-  },
-  cardHeaderSpace: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  cardTitleInline: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  todoCounter: {
-    fontSize: 14,
-    color: "rgba(28, 73, 102, 0.6)",
-    fontWeight: "500",
-  },
-  affirmationsList: {
-    gap: 10,
-  },
-  affirmationItem: {
-    padding: 12,
-    backgroundColor: "rgba(221, 238, 227, 0.3)",
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  affirmationText: {
-    color: "#1C4966",
-    fontWeight: "600",
-    fontSize: 14,
-    textAlign: "center",
-  },
-  journalInput: {
-    backgroundColor: "#FFFFF0",
-    borderWidth: 2,
-    borderColor: "#DDEEE3",
-    borderRadius: 16,
-    padding: 16,
-    minHeight: 110,
-    fontSize: 15,
-    color: "#1C4966",
-    textAlignVertical: "top",
-    marginBottom: 12,
-  },
-  saveBtn: {
-    width: "100%",
-  },
-  todoList: {
-    gap: 12,
-  },
-  todoItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-    backgroundColor: "#F5F7FA",
-    borderRadius: 16,
-    gap: 12,
-  },
-  todoCheck: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: "#5F8B70",
-  },
-  todoChecked: {
-    backgroundColor: "#5F8B70",
-  },
-  todoText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#1C4966",
-    flex: 1,
-  },
-  todoTextCompleted: {
-    textDecorationLine: "line-through",
-    color: "rgba(28, 73, 102, 0.4)",
-  },
-});

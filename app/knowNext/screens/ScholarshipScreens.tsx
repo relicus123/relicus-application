@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from "react";
 import {
   View,
-  Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Dimensions,
@@ -14,18 +12,20 @@ import { MotiView } from "moti";
 import {
   ArrowLeft,
   Bookmark,
-  Calendar,
   DollarSign,
-  Award,
-  BookOpen,
-  ChevronRight,
   ExternalLink,
 } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useKnowNextStore } from "../../../store/knownext.store";
 import { supabase } from "../../../lib/supabase";
 import { Scholarship, CareerStage, KnowNextView, NavContext } from "../types";
 import { CareerStageFilter } from "./ExplorerScreens";
+
+import { Typography } from "../../../components/Typography";
+import { BentoCard, BentoCardPressable } from "../../../components/BentoCard";
+import { IconButton } from "../../../components/IconButton";
+import { Button } from "../../../components/Button";
 
 const { width } = Dimensions.get("window");
 const CATEGORIES = ["All", "Merit", "Need-based", "Category", "Sports", "Research"] as const;
@@ -40,19 +40,20 @@ export function getDaysRemaining(deadlineStr: string) {
 // Reusable Urgency Badge
 export function DeadlineBadge({ deadline }: { deadline: string }) {
   const days = getDaysRemaining(deadline);
-  let color = "#5CB85C"; // green
-  let bg = "rgba(92, 184, 92, 0.15)";
+  let colorClass = "text-emerald-700";
+  let bgClass = "bg-emerald-50";
+  
   if (days <= 15) {
-    color = "#D9534F"; // red
-    bg = "rgba(217, 83, 79, 0.15)";
+    colorClass = "text-red-700";
+    bgClass = "bg-red-50";
   } else if (days <= 30) {
-    color = "#F0AD4E"; // orange
-    bg = "rgba(240, 173, 78, 0.15)";
+    colorClass = "text-amber-700";
+    bgClass = "bg-amber-50";
   }
 
   return (
-    <View style={[styles.badge, { backgroundColor: bg }]}>
-      <Text style={[styles.badgeText, { color }]}>{days} days left</Text>
+    <View className={`px-2 py-1 rounded ${bgClass}`}>
+      <Typography variant="caption" weight="bold" className={colorClass}>{days} days left</Typography>
     </View>
   );
 }
@@ -68,48 +69,45 @@ export function ScholarshipCard({ scholarship, onSelect }: ScholarshipCardProps)
   const isSaved = savedScholarshipIds.includes(scholarship.id);
 
   return (
-    <TouchableOpacity
+    <BentoCardPressable
       activeOpacity={0.9}
       onPress={() => onSelect(scholarship)}
-      style={styles.card}
+      variant="secondary"
+      className="bg-white border border-border-subtle shadow-sm mb-3 p-4"
     >
-      <View style={styles.cardRow}>
-        <View style={styles.iconBox}>
-          <Text style={styles.iconText}>🎓</Text>
+      <View className="flex-row gap-3">
+        <View className="w-12 h-12 rounded-xl bg-primary/10 items-center justify-center">
+          <Typography className="text-2xl">🎓</Typography>
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.cardCategory}>{scholarship.category} Scholarship</Text>
-          <Text style={styles.cardTitle}>{scholarship.name}</Text>
-          <Text style={styles.cardTagline}>Provided by {scholarship.provider}</Text>
+        <View className="flex-1">
+          <Typography variant="caption" weight="bold" color="secondary" className="mb-0.5">{scholarship.category} Scholarship</Typography>
+          <Typography variant="body" weight="bold" color="primary">{scholarship.name}</Typography>
+          <Typography variant="caption" color="secondary">Provided by {scholarship.provider}</Typography>
         </View>
       </View>
 
-      <View style={styles.cardStats}>
-        <View style={styles.statChip}>
+      <View className="flex-row gap-2 mt-3 items-center">
+        <View className="flex-row items-center gap-1 bg-slate-100 px-2 py-1 rounded">
           <DollarSign size={12} color="#1C4966" />
-          <Text style={styles.statChipText}>₹{scholarship.amount.toLocaleString()} ({scholarship.frequency})</Text>
+          <Typography variant="caption" weight="bold" className="text-slate-700">₹{scholarship.amount.toLocaleString()} ({scholarship.frequency})</Typography>
         </View>
         <DeadlineBadge deadline={scholarship.deadline} />
       </View>
 
-      <View style={styles.cardDivider} />
+      <View className="h-px bg-border-subtle my-3" />
 
-      <View style={styles.cardActions}>
+      <View className="flex-row justify-between">
         <TouchableOpacity
           onPress={() => toggleSaveScholarship(scholarship.id)}
-          style={styles.cardActionBtn}
+          className="flex-row items-center gap-1.5 p-1"
         >
-          <Bookmark
-            size={16}
-            color={isSaved ? "#5F8B70" : "#8FBDD7"}
-            fill={isSaved ? "#5F8B70" : "transparent"}
-          />
-          <Text style={[styles.actionBtnText, isSaved && { color: "#5F8B70" }]}>
+          <Bookmark size={16} color={isSaved ? "#4f378a" : "#79747e"} fill={isSaved ? "#4f378a" : "transparent"} />
+          <Typography variant="caption" weight="bold" className={isSaved ? "text-[#4f378a]" : "text-slate-500"}>
             {isSaved ? "Saved" : "Save"}
-          </Text>
+          </Typography>
         </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </BentoCardPressable>
   );
 }
 
@@ -159,58 +157,61 @@ export const ScholarshipExplorer: React.FC<ScholarshipExplorerProps> = ({ onNavi
   }, [selectedCat, activeStage, scholarships]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
+    <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
+        colors={["#4f378a", "#6750a4"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        className="px-6 pb-6 pt-16 rounded-b-[40px] shadow-sm z-10"
       >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View>
-            <Text style={styles.headerTitle}>Scholarship Finder</Text>
-            <Text style={styles.headerSubtitle}>{filtered.length} active programs</Text>
+        <SafeAreaView edges={["top"]} className="gap-4">
+          <View className="flex-row items-center gap-3">
+            <IconButton 
+              icon={<ArrowLeft color="#FFF" size={24} />} 
+              variant="ghost" 
+              size="sm" 
+              onPress={onBack} 
+            />
+            <View>
+              <Typography variant="title" weight="bold" className="text-white">Scholarship Finder</Typography>
+              <Typography variant="caption" className="text-white/80">{filtered.length} active programs</Typography>
+            </View>
           </View>
-        </View>
-        <View style={styles.infoBanner}>
-          <Text style={styles.infoBannerText}>Sorted by deadline · closest first</Text>
-        </View>
+          <View className="bg-white/10 rounded-2xl py-2 px-4 self-start">
+            <Typography variant="caption" weight="bold" className="text-white">Sorted by deadline · closest first</Typography>
+          </View>
+        </SafeAreaView>
       </LinearGradient>
 
-      <View style={styles.filterSection}>
+      <View className="py-4 bg-white border-b border-border-subtle shadow-sm z-0">
         <CareerStageFilter />
       </View>
 
       <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5F8B70" />}
+        contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4f378a" />}
       >
         {/* Category horizontal tabs */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6 -mx-6 px-6">
           {CATEGORIES.map((cat) => {
             const active = selectedCat === cat;
             return (
               <TouchableOpacity
                 key={cat}
                 onPress={() => setSelectedCat(cat)}
-                style={[styles.categoryChip, active && styles.categoryChipActive]}
+                className={`px-4 py-2 rounded-full mr-2 border ${active ? "bg-[#e8def8] border-[#e8def8]" : "bg-white border-border-subtle"}`}
               >
-                <Text style={[styles.categoryChipText, active && styles.categoryChipTextActive]}>
+                <Typography variant="caption" weight="bold" className={active ? "text-[#1d192b]" : "text-slate-600"}>
                   {cat}
-                </Text>
+                </Typography>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
 
-        {loading ? (
-          <Text style={styles.resultsText}>Loading scholarships...</Text>
-        ) : (
-          <Text style={styles.resultsText}>{filtered.length} scholarships found</Text>
-        )}
+        <Typography variant="caption" weight="bold" color="primary" className="mb-4 uppercase tracking-wider">
+          {loading ? "Loading scholarships..." : `${filtered.length} scholarships found`}
+        </Typography>
 
         {filtered.map((scholarship, index) => (
           <MotiView
@@ -227,8 +228,8 @@ export const ScholarshipExplorer: React.FC<ScholarshipExplorerProps> = ({ onNavi
         ))}
 
         {filtered.length === 0 && (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No active scholarships found matching filters.</Text>
+          <View className="py-12 items-center justify-center">
+            <Typography variant="body" color="secondary" className="text-center">No active scholarships found matching filters.</Typography>
           </View>
         )}
       </ScrollView>
@@ -267,11 +268,9 @@ export const ScholarshipDetails: React.FC<ScholarshipDetailsProps> = ({ scholars
 
   if (!scholarship) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Scholarship details not found.</Text>
-        <TouchableOpacity onPress={onBack} style={styles.btn}>
-          <Text style={styles.btnText}>Go Back</Text>
-        </TouchableOpacity>
+      <View className="flex-1 items-center justify-center bg-surface-primary p-6">
+        <Typography variant="body" color="secondary" className="mb-4">Scholarship details not found.</Typography>
+        <Button variant="primary" onPress={onBack}>Go Back</Button>
       </View>
     );
   }
@@ -279,95 +278,98 @@ export const ScholarshipDetails: React.FC<ScholarshipDetailsProps> = ({ scholars
   const daysLeft = getDaysRemaining(scholarship.deadline);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
+    <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
+        colors={["#4f378a", "#6750a4"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        className="px-6 pb-6 pt-16 rounded-b-[32px] shadow-sm z-10"
       >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle} numberOfLines={1}>{scholarship.name}</Text>
-            <Text style={styles.headerSubtitle}>By {scholarship.provider}</Text>
+        <View className="flex-row items-center gap-3">
+          <IconButton 
+            icon={<ArrowLeft color="#FFF" size={24} />} 
+            variant="ghost" 
+            size="sm" 
+            onPress={onBack} 
+          />
+          <View className="flex-1">
+            <Typography variant="title" weight="bold" className="text-white" numberOfLines={1}>{scholarship.name}</Typography>
+            <Typography variant="caption" className="text-white/80">By {scholarship.provider}</Typography>
           </View>
-          <TouchableOpacity
+          <IconButton 
+            icon={<Bookmark color="#FFF" fill={isSaved ? "#FFF" : "transparent"} size={22} />}
+            variant="ghost"
             onPress={() => toggleSaveScholarship(scholarship.id)}
-            style={styles.bookmarkHeaderBtn}
-          >
-            <Bookmark
-              size={22}
-              color="white"
-              fill={isSaved ? "white" : "transparent"}
-            />
-          </TouchableOpacity>
+          />
         </View>
       </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.detailsScrollContent}>
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
         {/* Info Card */}
-        <View style={styles.detailCard}>
-          <Text style={styles.sectionHeaderTitle}>Overview & Value</Text>
-          <View style={styles.metaRow}>
-            <View style={styles.metaCol}>
-              <Text style={styles.metaLabel}>AWARD AMOUNT</Text>
-              <Text style={styles.metaValue}>₹{scholarship.amount.toLocaleString()}</Text>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm mb-4">
+          <Typography variant="heading" weight="bold" color="primary" className="mb-4">Overview & Value</Typography>
+          <View className="flex-row gap-3 mb-3">
+            <View className="flex-1 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+              <Typography variant="caption" weight="bold" color="secondary" className="uppercase tracking-wider text-[10px] mb-1">Award Amount</Typography>
+              <Typography variant="body" weight="bold" color="primary">₹{scholarship.amount.toLocaleString()}</Typography>
             </View>
-            <View style={styles.metaCol}>
-              <Text style={styles.metaLabel}>FREQUENCY</Text>
-              <Text style={styles.metaValue}>{scholarship.frequency}</Text>
+            <View className="flex-1 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+              <Typography variant="caption" weight="bold" color="secondary" className="uppercase tracking-wider text-[10px] mb-1">Frequency</Typography>
+              <Typography variant="body" weight="bold" color="primary">{scholarship.frequency}</Typography>
             </View>
           </View>
 
-          <View style={[styles.metaRow, { marginTop: 12 }]}>
-            <View style={styles.metaCol}>
-              <Text style={styles.metaLabel}>DEADLINE</Text>
-              <Text style={styles.metaValue}>{new Date(scholarship.deadline).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</Text>
+          <View className="flex-row gap-3">
+            <View className="flex-1 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+              <Typography variant="caption" weight="bold" color="secondary" className="uppercase tracking-wider text-[10px] mb-1">Deadline</Typography>
+              <Typography variant="body" weight="bold" color="primary">
+                {new Date(scholarship.deadline).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+              </Typography>
             </View>
-            <View style={styles.metaCol}>
-              <Text style={styles.metaLabel}>DAYS REMAINING</Text>
-              <Text style={[styles.metaValue, { color: daysLeft <= 15 ? "#D9534F" : "#5CB85C" }]}>
+            <View className={`flex-1 p-3 rounded-2xl border ${daysLeft <= 15 ? 'bg-red-50 border-red-100' : 'bg-emerald-50 border-emerald-100'}`}>
+              <Typography variant="caption" weight="bold" color="secondary" className="uppercase tracking-wider text-[10px] mb-1">Days Remaining</Typography>
+              <Typography variant="body" weight="bold" className={daysLeft <= 15 ? 'text-red-700' : 'text-emerald-700'}>
                 {daysLeft} days
-              </Text>
+              </Typography>
             </View>
           </View>
-        </View>
+        </BentoCard>
 
         {/* Section: Eligibility */}
-        <View style={styles.detailCard}>
-          <Text style={styles.sectionHeaderTitle}>Eligibility Criteria</Text>
-          {(Array.isArray(scholarship.eligibility) ? scholarship.eligibility : JSON.parse(scholarship.eligibility || '[]')).map((criteria: string, index: number) => (
-            <View key={index} style={styles.bulletItem}>
-              <Text style={styles.bulletDot}>✔</Text>
-              <Text style={styles.bulletText}>{criteria}</Text>
-            </View>
-          ))}
-        </View>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm mb-4">
+          <Typography variant="heading" weight="bold" color="primary" className="mb-3">Eligibility Criteria</Typography>
+          <View className="gap-2">
+            {(Array.isArray(scholarship.eligibility) ? scholarship.eligibility : JSON.parse(scholarship.eligibility || '[]')).map((criteria: string, index: number) => (
+              <View key={index} className="flex-row gap-2">
+                <Typography className="text-base text-emerald-600">✔</Typography>
+                <Typography variant="body" color="secondary" className="flex-1">{criteria}</Typography>
+              </View>
+            ))}
+          </View>
+        </BentoCard>
 
         {/* Section: Required Documents */}
-        <View style={styles.detailCard}>
-          <Text style={styles.sectionHeaderTitle}>Required Documents</Text>
-          {(Array.isArray(scholarship.requiredDocuments) ? scholarship.requiredDocuments : JSON.parse(scholarship.requiredDocuments || '[]')).map((doc: string, index: number) => (
-            <View key={index} style={styles.bulletItem}>
-              <Text style={styles.bulletDot}>📄</Text>
-              <Text style={styles.bulletText}>{doc}</Text>
-            </View>
-          ))}
-        </View>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm mb-6">
+          <Typography variant="heading" weight="bold" color="primary" className="mb-3">Required Documents</Typography>
+          <View className="gap-2">
+            {(Array.isArray(scholarship.requiredDocuments) ? scholarship.requiredDocuments : JSON.parse(scholarship.requiredDocuments || '[]')).map((doc: string, index: number) => (
+              <View key={index} className="flex-row items-center gap-2">
+                <Typography className="text-base">📄</Typography>
+                <Typography variant="body" color="secondary" className="flex-1">{doc}</Typography>
+              </View>
+            ))}
+          </View>
+        </BentoCard>
 
         {/* CTA to Apply */}
-        <TouchableOpacity
+        <Button
+          variant="primary"
           onPress={() => alert(`Redirecting to portal: ${scholarship.applicationUrl}`)}
-          style={[styles.btn, { marginHorizontal: 4 }]}
+          className="flex-row justify-center gap-2"
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text style={styles.btnText}>Apply Now</Text>
-            <ExternalLink size={16} color="white" />
-          </View>
-        </TouchableOpacity>
+          <Typography variant="body" weight="bold" className="text-white">Apply Now</Typography>
+          <ExternalLink size={18} color="white" />
+        </Button>
       </ScrollView>
     </View>
   );
@@ -407,313 +409,57 @@ export const DeadlineTracker: React.FC<DeadlineTrackerProps> = ({ onNavigate, on
   }, [scholarships]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
+    <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
+        colors={["#4f378a", "#6750a4"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        className="px-6 pb-6 pt-16 rounded-b-[32px] shadow-sm z-10"
       >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
+        <View className="flex-row items-center gap-3">
+          <IconButton 
+            icon={<ArrowLeft color="#FFF" size={24} />} 
+            variant="ghost" 
+            size="sm" 
+            onPress={onBack} 
+          />
           <View>
-            <Text style={styles.headerTitle}>Deadline Tracker</Text>
-            <Text style={styles.headerSubtitle}>{savedScholarships.length} saved programs</Text>
+            <Typography variant="title" weight="bold" className="text-white">Deadline Tracker</Typography>
+            <Typography variant="caption" className="text-white/80">{savedScholarships.length} saved programs</Typography>
           </View>
         </View>
       </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {savedScholarships.length > 0 ? (
-          savedScholarships.map((s) => (
-            <TouchableOpacity
-              key={s.id}
-              onPress={() => onNavigate("scholarshipDetails", { selectedScholarshipId: s.id })}
-              style={styles.card}
-            >
-              <View style={styles.cardRow}>
-                <View style={styles.iconBox}>
-                  <Text style={styles.iconText}>📅</Text>
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
+        <View className="gap-4">
+          {savedScholarships.length > 0 ? (
+            savedScholarships.map((s) => (
+              <BentoCardPressable
+                key={s.id}
+                onPress={() => onNavigate("scholarshipDetails", { selectedScholarshipId: s.id })}
+                variant="secondary"
+                className="bg-white border border-border-subtle shadow-sm p-4 flex-row items-center gap-4"
+              >
+                <View className="w-12 h-12 rounded-xl bg-primary/10 items-center justify-center">
+                  <Typography className="text-2xl">📅</Typography>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.cardCategory}>{s.category} Scholarship</Text>
-                  <Text style={styles.cardTitle}>{s.name}</Text>
-                  <Text style={styles.cardTagline}>
+                <View className="flex-1">
+                  <Typography variant="caption" weight="bold" color="secondary" className="mb-0.5">{s.category} Scholarship</Typography>
+                  <Typography variant="body" weight="bold" color="primary">{s.name}</Typography>
+                  <Typography variant="caption" color="secondary" className="mt-1">
                     Deadline: {new Date(s.deadline).toLocaleDateString()}
-                  </Text>
+                  </Typography>
                 </View>
                 <DeadlineBadge deadline={s.deadline} />
-              </View>
-            </TouchableOpacity>
-          ))
-        ) : (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No saved scholarships yet. Bookmark a scholarship to track its deadline here!</Text>
-          </View>
-        )}
+              </BentoCardPressable>
+            ))
+          ) : (
+            <View className="py-12 items-center justify-center">
+              <Typography variant="body" color="secondary" className="text-center">No saved scholarships yet. Bookmark a scholarship to track its deadline here!</Typography>
+            </View>
+          )}
+        </View>
       </ScrollView>
     </View>
   );
 };
-
-// ── Styles ──────────────────────────────────────────
-const styles = StyleSheet.create({
-  header: {
-    padding: 20,
-    paddingTop: 44,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "white",
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.8)",
-  },
-  infoBanner: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 16,
-    padding: 10,
-    marginTop: 12,
-    alignItems: "center",
-  },
-  infoBannerText: {
-    color: "white",
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  filterSection: {
-    backgroundColor: "white",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  categoryScroll: {
-    marginBottom: 16,
-  },
-  categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#DDEEE3",
-    marginRight: 8,
-  },
-  categoryChipActive: {
-    backgroundColor: "#5F8B70",
-    borderColor: "#5F8B70",
-  },
-  categoryChipText: {
-    fontSize: 12,
-    color: "#5F8B70",
-    fontWeight: "bold",
-  },
-  categoryChipTextActive: {
-    color: "white",
-  },
-  resultsText: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 12,
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.06)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-  },
-  cardRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "rgba(143, 189, 215, 0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconText: {
-    fontSize: 24,
-  },
-  cardCategory: {
-    fontSize: 10,
-    color: "#5F8B70",
-    fontWeight: "bold",
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  cardTagline: {
-    fontSize: 12,
-    color: "#8FBDD7",
-  },
-  cardStats: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 12,
-  },
-  statChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(143, 189, 215, 0.08)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statChipText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#1C4966",
-  },
-  cardDivider: {
-    height: 1,
-    backgroundColor: "#F5F7FA",
-    marginVertical: 12,
-  },
-  cardActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  cardActionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  actionBtnText: {
-    fontSize: 12,
-    color: "#8FBDD7",
-  },
-  emptyContainer: {
-    padding: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyText: {
-    fontSize: 14,
-    color: "#8FBDD7",
-    textAlign: "center",
-  },
-  bookmarkHeaderBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  detailsScrollContent: {
-    padding: 16,
-    gap: 16,
-  },
-  detailCard: {
-    backgroundColor: "white",
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-  },
-  overviewText: {
-    fontSize: 14,
-    color: "#5F8B70",
-    lineHeight: 20,
-  },
-  metaRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 16,
-    backgroundColor: "rgba(143, 189, 215, 0.06)",
-    padding: 12,
-    borderRadius: 12,
-  },
-  metaCol: {
-    flex: 1,
-  },
-  metaLabel: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#8FBDD7",
-  },
-  metaValue: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginTop: 2,
-  },
-  sectionHeaderTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 16,
-  },
-  bulletItem: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 8,
-  },
-  bulletDot: {
-    color: "#5F8B70",
-  },
-  bulletText: {
-    fontSize: 14,
-    color: "#5F8B70",
-    flex: 1,
-  },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: "bold",
-  },
-  btn: {
-    backgroundColor: "#1C4966",
-    height: 44,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-});

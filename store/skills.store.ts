@@ -635,38 +635,55 @@ export const useSkillsStore = create<SkillsState>()(
             vidId = videoUrl.split("youtu.be/")[1]?.split("?")[0];
           }
           
-          const res = await fetch(`https://www.youtube.com/watch?v=${vidId}`);
-          const html = await res.text();
-          const match = html.match(/"lengthSeconds":"(\d+)"/);
+          const apiKey = process.env.EXPO_PUBLIC_YOUTUBE_API_KEY;
           
-          if (match && match[1]) {
-            const seconds = parseInt(match[1]);
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = seconds % 60;
-            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+          if (!apiKey) {
+            console.warn("YouTube API key missing (EXPO_PUBLIC_YOUTUBE_API_KEY)");
+            return "Video";
+          }
+          
+          const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?id=${vidId}&part=contentDetails&key=${apiKey}`);
+          const data = await res.json();
+          
+          if (data.items && data.items.length > 0) {
+            const durationIso = data.items[0].contentDetails.duration;
+            // Parse ISO 8601 duration (e.g. PT1H2M10S)
+            const match = durationIso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+            if (match) {
+              const h = parseInt(match[1] || '0');
+              const m = parseInt(match[2] || '0');
+              const s = parseInt(match[3] || '0');
+              
+              if (h > 0) {
+                return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+              }
+              return `${m}:${s.toString().padStart(2, '0')}`;
+            }
           }
         } catch (e) {
-          console.warn("Failed to fetch video duration", e);
+          console.warn("Failed to fetch video duration via API", e);
         }
         return "Video";
       },
 
       resetAll: () =>
         set({
-          enrolledCourseIds: [],
+          enrolledCourseIds: {},
           currentCourseId: null,
           lessonProgress: {},
+          quizProgress: {},
           submissions: [],
           doubts: [],
           bookmarks: [],
-          certificates: [],
+          certificates: {},
+          certificateRequests: [],
           notifications: [],
           reviews: [],
           activityFeed: [],
           downloadLogs: {},
-          learningHours: 0,
-          streakCount: 0,
-          lastActiveDate: null,
+          learningHours: {},
+          streakCount: {},
+          lastActiveDate: {},
           activeLandingTab: "catalog",
           activeDashboardTab: "overview"
         })

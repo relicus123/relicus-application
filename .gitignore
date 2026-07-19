@@ -37,4 +37,9 @@ dist/
 
 
 *.graphify-out
-*.graphify-out-py   
+*.graphify-out-py
+
+# Editor swap / temp files
+*.swp
+*.swo
+*~

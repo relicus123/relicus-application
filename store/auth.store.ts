@@ -18,6 +18,7 @@ interface AuthState {
   logout: () => void;
   getUserById: (id: string) => Promise<User | undefined>;
   hydrate: () => Promise<void>;
+  updateProfile: (updates: Partial<User>) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -80,5 +81,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   hydrate: async () => {
     // Optionally restore session if we implement true Supabase auth later
+  },
+
+  updateProfile: async (updates) => {
+    const { currentUser } = get();
+    if (!currentUser) return;
+
+    const { error, data } = await supabase
+      .from("users")
+      .update(updates)
+      .eq("id", currentUser.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Failed to update profile:", error);
+      throw new Error("Failed to update profile. " + error.message);
+    }
+
+    set({ currentUser: data as User });
   }
 }));

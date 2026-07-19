@@ -1,19 +1,17 @@
 import React, { useState, useRef, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  Dimensions,
-  SafeAreaView,
-} from "react-native";
+import { View, TextInput, Dimensions, TouchableOpacity } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MotiView } from "moti";
 import { ArrowLeft, ShieldCheck } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Button } from "../components/Button";
+import { IconButton } from "../components/IconButton";
+import { AppScreen } from "../components/AppScreen";
+import { Typography } from "../components/Typography";
+import { GlassSurface } from "../components/GlassSurface";
 import { useAuthStore } from "../store/auth.store";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 const { width } = Dimensions.get("window");
 
@@ -24,13 +22,21 @@ export default function OTP() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(60);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const inputRefs = useRef<Array<TextInput | null>>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
+  const startTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setTimer(60);
+    timerRef.current = setInterval(() => {
       setTimer((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
-    return () => clearInterval(interval);
+  };
+
+  useEffect(() => {
+    startTimer();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, []);
 
   const handleChange = (index: number, value: string) => {
@@ -41,6 +47,7 @@ export default function OTP() {
 
       if (value && index < 5) {
         inputRefs.current[index + 1]?.focus();
+        setActiveIndex(index + 1);
       }
     }
   };
@@ -48,6 +55,7 @@ export default function OTP() {
   const handleKeyDown = (index: number, key: string) => {
     if (key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
+      setActiveIndex(index - 1);
     }
   };
 
@@ -76,166 +84,80 @@ export default function OTP() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
+    <AppScreen backgroundColor="primary" className="px-6 py-6">
+      <IconButton
+        icon={<ArrowLeft color="#1d1b20" size={24} />}
+        variant="ghost"
+        onPress={() => router.back()}
+        className="self-start -ml-2 mb-8"
+      />
+
+      <View className="flex-1 items-center justify-center">
+        <MotiView
+          from={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", duration: 600 }}
+          className="mb-8"
         >
-          <ArrowLeft color="#1C4966" size={24} />
-        </TouchableOpacity>
+          <GlassSurface intensity={40} rounded="2xl" className="w-24 h-24 items-center justify-center border-primary/20 bg-surface-variant/50">
+            <ShieldCheck color="#4f378a" size={48} strokeWidth={1.5} />
+          </GlassSurface>
+        </MotiView>
 
-        <View style={styles.centerContent}>
-          <MotiView
-            from={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", duration: 600 }}
-          >
-            <LinearGradient
-              colors={["#1C4966", "#5F8B70"]}
-              style={styles.iconContainer}
+        <Typography variant="heading" weight="bold" color="primary" className="mb-2">Verify OTP</Typography>
+        <Typography variant="body" color="secondary" className="text-center mb-10">
+          Enter the 6-digit code sent to your phone
+        </Typography>
+
+        <View className="flex-row justify-center gap-3 mb-10 w-full">
+          {otp.map((digit, index) => (
+            <MotiView
+              key={index}
+              from={{ opacity: 0, translateY: 20 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ delay: index * 100 }}
             >
-              <ShieldCheck color="white" size={48} strokeWidth={2} />
-            </LinearGradient>
-          </MotiView>
-
-          <Text style={styles.title}>Verify OTP</Text>
-          <Text style={styles.subtitle}>
-            Enter the 6-digit code sent to your phone
-          </Text>
-
-          <View style={styles.otpContainer}>
-            {otp.map((digit, index) => (
-              <MotiView
-                key={index}
-                from={{ opacity: 0, translateY: 20 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ delay: index * 100 }}
-              >
-                <TextInput
-                  ref={(el) => (inputRefs.current[index] = el)}
-                  style={styles.otpInput}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  value={digit}
-                  onChangeText={(value) => handleChange(index, value)}
-                  onKeyPress={({ nativeEvent }) =>
-                    handleKeyDown(index, nativeEvent.key)
-                  }
-                />
-              </MotiView>
-            ))}
-          </View>
-
-          <View style={styles.timerContainer}>
-            {timer > 0 ? (
-              <Text style={styles.timerText}>
-                Resend OTP in <Text style={styles.timerCount}>{timer}s</Text>
-              </Text>
-            ) : (
-              <TouchableOpacity>
-                <Text style={styles.resendText}>Resend OTP</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <Button 
-            onPress={handleVerify} 
-            size="lg" 
-            style={styles.verifyButton}
-            disabled={isVerifying || !otp.every((digit) => digit !== "")}
-          >
-            {isVerifying ? "Verifying..." : "Verify & Continue"}
-          </Button>
+              <TextInput
+                ref={(el) => (inputRefs.current[index] = el)}
+                className={twMerge(clsx(
+                  "w-12 h-16 rounded-xl border-2 text-center text-2xl font-bold text-primary bg-surface",
+                  activeIndex === index ? "border-primary" : "border-primary/10",
+                  digit ? "border-primary/50" : ""
+                ))}
+                keyboardType="number-pad"
+                maxLength={1}
+                value={digit}
+                onFocus={() => setActiveIndex(index)}
+                onChangeText={(value) => handleChange(index, value)}
+                onKeyPress={({ nativeEvent }) =>
+                  handleKeyDown(index, nativeEvent.key)
+                }
+              />
+            </MotiView>
+          ))}
         </View>
+
+        <View className="mb-10">
+          {timer > 0 ? (
+            <Typography variant="body" color="secondary">
+              Resend OTP in <Typography weight="bold" color="primary">{timer}s</Typography>
+            </Typography>
+          ) : (
+            <TouchableOpacity onPress={() => { setOtp(["", "", "", "", "", ""]); startTimer(); }}>
+              <Typography variant="body" color="primary" weight="bold" className="underline">Resend OTP</Typography>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <Button 
+          onPress={handleVerify} 
+          size="lg" 
+          className="w-full"
+          disabled={isVerifying || !otp.every((digit) => digit !== "")}
+        >
+          {isVerifying ? "Verifying..." : "Verify & Continue"}
+        </Button>
       </View>
-    </SafeAreaView>
+    </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFF0",
-  },
-  content: {
-    flex: 1,
-    padding: 24,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(28, 73, 102, 0.05)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 32,
-  },
-  centerContent: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 32,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#8FBDD7",
-    textAlign: "center",
-    marginBottom: 40,
-  },
-  otpContainer: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 32,
-  },
-  otpInput: {
-    width: (width - 48 - 40) / 6,
-    height: 64,
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "rgba(28, 73, 102, 0.1)",
-    textAlign: "center",
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  timerContainer: {
-    marginBottom: 40,
-  },
-  timerText: {
-    fontSize: 16,
-    color: "#8FBDD7",
-  },
-  timerCount: {
-    color: "#1C4966",
-    fontWeight: "bold",
-  },
-  resendText: {
-    fontSize: 16,
-    color: "#1C4966",
-    fontWeight: "bold",
-    textDecorationLine: "underline",
-  },
-  verifyButton: {
-    width: "100%",
-  },
-});

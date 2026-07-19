@@ -1,10 +1,16 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator, StatusBar, BackHandler } from "react-native";
+import { View, TouchableOpacity, Dimensions, ActivityIndicator, StatusBar, BackHandler } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import YoutubePlayer from "react-native-youtube-iframe";
 import { ArrowLeft, Play, Pause, Maximize, Minimize, RotateCcw, RotateCw } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
 import { useSkillsStore } from "../../store/skills.store";
+import { Typography } from "../../components/Typography";
+import { Button } from "../../components/Button";
 
 const { width, height: screenHeight } = Dimensions.get("window");
 const VIDEO_HEIGHT = width * (9 / 16);
@@ -94,7 +100,7 @@ export default function VideoPlayerScreen() {
       const duration = await playerRef.current?.getDuration();
       if (duration && duration > 0) {
         setDuration(duration);
-        const progressKey = `${useAuthStore.getState().currentUser?.id}_${courseId}_${lessonId}`;
+        const progressKey = `${store.lessonProgress}_${courseId}_${lessonId}`; // Fixed from auth store
         const savedProgress = useSkillsStore.getState().lessonProgress[progressKey]?.progress || 0;
         if (savedProgress > 0 && savedProgress < 95) {
           const seekTime = (savedProgress / 100) * duration;
@@ -102,7 +108,7 @@ export default function VideoPlayerScreen() {
         }
       }
     } catch (e) {}
-  }, [courseId, lessonId]);
+  }, [courseId, lessonId, store]);
 
   // Track progress manually
   useEffect(() => {
@@ -136,11 +142,9 @@ export default function VideoPlayerScreen() {
 
   if (!videoId) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Invalid video format. Cannot play this video directly.</Text>
-        <TouchableOpacity onPress={handleBack} style={styles.btn}>
-          <Text style={styles.btnText}>Go Back</Text>
-        </TouchableOpacity>
+      <View className="flex-1 bg-surface-primary items-center justify-center p-8">
+        <Typography variant="body" color="secondary" className="mb-4 text-center">Invalid video format. Cannot play this video directly.</Typography>
+        <Button onPress={handleBack} variant="primary">Go Back</Button>
       </View>
     );
   }
@@ -148,46 +152,69 @@ export default function VideoPlayerScreen() {
   const progressPercentage = duration > 0 ? (progress / duration) * 100 : 0;
 
   return (
-    <View style={[styles.container, isFullscreen && styles.containerFullscreen]}>
+    <View className={twMerge(clsx("flex-1 bg-surface-primary", isFullscreen && "bg-black"))}>
       <StatusBar hidden={isFullscreen} />
       
       {!isFullscreen && (
         <LinearGradient
-          colors={["#1C4966", "#5F8B70"]}
-          style={styles.header}
+          colors={["#fdf7ff", "#e9ddff", "#cfbcff"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
+          className="px-6 pb-6 pt-10"
         >
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerSubtitle}>Now Playing</Text>
-            <Text style={styles.headerTitle} numberOfLines={1}>{lessonTitle}</Text>
-          </View>
+          <SafeAreaView edges={["top"]}>
+            <View className="flex-row items-center gap-4">
+              <TouchableOpacity
+                onPress={handleBack}
+                className="w-10 h-10 rounded-full bg-white/40 items-center justify-center border border-white/50"
+                activeOpacity={0.7}
+              >
+                <ArrowLeft color="#4f378a" size={20} />
+              </TouchableOpacity>
+              <View className="flex-1">
+                <Typography variant="caption" color="secondary" className="mb-0.5">Now Playing</Typography>
+                <Typography variant="heading" weight="bold" color="primary" numberOfLines={1}>{lessonTitle}</Typography>
+              </View>
+            </View>
+          </SafeAreaView>
         </LinearGradient>
       )}
 
       {/* Video Player Container */}
-      <View style={[styles.videoWrapper, isFullscreen && styles.videoWrapperFullscreen]}>
+      <View 
+        className={twMerge(clsx(
+          "bg-black relative",
+          isFullscreen ? "absolute z-50" : "w-full"
+        ))}
+        style={isFullscreen ? {
+          top: (screenHeight - width) / 2,
+          left: (width - screenHeight) / 2,
+          width: screenHeight,
+          height: width,
+          transform: [{ rotate: "90deg" }]
+        } : {
+          width: width,
+          height: VIDEO_HEIGHT,
+        }}
+      >
         {!isReady && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color="#5F8B70" />
-            <Text style={styles.loadingText}>Loading Video...</Text>
+          <View className="absolute inset-0 bg-black items-center justify-center z-10">
+            <ActivityIndicator size="large" color="#6b4fa3" />
+            <Typography variant="caption" className="text-white mt-2">Loading Video...</Typography>
           </View>
         )}
         
         <YoutubePlayer
           ref={playerRef}
-          height={isFullscreen ? width : VIDEO_HEIGHT} // In CSS rotation, the iframe's height should be the screen width
-          width={isFullscreen ? screenHeight : width} // And iframe's width should be the screen height
+          height={isFullscreen ? width : VIDEO_HEIGHT}
+          width={isFullscreen ? screenHeight : width}
           play={playing}
           videoId={videoId}
           onChangeState={onStateChange}
           onReady={onReady}
           forceAndroidAutoplay={true}
           initialPlayerParams={{
-            controls: true, // Enables native YouTube controls
+            controls: true,
             rel: false,
             preventFullScreen: false,
             iv_load_policy: 3,
@@ -197,13 +224,13 @@ export default function VideoPlayerScreen() {
 
         {/* Overlay controls for Fullscreen mode */}
         {isFullscreen && (
-          <View style={styles.fullscreenControlsOverlay} pointerEvents="box-none">
-            <TouchableOpacity onPress={toggleFullscreen} style={styles.fullscreenBtnOverlay}>
+          <View className="absolute inset-0 z-10 items-center justify-center bg-black/50" pointerEvents="box-none">
+            <TouchableOpacity onPress={toggleFullscreen} className="absolute right-5 z-[101] bg-black/50 p-3 rounded-full" style={{ top: 20 }}>
               <Minimize size={24} color="white" />
             </TouchableOpacity>
             
-            <View style={[styles.progressBarBg, styles.progressBarBgFullscreen]}>
-              <View style={[styles.progressBarFill, { width: `${progressPercentage}%` }]} />
+            <View className="absolute bottom-10 left-10 right-10 h-1.5 bg-white/30 rounded-full overflow-hidden">
+              <View className="h-full bg-primary" style={{ width: `${progressPercentage}%` }} />
             </View>
           </View>
         )}
@@ -211,217 +238,21 @@ export default function VideoPlayerScreen() {
 
       {/* Custom Video Controls (Portrait) */}
       {!isFullscreen && (
-        <View style={styles.controlsContainer}>
-          <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: `${progressPercentage}%` }]} />
+        <View className="p-5 bg-white border-b border-border-subtle">
+          <View className="w-full h-1.5 bg-surface-secondary rounded-full overflow-hidden">
+            <View className="h-full bg-primary" style={{ width: `${progressPercentage}%` }} />
           </View>
         </View>
       )}
       
       {!isFullscreen && (
-        <View style={styles.infoContainer}>
-          <Text style={styles.infoTitle}>{lessonTitle}</Text>
-          <Text style={styles.infoDesc}>
+        <View className="p-6">
+          <Typography variant="title" weight="bold" color="primary" className="mb-2">{lessonTitle}</Typography>
+          <Typography variant="body" color="secondary" className="leading-6">
             Watch this lesson to automatically track your progress. Completing the video will earn you a lesson badge and update your analytics!
-          </Text>
+          </Typography>
         </View>
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFF0",
-  },
-  containerFullscreen: {
-    backgroundColor: "black",
-  },
-  header: {
-    padding: 20,
-    paddingTop: 44,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "white",
-  },
-  headerSubtitle: {
-    fontSize: 11,
-    color: "rgba(255, 255, 255, 0.8)",
-  },
-  videoWrapper: {
-    width: width,
-    height: VIDEO_HEIGHT,
-    backgroundColor: "black",
-    position: "relative",
-  },
-  videoWrapperFullscreen: {
-    position: "absolute",
-    top: (screenHeight - width) / 2,
-    left: (width - screenHeight) / 2,
-    width: screenHeight,
-    height: width,
-    transform: [{ rotate: "90deg" }],
-    zIndex: 100,
-    backgroundColor: "black",
-  },
-  loadingOverlay: {
-    position: "absolute",
-    top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: "black",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
-  },
-  loadingText: {
-    color: "white",
-    marginTop: 8,
-    fontSize: 12,
-  },
-  controlsContainer: {
-    padding: 20,
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.08)",
-  },
-  progressBarBg: {
-    width: "100%",
-    height: 6,
-    backgroundColor: "#E2E8F0",
-    borderRadius: 3,
-    marginBottom: 20,
-    overflow: "hidden",
-  },
-  progressBarFill: {
-    height: "100%",
-    backgroundColor: "#5F8B70",
-  },
-  controlsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 40,
-  },
-  playPauseBtn: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#1C4966",
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-  },
-  seekBtn: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  seekText: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginTop: 4,
-  },
-  fullscreenBtnPortrait: {
-    position: "absolute",
-    right: 0,
-    padding: 8,
-  },
-  fullscreenControlsOverlay: {
-    position: "absolute",
-    top: 0, left: 0, right: 0, bottom: 0,
-    zIndex: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  fullscreenBtnOverlay: {
-    position: "absolute",
-    top: 20,
-    right: 20, // In rotated view, right is actually the physical bottom
-    padding: 12,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    borderRadius: 24,
-    zIndex: 101,
-  },
-  controlsRowFullscreen: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 40,
-    backgroundColor: "transparent",
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-  },
-  playPauseBtnFullscreen: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.5)",
-  },
-  progressBarBgFullscreen: {
-    position: "absolute",
-    bottom: 40,
-    left: 40,
-    right: 40,
-    width: "auto",
-    backgroundColor: "rgba(255,255,255,0.3)",
-  },
-  infoContainer: {
-    padding: 24,
-  },
-  infoTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 8,
-  },
-  infoDesc: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: "#5F8B70",
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 32,
-    backgroundColor: "#FFFFF0",
-  },
-  errorText: {
-    fontSize: 14,
-    color: "#8FBDD7",
-    textAlign: "center",
-    marginBottom: 16,
-  },
-  btn: {
-    backgroundColor: "#1C4966",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-  },
-  btnText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-});

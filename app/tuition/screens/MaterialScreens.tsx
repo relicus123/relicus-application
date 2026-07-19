@@ -1,8 +1,12 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from "react-native";
+import { View, ScrollView, RefreshControl } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { TuitionView, TuitionNavContext } from "../types";
 import { supabase } from "../../../lib/supabase";
+import { Typography } from "../../../components/Typography";
+import { BentoCardPressable } from "../../../components/BentoCard";
+import { IconButton } from "../../../components/IconButton";
+import { ArrowLeft, Video, FileText, ChevronRight } from "lucide-react-native";
 
 interface ScreenProps {
   context: TuitionNavContext;
@@ -12,7 +16,6 @@ interface ScreenProps {
 
 export function MaterialLibrary({ onNavigate, onBack }: ScreenProps) {
   const [materials, setMaterials] = React.useState<any[]>([]);
-
   const [refreshing, setRefreshing] = React.useState(false);
 
   const fetchMaterials = React.useCallback(async () => {
@@ -35,53 +38,53 @@ export function MaterialLibrary({ onNavigate, onBack }: ScreenProps) {
   };
 
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#007AFF" />}
-    >
-      <TouchableOpacity onPress={onBack} style={styles.backButton}>
-        <Text style={styles.backText}>← Back</Text>
-      </TouchableOpacity>
+    <View className="flex-1 bg-surface-primary">
+      <View className="flex-row items-center gap-4 px-6 pt-16 pb-6 bg-white border-b border-border-subtle shadow-sm z-10">
+        <IconButton 
+          icon={<ArrowLeft size={24} color="#1d1b20" />}
+          variant="ghost"
+          size="sm"
+          onPress={onBack}
+        />
+        <Typography variant="title" weight="bold" color="primary">Study Materials</Typography>
+      </View>
 
-      <Text style={styles.header}>Study Materials</Text>
-
-      {materials.map((mat) => (
-        <View key={mat.id} style={styles.card}>
-          <View style={styles.iconContainer}>
-            <Text style={styles.icon}>{mat.type === "Video" ? "🎥" : "📄"}</Text>
-          </View>
-          <View style={styles.info}>
-            <Text style={styles.title}>{mat.title}</Text>
-            <Text style={styles.details}>{mat.subject} • {mat.type} • {mat.size || mat.duration}</Text>
-          </View>
-          <TouchableOpacity style={styles.downloadBtn}>
-            <Text style={styles.downloadBtnText}>Open</Text>
-          </TouchableOpacity>
+      <ScrollView 
+        contentContainerStyle={{ padding: 24, paddingBottom: 48 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4f378a" />}
+      >
+        <View className="gap-4">
+          {materials.map((mat) => (
+            <BentoCardPressable 
+              key={mat.id} 
+              variant="secondary" 
+              padding="md"
+              className="flex-row items-center bg-white border border-border-subtle shadow-sm"
+              onPress={() => {}} // Handle opening material
+            >
+              <View className="w-12 h-12 rounded-xl bg-primary/10 items-center justify-center mr-4">
+                {mat.type === "Video" ? (
+                  <Video size={24} color="#4f378a" />
+                ) : (
+                  <FileText size={24} color="#4f378a" />
+                )}
+              </View>
+              <View className="flex-1 mr-4">
+                <Typography variant="body" weight="bold" color="primary">{mat.title}</Typography>
+                <View className="flex-row items-center mt-1">
+                  <Typography variant="caption" color="secondary" className="mr-2">{mat.subject}</Typography>
+                  <View className="w-1 h-1 rounded-full bg-border-subtle mr-2" />
+                  <Typography variant="caption" color="secondary">{mat.type} • {mat.size || mat.duration}</Typography>
+                </View>
+              </View>
+              <ChevronRight size={20} color="#79747e" />
+            </BentoCardPressable>
+          ))}
+          {materials.length === 0 && (
+             <Typography variant="caption" color="secondary" className="italic text-center py-8">No materials found.</Typography>
+          )}
         </View>
-      ))}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#FFFFF0" },
-  backButton: { marginBottom: 16 },
-  backText: { color: "#007AFF", fontSize: 16 },
-  header: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
-  card: {
-    backgroundColor: "#FFF",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 4, elevation: 2,
-  },
-  iconContainer: { width: 40, height: 40, borderRadius: 20, backgroundColor: "#F0F8FF", justifyContent: "center", alignItems: "center", marginRight: 16 },
-  icon: { fontSize: 20 },
-  info: { flex: 1 },
-  title: { fontSize: 16, fontWeight: "bold", color: "#333" },
-  details: { fontSize: 12, color: "#666", marginTop: 4 },
-  downloadBtn: { backgroundColor: "#E3F2FD", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-  downloadBtnText: { color: "#007AFF", fontWeight: "bold" },
-});

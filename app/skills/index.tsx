@@ -1,16 +1,12 @@
 import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
-  Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
-  Dimensions,
   RefreshControl,
   Image,
 } from "react-native";
-import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { LinearGradient } from "expo-linear-gradient";
@@ -23,17 +19,18 @@ import {
   Star,
   Clock,
   Users,
-  ChevronRight,
-  TrendingUp,
   Activity,
-  Trophy,
-  CheckCircle,
+  Download,
 } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useSkillsStore, Course } from "../../store/skills.store";
+import { Typography } from "../../components/Typography";
+import { BentoCard } from "../../components/BentoCard";
+import { Button } from "../../components/Button";
+import { useSkillsStore } from "../../store/skills.store";
 import { useAuthStore } from "../../store/auth.store";
-
-const { width } = Dimensions.get("window");
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export default function SkillEnhancementLanding() {
   const router = useRouter();
@@ -43,12 +40,6 @@ export default function SkillEnhancementLanding() {
   const [refreshing, setRefreshing] = useState(false);
 
   const userId = authStore.currentUser?.id;
-
-  useFocusEffect(
-    useCallback(() => {
-      store.fetchCourses();
-    }, [])
-  );
 
   useFocusEffect(
     useCallback(() => {
@@ -105,11 +96,11 @@ export default function SkillEnhancementLanding() {
     try {
       const html = `
         <html>
-          <body style="padding: 40px; font-family: sans-serif; text-align: center; border: 15px solid #1C4966; box-sizing: border-box; min-height: 90vh;">
+          <body style="padding: 40px; font-family: sans-serif; text-align: center; border: 15px solid #4f378a; box-sizing: border-box; min-height: 90vh;">
             <div style="margin-top: 50px;">
-              <h1 style="color: #1C4966; font-size: 50px;">Certificate of Completion</h1>
+              <h1 style="color: #4f378a; font-size: 50px;">Certificate of Completion</h1>
               <p style="font-size: 24px; margin-top: 40px;">This is to certify that</p>
-              <h2 style="font-size: 40px; color: #5F8B70; margin-top: 20px; text-decoration: underline;">${cert.recipientName}</h2>
+              <h2 style="font-size: 40px; color: #6b4fa3; margin-top: 20px; text-decoration: underline;">${cert.recipientName}</h2>
               <p style="font-size: 24px; margin-top: 20px;">has successfully completed the course</p>
               <h2 style="font-size: 40px; color: #F59E0B; margin-top: 20px;">${cert.courseTitle}</h2>
               <p style="font-size: 20px; margin-top: 80px;">Issued on: ${new Date(cert.date).toLocaleDateString()}</p>
@@ -127,30 +118,38 @@ export default function SkillEnhancementLanding() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
+    <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
+        colors={["#fdf7ff", "#e9ddff", "#cfbcff"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        className="px-6 pb-6 pt-10"
       >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerSubtitle}>Relicus Skills Academy</Text>
-            <Text style={styles.headerTitle}>Skill Enhancement</Text>
+        <SafeAreaView edges={["top"]}>
+          <View className="flex-row items-center gap-4">
+            <TouchableOpacity
+              onPress={handleBack}
+              className="w-10 h-10 rounded-full bg-white/40 items-center justify-center border border-white/50"
+              activeOpacity={0.7}
+            >
+              <ArrowLeft color="#4f378a" size={20} />
+            </TouchableOpacity>
+            <View className="flex-1">
+              <Typography variant="caption" color="secondary" className="mb-0.5">Relicus Skills Academy</Typography>
+              <Typography variant="heading" weight="bold" color="primary">Skill Enhancement</Typography>
+            </View>
+            <View className="flex-row items-center gap-1.5 bg-white/40 px-3 py-1.5 rounded-full border border-white/50">
+              <Flame size={16} color="#F59E0B" fill="#F59E0B" />
+              <Typography variant="caption" weight="bold" color="primary">
+                {(userId ? store.streakCount[userId] : 0) || 0} Days
+              </Typography>
+            </View>
           </View>
-          <View style={styles.streakBadge}>
-            <Flame size={14} color="#F59E0B" fill="#F59E0B" />
-            <Text style={styles.streakBadgeText}>{(userId ? store.streakCount[userId] : 0) || 0} Days</Text>
-          </View>
-        </View>
+        </SafeAreaView>
       </LinearGradient>
 
       {/* Main Tab Segmented Controller */}
-      <View style={styles.tabsContainer}>
+      <View className="flex-row border-b border-border-subtle bg-white">
         {[
           { id: "catalog", label: "Catalog" },
           { id: "my-courses", label: "My Learning" },
@@ -162,45 +161,64 @@ export default function SkillEnhancementLanding() {
             <TouchableOpacity
               key={tab.id}
               onPress={() => store.setActiveLandingTab(tab.id as any)}
-              style={[styles.tabButton, active && styles.tabButtonActive]}
+              className={twMerge(clsx(
+                "flex-1 py-4 items-center border-b-2",
+                active ? "border-primary" : "border-transparent"
+              ))}
             >
-              <Text style={[styles.tabButtonText, active && styles.tabButtonTextActive]}>
+              <Typography 
+                variant="caption" 
+                weight={active ? "bold" : "medium"} 
+                color={active ? "primary" : "secondary"}
+                className={active ? "" : "opacity-70"}
+              >
                 {tab.label}
-              </Text>
+              </Typography>
             </TouchableOpacity>
           );
         })}
       </View>
 
       <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
+        contentContainerStyle={{ padding: 24, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5F8B70" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4f378a" />
         }
       >
         {/* TAB 1: CATALOG */}
         {store.activeLandingTab === "catalog" && (
           <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
             {/* Category horizontal scrolling selector */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-5" contentContainerStyle={{ paddingRight: 24 }}>
               {categories.map((cat) => {
                 const active = selectedCategory === cat;
                 return (
                   <TouchableOpacity
                     key={cat}
                     onPress={() => setSelectedCategory(cat)}
-                    style={[styles.categoryChip, active && styles.categoryChipActive]}
+                    className={twMerge(clsx(
+                      "px-4 py-2 rounded-full border mr-2",
+                      active 
+                        ? "bg-primary border-primary" 
+                        : "bg-surface-secondary border-border-subtle"
+                    ))}
                   >
-                    <Text style={[styles.categoryChipText, active && styles.categoryChipTextActive]}>
+                    <Typography 
+                      variant="caption" 
+                      weight="bold" 
+                      color={active ? "white" : "primary"}
+                    >
                       {cat}
-                    </Text>
+                    </Typography>
                   </TouchableOpacity>
                 );
               })}
             </ScrollView>
 
-            <Text style={styles.resultsText}>{filteredCourses.length} courses available</Text>
+            <Typography variant="body" weight="bold" color="primary" className="mb-4">
+              {filteredCourses.length} courses available
+            </Typography>
 
             {filteredCourses.map((course) => {
               const isEnrolled = userId ? (store.enrolledCourseIds[userId] || []).includes(course.id) : false;
@@ -209,42 +227,48 @@ export default function SkillEnhancementLanding() {
                   key={course.id}
                   activeOpacity={0.9}
                   onPress={() => handleOpenCourse(course.id)}
-                  style={styles.courseCard}
+                  className="bg-white rounded-3xl p-4 mb-5 border border-border-subtle shadow-sm"
                 >
                   {/* Premium Image Header */}
-                  <View style={styles.premiumThumbnailContainer}>
+                  <View className="w-full h-40 rounded-2xl overflow-hidden relative mb-3">
                     {course.thumbnail && String(course.thumbnail).trim().startsWith('http') ? (
-                      <Image source={{ uri: String(course.thumbnail).trim() }} style={styles.premiumImage} resizeMode="cover" />
+                      <Image source={{ uri: String(course.thumbnail).trim() }} className="w-full h-full" resizeMode="cover" />
                     ) : (
-                      <View style={styles.premiumPlaceholder}>
-                        <Text style={styles.premiumPlaceholderText}>{course.thumbnail || "📚"}</Text>
+                      <View className="w-full h-full bg-primary/10 items-center justify-center">
+                        <Typography className="text-5xl">{course.thumbnail || "📚"}</Typography>
                       </View>
                     )}
-                    <View style={styles.premiumBadge}>
-                      <Text style={styles.premiumBadgeText}>{course.category} • {course.level}</Text>
+                    <View className="absolute top-3 left-3 bg-white/95 px-2.5 py-1 rounded-lg">
+                      <Typography variant="caption" weight="bold" color="primary" className="text-[10px]">
+                        {course.category} • {course.level}
+                      </Typography>
                     </View>
                   </View>
 
-                  <View style={{ marginTop: 4, marginBottom: 12 }}>
-                    <Text style={styles.premiumTitle}>{course.title}</Text>
-                    <Text style={styles.courseInstructor}>Instructor: {course.instructor}</Text>
+                  <View className="mb-3">
+                    <Typography variant="title" weight="bold" color="primary" className="mb-1">{course.title}</Typography>
+                    <Typography variant="caption" color="secondary">Instructor: {course.instructor}</Typography>
                   </View>
 
                   {/* Skills tags */}
-                  <View style={styles.skillsTagsRow}>
+                  <View className="flex-row flex-wrap gap-2 mb-3">
                     {course.skillsLearned.slice(0, 3).map((skill) => (
-                      <View key={skill} style={styles.skillTag}>
-                        <Text style={styles.skillTagText}>{skill}</Text>
+                      <View key={skill} className="bg-primary/5 px-2.5 py-1.5 rounded-lg border border-primary/10">
+                        <Typography variant="caption" weight="bold" color="primary" className="text-[11px] text-[#6b4fa3]">
+                          {skill}
+                        </Typography>
                       </View>
                     ))}
                     {course.skillsLearned.length > 3 && (
-                      <View style={[styles.skillTag, { backgroundColor: "#F5F7FA", borderWidth: 0 }]}>
-                        <Text style={[styles.skillTagText, { color: "#8FBDD7" }]}>+{course.skillsLearned.length - 3} more</Text>
+                      <View className="bg-surface-secondary px-2.5 py-1.5 rounded-lg">
+                        <Typography variant="caption" color="secondary" className="text-[11px]">
+                          +{course.skillsLearned.length - 3} more
+                        </Typography>
                       </View>
                     )}
                   </View>
 
-                  <View style={styles.cardDivider} />
+                  <View className="h-[1px] bg-border-subtle my-3" />
 
                   {/* Dynamically calculate live metrics */}
                   {(() => {
@@ -257,31 +281,30 @@ export default function SkillEnhancementLanding() {
                     const liveLearnersCount = course.learnersCount + (isEnrolled ? 1 : 0);
 
                     return (
-                      <View style={styles.courseStatsRow}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                          <Clock size={12} color="#8FBDD7" />
-                          <Text style={styles.courseStatsText}>{liveDuration}</Text>
+                      <View className="flex-row justify-between mb-4 px-1">
+                        <View className="flex-row items-center gap-1.5">
+                          <Clock size={14} color="#79747e" />
+                          <Typography variant="caption" weight="bold" color="secondary" className="text-[11px]">{liveDuration}</Typography>
                         </View>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                          <Star size={12} color="#F1C40F" fill="#F1C40F" />
-                          <Text style={styles.courseStatsText}>{liveRating}</Text>
+                        <View className="flex-row items-center gap-1.5">
+                          <Star size={14} color="#F1C40F" fill="#F1C40F" />
+                          <Typography variant="caption" weight="bold" color="secondary" className="text-[11px]">{liveRating}</Typography>
                         </View>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                          <Users size={12} color="#8FBDD7" />
-                          <Text style={styles.courseStatsText}>{liveLearnersCount} Enrolled</Text>
+                        <View className="flex-row items-center gap-1.5">
+                          <Users size={14} color="#79747e" />
+                          <Typography variant="caption" weight="bold" color="secondary" className="text-[11px]">{liveLearnersCount} Enrolled</Typography>
                         </View>
                       </View>
                     );
                   })()}
 
-                  <TouchableOpacity
+                  <Button
                     onPress={() => isEnrolled ? handleOpenCourse(course.id) : handleEnroll(course.id)}
-                    style={[styles.btn, isEnrolled && { backgroundColor: "rgba(95, 139, 112, 0.1)" }]}
+                    variant={isEnrolled ? "outline" : "primary"}
+                    className="w-full"
                   >
-                    <Text style={[styles.btnText, isEnrolled && { color: "#5F8B70" }]}>
-                      {isEnrolled ? "Open Dashboard" : "Enroll Now"}
-                    </Text>
-                  </TouchableOpacity>
+                    {isEnrolled ? "Open Dashboard" : "Enroll Now"}
+                  </Button>
                 </TouchableOpacity>
               );
             })}
@@ -291,7 +314,9 @@ export default function SkillEnhancementLanding() {
         {/* TAB 2: MY LEARNING */}
         {store.activeLandingTab === "my-courses" && (
           <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <Text style={styles.resultsText}>Enrolled Courses ({enrolledCourses.length})</Text>
+            <Typography variant="body" weight="bold" color="primary" className="mb-4">
+              Enrolled Courses ({enrolledCourses.length})
+            </Typography>
 
             {enrolledCourses.length > 0 ? (
               enrolledCourses.map((course) => {
@@ -311,46 +336,52 @@ export default function SkillEnhancementLanding() {
                   <TouchableOpacity
                     key={course.id}
                     onPress={() => handleOpenCourse(course.id)}
-                    style={styles.courseCard}
+                    className="bg-white rounded-3xl p-4 mb-5 border border-border-subtle shadow-sm"
                   >
                     {/* Premium Image Header */}
-                    <View style={styles.premiumThumbnailContainer}>
+                    <View className="w-full h-32 rounded-2xl overflow-hidden relative mb-3">
                       {course.thumbnail && String(course.thumbnail).trim().startsWith('http') ? (
-                        <Image source={{ uri: String(course.thumbnail).trim() }} style={styles.premiumImage} resizeMode="cover" />
+                        <Image source={{ uri: String(course.thumbnail).trim() }} className="w-full h-full" resizeMode="cover" />
                       ) : (
-                        <View style={styles.premiumPlaceholder}>
-                          <Text style={styles.premiumPlaceholderText}>{course.thumbnail || "📚"}</Text>
+                        <View className="w-full h-full bg-primary/10 items-center justify-center">
+                          <Typography className="text-5xl">{course.thumbnail || "📚"}</Typography>
                         </View>
                       )}
-                      <View style={styles.premiumBadge}>
-                        <Text style={styles.premiumBadgeText}>{course.category}</Text>
+                      <View className="absolute top-3 left-3 bg-white/95 px-2.5 py-1 rounded-lg">
+                        <Typography variant="caption" weight="bold" color="primary" className="text-[10px]">
+                          {course.category}
+                        </Typography>
                       </View>
                     </View>
 
-                    <View style={{ marginTop: 4, marginBottom: 12 }}>
-                      <Text style={styles.premiumTitle}>{course.title}</Text>
-                      <Text style={styles.courseInstructor}>{completedLessons} of {totalLessons} lessons completed</Text>
+                    <View className="mb-3">
+                      <Typography variant="title" weight="bold" color="primary" className="mb-1">{course.title}</Typography>
+                      <Typography variant="caption" color="secondary">
+                        {completedLessons} of {totalLessons} lessons completed
+                      </Typography>
                     </View>
 
-                    <View style={styles.progressContainer}>
-                      <View style={styles.progressLabels}>
-                        <Text style={styles.progressLabelText}>Course Progress</Text>
-                        <Text style={styles.progressPercentText}>{progressPercent}%</Text>
+                    <View className="mt-3 pt-3 border-t border-border-subtle">
+                      <View className="flex-row justify-between mb-2">
+                        <Typography variant="caption" color="secondary">Course Progress</Typography>
+                        <Typography variant="caption" weight="bold" color="primary">{progressPercent}%</Typography>
                       </View>
-                      <View style={styles.progressBar}>
-                        <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+                      <View className="h-1.5 bg-surface-secondary rounded-full overflow-hidden">
+                        <View className="h-full bg-primary rounded-full" style={{ width: `${progressPercent}%` }} />
                       </View>
                     </View>
                   </TouchableOpacity>
                 )
               })
             ) : (
-              <View style={styles.emptyContainer}>
-                <BookOpen size={40} color="#8FBDD7" />
-                <Text style={styles.emptyText}>You are not enrolled in any courses yet.</Text>
-                <TouchableOpacity onPress={() => store.setActiveLandingTab("catalog")} style={styles.btn}>
-                  <Text style={styles.btnText}>Browse Catalog</Text>
-                </TouchableOpacity>
+              <View className="items-center justify-center p-8 gap-3">
+                <BookOpen size={48} color="#4f378a" className="opacity-50" />
+                <Typography variant="body" color="secondary" className="text-center mb-2">
+                  You are not enrolled in any courses yet.
+                </Typography>
+                <Button onPress={() => store.setActiveLandingTab("catalog")} variant="primary">
+                  Browse Catalog
+                </Button>
               </View>
             )}
           </MotiView>
@@ -359,32 +390,46 @@ export default function SkillEnhancementLanding() {
         {/* TAB 3: CERTIFICATES */}
         {store.activeLandingTab === "certificates" && (
           <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <Text style={styles.resultsText}>Earned Credentials ({earnedCertificates.length})</Text>
+            <Typography variant="body" weight="bold" color="primary" className="mb-4">
+              Earned Credentials ({earnedCertificates.length})
+            </Typography>
             {earnedCertificates.length > 0 ? (
               earnedCertificates.map((cert) => (
-                <View key={cert.id} style={styles.certCard}>
-                  <Award size={36} color="#F1C40F" style={{ marginRight: 12 }} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.certCategory}>PROFESSIONAL CREDENTIAL</Text>
-                    <Text style={styles.certTitle}>{cert.courseTitle}</Text>
-                    <Text style={styles.certDate}>Issued to {cert.recipientName} on {new Date(cert.date).toLocaleDateString()}</Text>
+                <View key={cert.id} className="flex-row items-center bg-white rounded-2xl p-4 border border-border-subtle mb-3 shadow-sm">
+                  <Award size={36} color="#F1C40F" className="mr-3" />
+                  <View className="flex-1">
+                    <Typography variant="caption" weight="bold" color="secondary" className="text-[9px] mb-1">
+                      PROFESSIONAL CREDENTIAL
+                    </Typography>
+                    <Typography variant="body" weight="bold" color="primary" className="mb-1">
+                      {cert.courseTitle}
+                    </Typography>
+                    <Typography variant="caption" color="secondary" className="text-[10px]">
+                      Issued to {cert.recipientName} on {new Date(cert.date).toLocaleDateString()}
+                    </Typography>
                   </View>
-                  <TouchableOpacity onPress={() => handleDownloadCertificate(cert)} style={{ padding: 8, backgroundColor: '#f1f5f9', borderRadius: 50 }}>
-                    <Download size={20} color="#1C4966" />
+                  <TouchableOpacity onPress={() => handleDownloadCertificate(cert)} className="p-2.5 bg-surface-secondary rounded-full ml-2">
+                    <Download size={20} color="#4f378a" />
                   </TouchableOpacity>
                 </View>
               ))
             ) : (
-              <View style={styles.emptyContainer}>
-                <Award size={40} color="#8FBDD7" />
-                <Text style={styles.emptyText}>No certificates earned yet.</Text>
+              <View className="items-center justify-center p-8 gap-3">
+                <Award size={48} color="#4f378a" className="opacity-50" />
+                <Typography variant="body" color="secondary" className="text-center">
+                  No certificates earned yet.
+                </Typography>
               </View>
             )}
 
-            <View style={{ height: 1, backgroundColor: 'rgba(28, 73, 102, 0.1)', marginVertical: 20 }} />
+            <View className="h-[1px] bg-border-subtle my-6" />
             
-            <Text style={styles.resultsText}>Available for Certification</Text>
-            <Text style={[styles.emptyText, { textAlign: 'left', marginBottom: 16, marginTop: -8 }]}>Request a certificate for courses you've completed.</Text>
+            <Typography variant="body" weight="bold" color="primary" className="mb-1">
+              Available for Certification
+            </Typography>
+            <Typography variant="caption" color="secondary" className="mb-4">
+              Request a certificate for courses you've completed.
+            </Typography>
             
             {enrolledCourses.length > 0 ? (
               enrolledCourses.map((c) => {
@@ -404,31 +449,42 @@ export default function SkillEnhancementLanding() {
                 const progressPercent = totalLessons > 0 ? Math.round(totalProgressSum / totalLessons) : 0;
                 
                 return (
-                  <View key={c.id} style={[styles.certCard, { alignItems: 'center' }]}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.certTitle}>{c.title}</Text>
+                  <View key={c.id} className="flex-row items-center bg-white rounded-2xl p-4 border border-border-subtle mb-3 shadow-sm">
+                    <View className="flex-1">
+                      <Typography variant="body" weight="bold" color="primary" className="mb-1">
+                        {c.title}
+                      </Typography>
                       {request ? (
-                        <Text style={{ color: '#F59E0B', fontWeight: 'bold', fontSize: 12, marginTop: 4 }}>Status: {request.status}</Text>
+                        <Typography variant="caption" weight="bold" className="text-[#F59E0B]">
+                          Status: {request.status}
+                        </Typography>
                       ) : (
-                        <Text style={{ color: progressPercent >= 100 ? '#8FBDD7' : '#94a3b8', fontSize: 12, marginTop: 4 }}>
+                        <Typography variant="caption" className={progressPercent >= 100 ? "text-[#10B981]" : "text-[#79747e]"}>
                           {progressPercent >= 100 ? "Ready to claim!" : `Course Progress: ${progressPercent}%`}
-                        </Text>
+                        </Typography>
                       )}
                     </View>
                     {!request && (
                       <TouchableOpacity 
-                        onPress={() => progressPercent >= 100 ? store.requestCertificate(c.id, c.title, authStore.currentUser?.name || "Student") : alert("Please complete the course 100% to request a certificate.")}
-                        style={[styles.btn, { paddingHorizontal: 16, paddingVertical: 8, minWidth: 100, backgroundColor: progressPercent >= 100 ? "#1C4966" : "#cbd5e1" }]}
+                        onPress={() => progressPercent >= 100 ? store.requestCertificate(c.id, c.title, authStore.currentUser?.username || authStore.currentUser?.email || "Student") : alert("Please complete the course 100% to request a certificate.")}
+                        className={twMerge(clsx(
+                          "px-4 py-2 rounded-xl ml-2",
+                          progressPercent >= 100 ? "bg-primary" : "bg-surface-secondary border border-border-subtle"
+                        ))}
                         activeOpacity={progressPercent >= 100 ? 0.8 : 1}
                       >
-                        <Text style={[styles.btnText, { fontSize: 13, color: progressPercent >= 100 ? "white" : "#64748b" }]}>Request</Text>
+                        <Typography variant="caption" weight="bold" color={progressPercent >= 100 ? "white" : "secondary"}>
+                          Request
+                        </Typography>
                       </TouchableOpacity>
                     )}
                   </View>
                 );
               })
             ) : (
-              <Text style={styles.emptyText}>Enroll in courses to request certificates.</Text>
+              <Typography variant="caption" color="secondary" className="text-center">
+                Enroll in courses to request certificates.
+              </Typography>
             )}
           </MotiView>
         )}
@@ -436,385 +492,55 @@ export default function SkillEnhancementLanding() {
         {/* TAB 4: ANALYTICS */}
         {store.activeLandingTab === "analytics" && (
           <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <View style={styles.analyticsRow}>
-              <View style={styles.analyticsBox}>
-                <Text style={styles.analyticsTitle}>Study Duration</Text>
-                <Text style={styles.analyticsVal}>{userId ? (store.learningHours[userId] || 0).toFixed(1) : 0} hrs</Text>
-                <Text style={styles.analyticsSub}>Total hours spent</Text>
-              </View>
+            <View className="flex-row gap-3 mb-5">
+              <BentoCard variant="secondary" padding="lg" className="flex-1 bg-white border border-border-subtle shadow-sm items-center">
+                <Typography variant="caption" weight="bold" color="secondary" className="mb-2">Study Duration</Typography>
+                <Typography variant="title" weight="bold" color="primary" className="mb-1">
+                  {userId ? (store.learningHours[userId] || 0).toFixed(1) : "0.0"} hrs
+                </Typography>
+                <Typography variant="caption" color="secondary" className="text-[10px]">Total hours spent</Typography>
+              </BentoCard>
 
-              <View style={styles.analyticsBox}>
-                <Text style={styles.analyticsTitle}>Weekly Streak</Text>
-                <Text style={styles.analyticsVal}>{userId ? (store.streakCount[userId] || 0) : 0} days</Text>
-                <Text style={styles.analyticsSub}>Daily consistency</Text>
-              </View>
+              <BentoCard variant="secondary" padding="lg" className="flex-1 bg-white border border-border-subtle shadow-sm items-center">
+                <Typography variant="caption" weight="bold" color="secondary" className="mb-2">Weekly Streak</Typography>
+                <Typography variant="title" weight="bold" color="primary" className="mb-1">
+                  {userId ? (store.streakCount[userId] || 0) : 0} days
+                </Typography>
+                <Typography variant="caption" color="secondary" className="text-[10px]">Daily consistency</Typography>
+              </BentoCard>
             </View>
 
             {/* Recent Activities */}
-            <View style={styles.activitiesCard}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                <Activity size={18} color="#1C4966" />
-                <Text style={styles.cardHeaderTitle}>Learning History Log</Text>
+            <BentoCard variant="secondary" padding="lg" className="bg-white border border-border-subtle shadow-sm">
+              <View className="flex-row items-center gap-2 mb-4">
+                <Activity size={18} color="#4f378a" />
+                <Typography variant="body" weight="bold" color="primary">Learning History Log</Typography>
               </View>
-              {store.activityFeed.slice(0, 8).map((activity) => (
-                <View key={activity.id} style={styles.activityItem}>
-                  <Text style={styles.activityDot}>✓</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.activityTitleText}>{activity.title}</Text>
-                    <Text style={styles.activityDateText}>{new Date(activity.timestamp).toLocaleDateString()}</Text>
+              <View>
+                {store.activityFeed.slice(0, 8).map((activity, idx) => (
+                  <View 
+                    key={activity.id} 
+                    className={twMerge(clsx(
+                      "flex-row items-center gap-3 py-3",
+                      idx !== Math.min(store.activityFeed.length, 8) - 1 && "border-b border-border-subtle"
+                    ))}
+                  >
+                    <Typography variant="body" weight="bold" className="text-[#10B981]">✓</Typography>
+                    <View className="flex-1">
+                      <Typography variant="caption" weight="bold" color="primary" className="mb-0.5">
+                        {activity.title}
+                      </Typography>
+                      <Typography variant="caption" color="secondary" className="text-[10px]">
+                        {new Date(activity.timestamp).toLocaleDateString()}
+                      </Typography>
+                    </View>
                   </View>
-                </View>
-              ))}
-            </View>
+                ))}
+              </View>
+            </BentoCard>
           </MotiView>
         )}
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFF0",
-  },
-  scrollContent: {
-    padding: 24,
-  },
-  header: {
-    padding: 20,
-    paddingTop: 44,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "white",
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.8)",
-  },
-  streakBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-  },
-  streakBadgeText: {
-    fontSize: 11,
-    fontWeight: "bold",
-    color: "white",
-  },
-  tabsContainer: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.08)",
-    backgroundColor: "white",
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 14,
-    alignItems: "center",
-    borderBottomWidth: 2,
-    borderColor: "transparent",
-  },
-  tabButtonActive: {
-    borderColor: "#1C4966",
-  },
-  tabButtonText: {
-    fontSize: 11,
-    color: "#8FBDD7",
-    fontWeight: "600",
-  },
-  tabButtonTextActive: {
-    color: "#1C4966",
-    fontWeight: "bold",
-  },
-  categoryScroll: {
-    marginBottom: 16,
-  },
-  categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#DDEEE3",
-    marginRight: 8,
-  },
-  categoryChipActive: {
-    backgroundColor: "#1C4966",
-    borderColor: "#1C4966",
-  },
-  categoryChipText: {
-    fontSize: 12,
-    color: "#1C4966",
-    fontWeight: "bold",
-  },
-  categoryChipTextActive: {
-    color: "white",
-  },
-  resultsText: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 16,
-  },
-  courseCard: {
-    backgroundColor: "white",
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  premiumThumbnailContainer: {
-    width: '100%',
-    height: 160,
-    borderRadius: 16,
-    overflow: 'hidden',
-    position: 'relative',
-    marginBottom: 12,
-  },
-  premiumImage: {
-    width: '100%',
-    height: '100%',
-  },
-  premiumPlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: "rgba(143, 189, 215, 0.15)",
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  premiumPlaceholderText: {
-    fontSize: 48,
-  },
-  premiumBadge: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  premiumBadgeText: {
-    fontSize: 10,
-    color: "#1C4966",
-    fontWeight: "bold",
-  },
-  premiumTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 4,
-  },
-  courseInstructor: {
-    fontSize: 12,
-    color: "#8FBDD7",
-    marginTop: 2,
-  },
-  skillsTagsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 8,
-  },
-  skillTag: {
-    backgroundColor: "rgba(95, 139, 112, 0.08)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "rgba(95, 139, 112, 0.15)",
-  },
-  skillTagText: {
-    fontSize: 11,
-    color: "#5F8B70",
-    fontWeight: "600",
-  },
-  cardDivider: {
-    height: 1,
-    backgroundColor: "#F5F7FA",
-    marginVertical: 12,
-  },
-  courseStatsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  courseStatsText: {
-    fontSize: 11,
-    color: "#8FBDD7",
-    fontWeight: "600",
-  },
-  btn: {
-    backgroundColor: "#1C4966",
-    height: 40,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 4,
-  },
-  btnText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 12,
-  },
-  progressContainer: {
-    marginTop: 12,
-    borderTopWidth: 1,
-    borderColor: "#F5F7FA",
-    paddingTop: 12,
-  },
-  progressLabels: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  progressLabelText: {
-    fontSize: 11,
-    color: "#5F8B70",
-  },
-  progressPercentText: {
-    fontSize: 11,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: "#F5F7FA",
-    borderRadius: 3,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#1C4966",
-    borderRadius: 3,
-  },
-  emptyContainer: {
-    padding: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-  },
-  emptyText: {
-    fontSize: 13,
-    color: "#8FBDD7",
-    textAlign: "center",
-  },
-  certCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-    marginBottom: 12,
-  },
-  certCategory: {
-    fontSize: 9,
-    fontWeight: "bold",
-    color: "#8FBDD7",
-  },
-  certTitle: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginTop: 2,
-  },
-  certDate: {
-    fontSize: 11,
-    color: "#5F8B70",
-    marginTop: 4,
-  },
-  analyticsRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
-  },
-  analyticsBox: {
-    flex: 1,
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-  },
-  analyticsTitle: {
-    fontSize: 11,
-    color: "#8FBDD7",
-    fontWeight: "bold",
-  },
-  analyticsVal: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginTop: 8,
-  },
-  analyticsSub: {
-    fontSize: 10,
-    color: "#5F8B70",
-    marginTop: 4,
-  },
-  activitiesCard: {
-    backgroundColor: "white",
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-  },
-  cardHeaderTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  activityItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderColor: "#F5F7FA",
-  },
-  activityDot: {
-    color: "#5F8B70",
-    fontWeight: "bold",
-  },
-  activityTitleText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#1C4966",
-  },
-  activityDateText: {
-    fontSize: 10,
-    color: "#8FBDD7",
-    marginTop: 2,
-  },
-});

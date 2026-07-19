@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from './auth.store';
 
@@ -37,7 +39,9 @@ interface KnowNextStore {
   clearCollegeComparison: () => void;
 }
 
-export const useKnowNextStore = create<KnowNextStore>((set, get) => ({
+export const useKnowNextStore = create<KnowNextStore>()(
+  persist(
+    (set, get) => ({
   activeStage: "all",
   setActiveStage: (stage) => set({ activeStage: stage }),
   
@@ -190,12 +194,13 @@ export const useKnowNextStore = create<KnowNextStore>((set, get) => ({
   
   completeRoadmapStep: async (roadmapId, stepId) => {
     const { completedRoadmapSteps } = get();
-    if (completedRoadmapSteps.includes(stepId)) return;
+    const compositeKey = `${roadmapId}::${stepId}`;
+    if (completedRoadmapSteps.includes(compositeKey)) return;
     
     const currentUser = useAuthStore.getState().currentUser;
     if (!currentUser) return;
 
-    set({ completedRoadmapSteps: [...completedRoadmapSteps, stepId] });
+    set({ completedRoadmapSteps: [...completedRoadmapSteps, compositeKey] });
     
     await supabase.from('knownext_roadmap_progress').insert([{ 
       user_id: currentUser.id, 
@@ -205,13 +210,17 @@ export const useKnowNextStore = create<KnowNextStore>((set, get) => ({
   },
   
   getRoadmapProgressPercent: (roadmapId, totalSteps = 10) => {
-    const completedCount = get().completedRoadmapSteps.length;
+    if (!roadmapId) return 0;
+    const completedCount = get().completedRoadmapSteps.filter(
+      (key) => key.startsWith(`${roadmapId}::`)
+    ).length;
     if (totalSteps === 0) return 0;
     return Math.min(100, Math.round((completedCount / totalSteps) * 100));
   },
   
-  getCompletedSteps: () => {
-    return get().completedRoadmapSteps;
+  getCompletedSteps: (roadmapId) => {
+    if (!roadmapId) return get().completedRoadmapSteps;
+    return get().completedRoadmapSteps.filter((key) => key.startsWith(`${roadmapId}::`));
   },
 
   toggleCompareCareer: (id) => set((state) => ({
@@ -227,4 +236,21 @@ export const useKnowNextStore = create<KnowNextStore>((set, get) => ({
       : [...state.compareCollegeIds, id]
   })),
   clearCollegeComparison: () => set({ compareCollegeIds: [] }),
-}));
+    }),
+    {
+      name: 'knownext-store',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        activeStage: state.activeStage,
+        compareCareerIds: state.compareCareerIds,
+        compareCollegeIds: state.compareCollegeIds,
+        savedCareerIds: state.savedCareerIds,
+        savedCollegeIds: state.savedCollegeIds,
+        savedScholarshipIds: state.savedScholarshipIds,
+        careerGoalId: state.careerGoalId,
+        activeRoadmapId: state.activeRoadmapId,
+        completedRoadmapSteps: state.completedRoadmapSteps,
+      }),
+    }
+  )
+);

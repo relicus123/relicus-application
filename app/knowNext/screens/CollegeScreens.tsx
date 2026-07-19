@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from "react";
 import {
   View,
-  Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   TextInput,
@@ -18,17 +16,19 @@ import {
   Bookmark,
   MapPin,
   Award,
-  BookOpen,
-  DollarSign,
-  Briefcase,
-  ChevronRight,
   Scale,
 } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useKnowNextStore } from "../../../store/knownext.store";
 import { supabase } from "../../../lib/supabase";
 import { College, CareerStage, KnowNextView, NavContext } from "../types";
 import { CareerStageFilter, CompareDrawer } from "./ExplorerScreens";
+
+import { Typography } from "../../../components/Typography";
+import { BentoCard, BentoCardPressable } from "../../../components/BentoCard";
+import { IconButton } from "../../../components/IconButton";
+import { Button } from "../../../components/Button";
 
 const { width } = Dimensions.get("window");
 const TYPES = ["All", "Government", "Private", "Deemed", "Autonomous"] as const;
@@ -45,63 +45,62 @@ export function CollegeCard({ college, onSelect }: CollegeCardProps) {
   const isComparing = compareCollegeIds.includes(college.id);
 
   return (
-    <TouchableOpacity
+    <BentoCardPressable
       activeOpacity={0.9}
       onPress={() => onSelect(college)}
-      style={styles.card}
+      variant="secondary"
+      className="bg-white border border-border-subtle shadow-sm mb-3 p-4"
     >
-      <View style={styles.cardRow}>
-        <View style={styles.iconBox}>
-          <Text style={styles.iconText}>{college.icon || "🏛️"}</Text>
+      <View className="flex-row gap-3">
+        <View className="w-12 h-12 rounded-xl bg-primary/10 items-center justify-center">
+          <Typography className="text-2xl">{college.icon || "🏛️"}</Typography>
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.cardCategory}>{college.type} College</Text>
-          <Text style={styles.cardTitle}>{college.name}</Text>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
-            <MapPin size={12} color="#5F8B70" />
-            <Text style={styles.cardTagline}>{college.location}, {college.state}</Text>
+        <View className="flex-1">
+          <Typography variant="caption" weight="bold" color="secondary" className="mb-0.5">{college.type} College</Typography>
+          <Typography variant="body" weight="bold" color="primary">{college.name}</Typography>
+          <View className="flex-row items-center gap-1 mt-1">
+            <MapPin size={12} color="#4f378a" />
+            <Typography variant="caption" color="secondary">{college.location}, {college.state}</Typography>
           </View>
         </View>
       </View>
 
-      <View style={styles.cardStats}>
-        <View style={styles.statChip}>
-          <Award size={12} color="#1C4966" />
-          <Text style={styles.statChipText}>NIRF Rank #{college.ranking}</Text>
+      <View className="flex-row gap-2 mt-3">
+        <View className="flex-row items-center gap-1 bg-amber-50 px-2 py-1 rounded">
+          <Award size={12} color="#b45309" />
+          <Typography variant="caption" weight="bold" className="text-amber-700">NIRF Rank #{college.ranking}</Typography>
         </View>
-        <View style={styles.statChip}>
-          <Text style={styles.statChipText}>₹{(college.feeRange.min / 100000).toFixed(1)}-{(college.feeRange.max / 100000).toFixed(1)}L/yr</Text>
+        <View className="flex-row items-center gap-1 bg-slate-100 px-2 py-1 rounded">
+          <Typography variant="caption" weight="bold" className="text-slate-700">
+            ₹{(college.feeRange.min / 100000).toFixed(1)}-{(college.feeRange.max / 100000).toFixed(1)}L/yr
+          </Typography>
         </View>
       </View>
 
-      <View style={styles.cardDivider} />
+      <View className="h-px bg-border-subtle my-3" />
 
-      <View style={styles.cardActions}>
+      <View className="flex-row justify-between">
         <TouchableOpacity
           onPress={() => toggleSaveCollege(college.id)}
-          style={styles.cardActionBtn}
+          className="flex-row items-center gap-1.5 p-1"
         >
-          <Bookmark
-            size={16}
-            color={isSaved ? "#5F8B70" : "#8FBDD7"}
-            fill={isSaved ? "#5F8B70" : "transparent"}
-          />
-          <Text style={[styles.actionBtnText, isSaved && { color: "#5F8B70" }]}>
+          <Bookmark size={16} color={isSaved ? "#4f378a" : "#79747e"} fill={isSaved ? "#4f378a" : "transparent"} />
+          <Typography variant="caption" weight="bold" className={isSaved ? "text-[#4f378a]" : "text-slate-500"}>
             {isSaved ? "Saved" : "Save"}
-          </Text>
+          </Typography>
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => toggleCompareCollege(college.id)}
-          style={styles.cardActionBtn}
+          className="flex-row items-center gap-1.5 p-1"
         >
-          <Scale size={16} color={isComparing ? "#1C4966" : "#8FBDD7"} />
-          <Text style={[styles.actionBtnText, isComparing && { color: "#1C4966", fontWeight: "bold" }]}>
+          <Scale size={16} color={isComparing ? "#4f378a" : "#79747e"} />
+          <Typography variant="caption" weight="bold" className={isComparing ? "text-[#4f378a]" : "text-slate-500"}>
             {isComparing ? "Added" : "Compare"}
-          </Text>
+          </Typography>
         </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </BentoCardPressable>
   );
 }
 
@@ -156,64 +155,69 @@ export const CollegeExplorer: React.FC<CollegeExplorerProps> = ({ onNavigate, on
   }, [query, selectedType, activeStage, colleges]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
+    <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
+        colors={["#4f378a", "#6750a4"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        className="px-6 pb-6 pt-16 rounded-b-[40px] shadow-sm z-10"
       >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View>
-            <Text style={styles.headerTitle}>Colleges & Universities</Text>
-            <Text style={styles.headerSubtitle}>{colleges.length} institutions</Text>
+        <SafeAreaView edges={["top"]} className="gap-4">
+          <View className="flex-row items-center gap-3">
+            <IconButton 
+              icon={<ArrowLeft color="#FFF" size={24} />} 
+              variant="ghost" 
+              size="sm" 
+              onPress={onBack} 
+            />
+            <View>
+              <Typography variant="title" weight="bold" className="text-white">Colleges & Universities</Typography>
+              <Typography variant="caption" className="text-white/80">{colleges.length} institutions</Typography>
+            </View>
           </View>
-        </View>
 
-        <View style={styles.searchContainer}>
-          <Search color="#8FBDD7" size={18} style={styles.searchIcon} />
-          <TextInput
-            placeholder="Search colleges, cities..."
-            placeholderTextColor="#8FBDD7"
-            value={query}
-            onChangeText={setQuery}
-            style={styles.searchInput}
-          />
-        </View>
+          <View className="flex-row items-center bg-white/20 rounded-2xl px-4 h-12 gap-2 border border-white/30">
+            <Search color="#FFF" size={18} />
+            <TextInput
+              placeholder="Search colleges, cities..."
+              placeholderTextColor="rgba(255,255,255,0.7)"
+              value={query}
+              onChangeText={setQuery}
+              className="flex-1 text-white"
+            />
+          </View>
+        </SafeAreaView>
       </LinearGradient>
 
-      <View style={styles.filterSection}>
+      <View className="py-4 bg-white border-b border-border-subtle shadow-sm z-0">
         <CareerStageFilter />
       </View>
 
       <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5F8B70" />}
+        contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4f378a" />}
       >
         {/* Type horizontal selector */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6 -mx-6 px-6">
           {TYPES.map((type) => {
             const active = selectedType === type;
             return (
               <TouchableOpacity
                 key={type}
                 onPress={() => setSelectedType(type)}
-                style={[styles.categoryChip, active && styles.categoryChipActive]}
+                className={`px-4 py-2 rounded-full mr-2 border ${active ? "bg-[#e8def8] border-[#e8def8]" : "bg-white border-border-subtle"}`}
               >
-                <Text style={[styles.categoryChipText, active && styles.categoryChipTextActive]}>
+                <Typography variant="caption" weight="bold" className={active ? "text-[#1d192b]" : "text-slate-600"}>
                   {type}
-                </Text>
+                </Typography>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
 
-        <Text style={styles.resultsText}>
+        <Typography variant="caption" weight="bold" color="primary" className="mb-4 uppercase tracking-wider">
           {filtered.length} colleges found
-        </Text>
+        </Typography>
 
         {filtered.map((college, index) => (
           <MotiView
@@ -230,8 +234,8 @@ export const CollegeExplorer: React.FC<CollegeExplorerProps> = ({ onNavigate, on
         ))}
 
         {filtered.length === 0 && (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No colleges matching selection found.</Text>
+          <View className="py-12 items-center justify-center">
+            <Typography variant="body" color="secondary">No colleges matching selection found.</Typography>
           </View>
         )}
       </ScrollView>
@@ -268,127 +272,131 @@ export const CollegeDetails: React.FC<CollegeDetailsProps> = ({ collegeId, onNav
     }
     fetchCollege();
   }, [collegeId]);
+
   const { savedCollegeIds, toggleSaveCollege } = useKnowNextStore();
   const isSaved = savedCollegeIds.includes(college?.id || "");
 
   if (!college) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>College details not found.</Text>
-        <TouchableOpacity onPress={onBack} style={styles.btn}>
-          <Text style={styles.btnText}>Go Back</Text>
-        </TouchableOpacity>
+      <View className="flex-1 items-center justify-center bg-surface-primary p-6">
+        <Typography variant="body" color="secondary" className="mb-4">College details not found.</Typography>
+        <Button variant="primary" onPress={onBack}>Go Back</Button>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
+    <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
+        colors={["#4f378a", "#6750a4"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        className="px-6 pb-6 pt-16 rounded-b-[32px] shadow-sm z-10"
       >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle} numberOfLines={1}>{college.name}</Text>
-            <Text style={styles.headerSubtitle}>{college.location}, {college.state}</Text>
+        <View className="flex-row items-center gap-3">
+          <IconButton 
+            icon={<ArrowLeft color="#FFF" size={24} />} 
+            variant="ghost" 
+            size="sm" 
+            onPress={onBack} 
+          />
+          <View className="flex-1">
+            <Typography variant="title" weight="bold" className="text-white" numberOfLines={1}>{college.name}</Typography>
+            <Typography variant="caption" className="text-white/80">{college.location}, {college.state}</Typography>
           </View>
-          <TouchableOpacity
+          <IconButton 
+            icon={<Bookmark color="#FFF" fill={isSaved ? "#FFF" : "transparent"} size={22} />}
+            variant="ghost"
             onPress={() => toggleSaveCollege(college.id)}
-            style={styles.bookmarkHeaderBtn}
-          >
-            <Bookmark
-              size={22}
-              color="white"
-              fill={isSaved ? "white" : "transparent"}
-            />
-          </TouchableOpacity>
+          />
         </View>
       </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.detailsScrollContent}>
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
         {/* Info Box */}
-        <View style={styles.detailCard}>
-          <Text style={styles.sectionHeaderTitle}>Institution Overview</Text>
-          <Text style={styles.overviewText}>{college.overview}</Text>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm mb-4">
+          <Typography variant="heading" weight="bold" color="primary" className="mb-3">Institution Overview</Typography>
+          <Typography variant="body" color="secondary" className="leading-relaxed mb-4">{college.overview}</Typography>
 
-          <View style={styles.metaRow}>
-            <View style={styles.metaCol}>
-              <Text style={styles.metaLabel}>NIRF RANKING</Text>
-              <Text style={styles.metaValue}>#{college.ranking}</Text>
+          <View className="flex-row gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+            <View className="flex-1">
+              <Typography variant="caption" weight="bold" color="secondary" className="uppercase tracking-wider text-[10px] mb-1">NIRF Ranking</Typography>
+              <Typography variant="body" weight="bold" color="primary">#{college.ranking}</Typography>
             </View>
-            <View style={styles.metaCol}>
-              <Text style={styles.metaLabel}>FEE RANGE</Text>
-              <Text style={styles.metaValue}>₹{(college.feeRange.min / 100000).toFixed(1)}-{(college.feeRange.max / 100000).toFixed(1)}L/yr</Text>
+            <View className="flex-1">
+              <Typography variant="caption" weight="bold" color="secondary" className="uppercase tracking-wider text-[10px] mb-1">Fee Range</Typography>
+              <Typography variant="body" weight="bold" color="primary">
+                ₹{(college.feeRange.min / 100000).toFixed(1)}-{(college.feeRange.max / 100000).toFixed(1)}L/yr
+              </Typography>
             </View>
           </View>
-        </View>
+        </BentoCard>
 
         {/* Section Placements */}
-        <View style={styles.detailCard}>
-          <Text style={styles.sectionHeaderTitle}>Placement Statistics</Text>
-          <View style={styles.placementStatBox}>
-            <View style={styles.placementStatCol}>
-              <Text style={styles.placementStatLabel}>Avg Package</Text>
-              <Text style={styles.placementStatValue}>₹{college.placementAvgPackage} LPA</Text>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm mb-4">
+          <Typography variant="heading" weight="bold" color="primary" className="mb-4">Placement Statistics</Typography>
+          <View className="flex-row justify-between">
+            <View className="items-center">
+              <Typography variant="caption" color="secondary" className="mb-1">Avg Package</Typography>
+              <Typography variant="body" weight="bold" color="primary">₹{college.placementAvgPackage} LPA</Typography>
             </View>
-            <View style={styles.placementStatCol}>
-              <Text style={styles.placementStatLabel}>Highest Package</Text>
-              <Text style={styles.placementStatValue}>₹{college.placementTopPackage} LPA</Text>
+            <View className="items-center">
+              <Typography variant="caption" color="secondary" className="mb-1">Highest Package</Typography>
+              <Typography variant="body" weight="bold" color="primary">₹{college.placementTopPackage} LPA</Typography>
             </View>
-            <View style={styles.placementStatCol}>
-              <Text style={styles.placementStatLabel}>Placement Rate</Text>
-              <Text style={styles.placementStatValue}>{college.placementRate}%</Text>
+            <View className="items-center">
+              <Typography variant="caption" color="secondary" className="mb-1">Placement Rate</Typography>
+              <Typography variant="body" weight="bold" color="primary">{college.placementRate}%</Typography>
             </View>
           </View>
-        </View>
+        </BentoCard>
 
         {/* Section: Admission & Exams */}
-        <View style={styles.detailCard}>
-          <Text style={styles.sectionHeaderTitle}>Admission & Entrance Exams</Text>
-          <Text style={styles.metaLabel}>ACCEPTED ENTRANCE EXAMS</Text>
-          <View style={styles.skillsTagWrap}>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm mb-4">
+          <Typography variant="heading" weight="bold" color="primary" className="mb-4">Admission & Entrance Exams</Typography>
+          
+          <Typography variant="caption" weight="bold" color="secondary" className="uppercase tracking-wider text-[10px] mb-3">Accepted Entrance Exams</Typography>
+          <View className="flex-row flex-wrap gap-2 mb-6">
           {(Array.isArray(college.entranceExamsAccepted) ? college.entranceExamsAccepted : JSON.parse(college.entranceExamsAccepted || '[]')).map((exam: string) => (
-              <View key={exam} style={styles.skillTag}>
-                <Text style={styles.skillTagText}>{exam}</Text>
+              <View key={exam} className="bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
+                <Typography variant="caption" weight="bold" color="primary">{exam}</Typography>
               </View>
             ))}
           </View>
 
-          <Text style={[styles.metaLabel, { marginTop: 16 }]}>ADMISSION STEPS</Text>
-          {(Array.isArray(college.admissionProcess) ? college.admissionProcess : JSON.parse(college.admissionProcess || '[]')).map((step: string, idx: number) => (
-            <View key={idx} style={styles.bulletItem}>
-              <Text style={styles.bulletDot}>{idx + 1}.</Text>
-              <Text style={styles.bulletText}>{step}</Text>
-            </View>
-          ))}
-        </View>
+          <Typography variant="caption" weight="bold" color="secondary" className="uppercase tracking-wider text-[10px] mb-3">Admission Steps</Typography>
+          <View className="gap-2">
+            {(Array.isArray(college.admissionProcess) ? college.admissionProcess : JSON.parse(college.admissionProcess || '[]')).map((step: string, idx: number) => (
+              <View key={idx} className="flex-row gap-2">
+                <Typography variant="body" color="primary" weight="bold">{idx + 1}.</Typography>
+                <Typography variant="body" color="secondary" className="flex-1">{step}</Typography>
+              </View>
+            ))}
+          </View>
+        </BentoCard>
 
         {/* Section: Courses */}
-        <View style={styles.detailCard}>
-          <Text style={styles.sectionHeaderTitle}>Courses Offered</Text>
-          {(Array.isArray(college.coursesOffered) ? college.coursesOffered : JSON.parse(college.coursesOffered || '[]')).map((course: string) => (
-            <View key={course} style={styles.bulletItem}>
-              <Text style={styles.bulletDot}>📚</Text>
-              <Text style={styles.bulletText}>{course}</Text>
-            </View>
-          ))}
-        </View>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm mb-4">
+          <Typography variant="heading" weight="bold" color="primary" className="mb-3">Courses Offered</Typography>
+          <View className="gap-2">
+            {(Array.isArray(college.coursesOffered) ? college.coursesOffered : JSON.parse(college.coursesOffered || '[]')).map((course: string) => (
+              <View key={course} className="flex-row items-center gap-2">
+                <Typography className="text-base">📚</Typography>
+                <Typography variant="body" color="secondary" className="flex-1">{course}</Typography>
+              </View>
+            ))}
+          </View>
+        </BentoCard>
 
         {/* Section: Scholarships */}
-        <View style={styles.detailCard}>
-          <Text style={styles.sectionHeaderTitle}>Scholarships & Aids</Text>
-          <Text style={styles.overviewText}>
+        <BentoCard variant="secondary" padding="md" className="bg-white border border-border-subtle shadow-sm">
+          <Typography variant="heading" weight="bold" color="primary" className="mb-3">Scholarships & Aids</Typography>
+          <Typography variant="body" color="secondary" className="leading-relaxed">
             {college.scholarshipsAvailable
               ? college.scholarshipDetails
               : "No specific college institutional scholarships listed. Feel free to explore general external scholarships in the Scholarships finder."}
-          </Text>
-        </View>
+          </Typography>
+        </BentoCard>
       </ScrollView>
     </View>
   );
@@ -423,395 +431,56 @@ export const CollegeComparison: React.FC<CollegeComparisonProps> = ({ compareIds
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
+    <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
+        colors={["#4f378a", "#6750a4"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        className="px-6 pb-6 pt-16 rounded-b-[32px] shadow-sm z-10"
       >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>Compare Colleges</Text>
-            <Text style={styles.headerSubtitle}>{colleges.length} selected</Text>
+        <View className="flex-row items-center gap-3">
+          <IconButton 
+            icon={<ArrowLeft color="#FFF" size={24} />} 
+            variant="ghost" 
+            size="sm" 
+            onPress={onBack} 
+          />
+          <View className="flex-1">
+            <Typography variant="title" weight="bold" className="text-white">Compare Colleges</Typography>
+            <Typography variant="caption" className="text-white/80">{colleges.length} selected</Typography>
           </View>
           <TouchableOpacity onPress={handleClear}>
-            <Text style={{ color: "white", fontSize: 13, fontWeight: "bold" }}>Reset</Text>
+            <Typography variant="caption" weight="bold" className="text-white">Reset</Typography>
           </TouchableOpacity>
         </View>
       </LinearGradient>
 
-      <ScrollView horizontal contentContainerStyle={{ padding: 16 }}>
-        <View style={styles.compareTableColumnLabels}>
-          <View style={styles.compareLabelCell}><Text style={styles.compareLabelText}>College</Text></View>
-          <View style={styles.compareLabelCell}><Text style={styles.compareLabelText}>Type</Text></View>
-          <View style={styles.compareLabelCell}><Text style={styles.compareLabelText}>Ranking</Text></View>
-          <View style={styles.compareLabelCell}><Text style={styles.compareLabelText}>Rating</Text></View>
-          <View style={styles.compareLabelCell}><Text style={styles.compareLabelText}>Avg Package</Text></View>
-          <View style={styles.compareLabelCell}><Text style={styles.compareLabelText}>Max Package</Text></View>
-          <View style={styles.compareLabelCell}><Text style={styles.compareLabelText}>Placements %</Text></View>
+      <ScrollView horizontal contentContainerStyle={{ padding: 24 }}>
+        <View className="w-24 mr-4 gap-y-4">
+          <View className="h-16 justify-center border-b border-transparent"><Typography variant="caption" weight="bold" color="secondary">College</Typography></View>
+          <View className="h-12 justify-center border-b border-transparent"><Typography variant="caption" weight="bold" color="secondary">Type</Typography></View>
+          <View className="h-12 justify-center border-b border-transparent"><Typography variant="caption" weight="bold" color="secondary">Ranking</Typography></View>
+          <View className="h-12 justify-center border-b border-transparent"><Typography variant="caption" weight="bold" color="secondary">Rating</Typography></View>
+          <View className="h-12 justify-center border-b border-transparent"><Typography variant="caption" weight="bold" color="secondary">Avg Package</Typography></View>
+          <View className="h-12 justify-center border-b border-transparent"><Typography variant="caption" weight="bold" color="secondary">Max Package</Typography></View>
+          <View className="h-12 justify-center border-b border-transparent"><Typography variant="caption" weight="bold" color="secondary">Placements %</Typography></View>
         </View>
 
         {colleges.map((college) => (
-          <View key={college.id} style={styles.compareTableColumnData}>
-            <View style={styles.compareDataCellHeader}>
-              <Text style={styles.compareEmoji}>{college.icon || "🏛️"}</Text>
-              <Text style={styles.compareNameText} numberOfLines={1}>{college.shortName}</Text>
+          <View key={college.id} className="w-40 mr-4 gap-y-4 bg-white rounded-2xl p-4 border border-border-subtle shadow-sm">
+            <View className="h-16 justify-center border-b border-border-subtle">
+              <Typography className="text-2xl mb-1">{college.icon || "🏛️"}</Typography>
+              <Typography variant="body" weight="bold" color="primary" numberOfLines={1}>{college.shortName}</Typography>
             </View>
-            <View style={styles.compareDataCell}><Text style={styles.compareValueText} numberOfLines={1}>{college.type}</Text></View>
-            <View style={styles.compareDataCell}><Text style={styles.compareValueTextBold}>NIRF #{college.ranking}</Text></View>
-            <View style={styles.compareDataCell}><Text style={styles.compareValueText}>⭐ {college.rating}/5</Text></View>
-            <View style={styles.compareDataCell}><Text style={styles.compareValueTextBold}>₹{college.placementAvgPackage} LPA</Text></View>
-            <View style={styles.compareDataCell}><Text style={styles.compareValueText}>₹{college.placementTopPackage} LPA</Text></View>
-            <View style={styles.compareDataCell}><Text style={styles.compareValueText}>{college.placementRate}%</Text></View>
+            <View className="h-12 justify-center border-b border-border-subtle"><Typography variant="caption" color="primary" numberOfLines={1}>{college.type}</Typography></View>
+            <View className="h-12 justify-center border-b border-border-subtle"><Typography variant="caption" weight="bold" color="primary">NIRF #{college.ranking}</Typography></View>
+            <View className="h-12 justify-center border-b border-border-subtle"><Typography variant="caption" color="primary">⭐ {college.rating}/5</Typography></View>
+            <View className="h-12 justify-center border-b border-border-subtle"><Typography variant="caption" weight="bold" color="primary">₹{college.placementAvgPackage} LPA</Typography></View>
+            <View className="h-12 justify-center border-b border-border-subtle"><Typography variant="caption" color="primary">₹{college.placementTopPackage} LPA</Typography></View>
+            <View className="h-12 justify-center border-b border-border-subtle"><Typography variant="caption" color="primary">{college.placementRate}%</Typography></View>
           </View>
         ))}
       </ScrollView>
     </View>
   );
 };
-
-// ── Styles ──────────────────────────────────────────
-const styles = StyleSheet.create({
-  header: {
-    padding: 20,
-    paddingTop: 44,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "white",
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.8)",
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: 20,
-    marginTop: 16,
-    paddingHorizontal: 12,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    height: 44,
-    fontSize: 14,
-    color: "#1C4966",
-  },
-  filterSection: {
-    backgroundColor: "white",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  categoryScroll: {
-    marginBottom: 16,
-  },
-  categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#DDEEE3",
-    marginRight: 8,
-  },
-  categoryChipActive: {
-    backgroundColor: "#5F8B70",
-    borderColor: "#5F8B70",
-  },
-  categoryChipText: {
-    fontSize: 12,
-    color: "#5F8B70",
-    fontWeight: "bold",
-  },
-  categoryChipTextActive: {
-    color: "white",
-  },
-  resultsText: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 12,
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.06)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-  },
-  cardRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "rgba(143, 189, 215, 0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconText: {
-    fontSize: 24,
-  },
-  cardCategory: {
-    fontSize: 10,
-    color: "#5F8B70",
-    fontWeight: "bold",
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  cardTagline: {
-    fontSize: 12,
-    color: "#8FBDD7",
-  },
-  cardStats: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 12,
-  },
-  statChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(143, 189, 215, 0.08)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statChipText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#1C4966",
-  },
-  cardDivider: {
-    height: 1,
-    backgroundColor: "#F5F7FA",
-    marginVertical: 12,
-  },
-  cardActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  cardActionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  actionBtnText: {
-    fontSize: 12,
-    color: "#8FBDD7",
-  },
-  emptyContainer: {
-    padding: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyText: {
-    fontSize: 14,
-    color: "#8FBDD7",
-    textAlign: "center",
-  },
-  bookmarkHeaderBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  detailsScrollContent: {
-    padding: 16,
-    gap: 16,
-  },
-  detailCard: {
-    backgroundColor: "white",
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-  },
-  overviewText: {
-    fontSize: 14,
-    color: "#5F8B70",
-    lineHeight: 20,
-  },
-  metaRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 16,
-    backgroundColor: "rgba(143, 189, 215, 0.06)",
-    padding: 12,
-    borderRadius: 12,
-  },
-  metaCol: {
-    flex: 1,
-  },
-  metaLabel: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#8FBDD7",
-  },
-  metaValue: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginTop: 2,
-  },
-  sectionHeaderTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 16,
-  },
-  bulletItem: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 8,
-  },
-  bulletDot: {
-    color: "#5F8B70",
-  },
-  bulletText: {
-    fontSize: 14,
-    color: "#5F8B70",
-    flex: 1,
-  },
-  placementStatBox: {
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between",
-  },
-  placementStatCol: {
-    flex: 1,
-    alignItems: "center",
-  },
-  placementStatLabel: {
-    fontSize: 11,
-    color: "#8FBDD7",
-  },
-  placementStatValue: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginTop: 4,
-  },
-  skillsTagWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 8,
-  },
-  skillTag: {
-    backgroundColor: "rgba(28, 73, 102, 0.06)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  skillTagText: {
-    fontSize: 12,
-    color: "#1C4966",
-    fontWeight: "bold",
-  },
-  compareTableColumnLabels: {
-    width: 90,
-    gap: 1,
-  },
-  compareLabelCell: {
-    height: 60,
-    justifyContent: "center",
-    paddingHorizontal: 8,
-    backgroundColor: "rgba(28, 73, 102, 0.05)",
-  },
-  compareLabelText: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  compareTableColumnData: {
-    width: 150,
-    borderLeftWidth: 1,
-    borderColor: "#E6E6D5",
-    gap: 1,
-  },
-  compareDataCellHeader: {
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 8,
-    backgroundColor: "rgba(28, 73, 102, 0.08)",
-  },
-  compareEmoji: {
-    fontSize: 18,
-  },
-  compareNameText: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginTop: 2,
-  },
-  compareDataCell: {
-    height: 60,
-    justifyContent: "center",
-    paddingHorizontal: 8,
-    backgroundColor: "white",
-  },
-  compareValueText: {
-    fontSize: 12,
-    color: "#5F8B70",
-  },
-  compareValueTextBold: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  btn: {
-    backgroundColor: "#1C4966",
-    height: 44,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-});

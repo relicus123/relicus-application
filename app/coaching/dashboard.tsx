@@ -1,12 +1,10 @@
 import React, { useState, useMemo } from "react";
 import {
   View,
-  Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
   TextInput,
+  ActivityIndicator
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -22,16 +20,18 @@ import {
   ChevronRight,
   Send,
   HelpCircle,
-  Clock,
   CheckCircle,
 } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useCoachingStore } from "../../store/coaching.store";
 import { supabase } from "../../lib/supabase";
-
-const { width } = Dimensions.get("window");
-
-// Mock exam streams definitions removed
+import { Typography } from "../../components/Typography";
+import { GlassSurface } from "../../components/GlassSurface";
+import { BentoCard, BentoCardPressable } from "../../components/BentoCard";
+import { Button } from "../../components/Button";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export default function CoachingDashboard() {
   const router = useRouter();
@@ -98,6 +98,7 @@ export default function CoachingDashboard() {
     }
     fetchChapters();
   }, [selectedSubjectId]);
+  
   const [activeTab, setActiveTab] = useState<"overview" | "chapters" | "live" | "tests" | "pyqs" | "doubt" | "analytics">("overview");
 
   const [doubtText, setDoubtText] = useState("");
@@ -156,589 +157,296 @@ export default function CoachingDashboard() {
 
   if (loading) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Loading Exam Details...</Text>
+      <View className="flex-1 bg-surface-primary justify-center items-center">
+        <ActivityIndicator size="large" color="#4f378a" />
+        <Typography color="secondary" className="mt-4">Loading Exam Details...</Typography>
       </View>
     );
   }
 
   if (!exam) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Exam details not found.</Text>
-        <TouchableOpacity onPress={handleBack} style={styles.btn}>
-          <Text style={styles.btnText}>Go Back</Text>
-        </TouchableOpacity>
+      <View className="flex-1 bg-surface-primary justify-center items-center px-6">
+        <Typography color="secondary" className="mb-4">Exam details not found.</Typography>
+        <Button onPress={handleBack} variant="primary" className="w-full">
+          Go Back
+        </Button>
       </View>
     );
   }
 
+  const tabs = [
+    { id: "overview", label: "Overview", icon: BookOpen },
+    { id: "chapters", label: "Chapters", icon: BookOpen },
+    { id: "live", label: "Live", icon: Video },
+    { id: "tests", label: "Mock Tests", icon: Award },
+    { id: "pyqs", label: "PYQs", icon: FileText },
+    { id: "doubt", label: "Doubts Desk", icon: MessageSquare },
+    { id: "analytics", label: "Analytics", icon: BarChart },
+  ];
+
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFF0" }}>
-      {/* Header */}
+    <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#1C4966", "#5F8B70"]}
-        style={styles.header}
+        colors={["#fdf7ff", "#e9ddff", "#cfbcff"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        className="px-6 pb-6 pt-8 rounded-b-[40px]"
       >
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <ArrowLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>{exam.name} Prep Hub</Text>
-            <Text style={styles.headerSubtitle}>Streak: {learningStreak} days 🔥</Text>
+        <SafeAreaView edges={["top"]}>
+          <View className="flex-row items-center gap-4 mb-6">
+            <TouchableOpacity 
+              onPress={handleBack}
+              className="w-10 h-10 rounded-full bg-white/40 items-center justify-center border border-white/50"
+            >
+              <ArrowLeft color="#4f378a" size={20} />
+            </TouchableOpacity>
+            <View className="flex-1">
+              <Typography variant="title" weight="bold" color="primary">{exam.name} Prep Hub</Typography>
+              <Typography variant="caption" color="secondary">Streak: {learningStreak} days 🔥</Typography>
+            </View>
           </View>
-        </View>
 
-        {/* Stream Selector */}
-        {subjects.length > 0 && (
-          <View style={styles.streamSelector}>
-            <Text style={styles.streamSelectorLabel}>Active Stream / Subject:</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.streamScroll}>
-              {subjects.map((subject) => {
-                const active = selectedSubjectId === subject.id;
-                return (
-                  <TouchableOpacity
-                    key={subject.id}
-                    onPress={() => setSelectedSubjectId(subject.id)}
-                    style={[styles.streamChip, active && styles.streamChipActive]}
-                  >
-                    <Text style={[styles.streamChipText, active && styles.streamChipTextActive]}>
-                      {subject.name}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-        )}
+          {subjects.length > 0 && (
+            <View>
+              <Typography variant="caption" weight="bold" color="secondary" className="mb-3 opacity-80 uppercase tracking-wider">
+                Active Stream / Subject
+              </Typography>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="overflow-visible">
+                <View className="flex-row gap-3">
+                  {subjects.map((subject) => {
+                    const active = selectedSubjectId === subject.id;
+                    return (
+                      <TouchableOpacity
+                        key={subject.id}
+                        onPress={() => setSelectedSubjectId(subject.id)}
+                        className={twMerge(clsx(
+                          "px-5 py-2.5 rounded-full border border-white/40 flex-row items-center",
+                          active ? "bg-white border-white/60 shadow-sm" : "bg-white/30"
+                        ))}
+                      >
+                        <Typography 
+                          variant="body" 
+                          weight="bold" 
+                          color="primary"
+                          className={clsx(active ? "opacity-100" : "opacity-70")}
+                        >
+                          {subject.name}
+                        </Typography>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+            </View>
+          )}
+        </SafeAreaView>
       </LinearGradient>
 
-      {/* Tabs list */}
-      <View style={styles.tabsRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>
-          {[
-            { id: "overview", label: "Overview", icon: BookOpen },
-            { id: "chapters", label: "Chapters", icon: BookOpen },
-            { id: "live", label: "Live", icon: Video },
-            { id: "tests", label: "Mock Tests", icon: Award },
-            { id: "pyqs", label: "PYQs", icon: FileText },
-            { id: "doubt", label: "Doubts Desk", icon: MessageSquare },
-            { id: "analytics", label: "Analytics", icon: BarChart },
-          ].map((tab) => {
-            const active = activeTab === tab.id;
-            return (
-              <TouchableOpacity
-                key={tab.id}
-                onPress={() => setActiveTab(tab.id as any)}
-                style={[styles.tabChip, active && styles.tabChipActive]}
-              >
-                <Text style={[styles.tabChipText, active && styles.tabChipTextActive]}>
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+      <View className="bg-surface-primary border-b border-border-subtle py-3">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-6" contentContainerStyle={{ paddingRight: 48 }}>
+          <View className="flex-row gap-2">
+            {tabs.map((tab) => {
+              const active = activeTab === tab.id;
+              return (
+                <TouchableOpacity
+                  key={tab.id}
+                  onPress={() => setActiveTab(tab.id as any)}
+                  className={twMerge(clsx(
+                    "px-4 py-2 rounded-xl flex-row items-center gap-2",
+                    active ? "bg-primary" : "bg-primary/5"
+                  ))}
+                >
+                  <tab.icon color={active ? "white" : "#4f378a"} size={16} />
+                  <Typography 
+                    variant="caption" 
+                    weight="bold" 
+                    color={active ? "inverse" : "primary"}
+                  >
+                    {tab.label}
+                  </Typography>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </ScrollView>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Render Tab Contents */}
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
         {activeTab === "overview" && (
-          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Daily Study Goals</Text>
-              <View style={styles.goalRow}>
-                <CheckCircle size={18} color="#5F8B70" />
-                <Text style={styles.goalText}>Complete 1 chapter video lesson in {activeSubjectName}</Text>
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-4">
+            <BentoCard variant="secondary" padding="md" className="border border-border-subtle">
+              <Typography variant="heading" weight="bold" color="primary" className="mb-4">Daily Study Goals</Typography>
+              <View className="flex-row gap-3 items-center mb-3">
+                <CheckCircle size={20} color="#10B981" />
+                <Typography color="secondary" className="flex-1">Complete 1 chapter video lesson in {activeSubjectName}</Typography>
               </View>
-              <View style={styles.goalRow}>
-                <HelpCircle size={18} color="#8FBDD7" />
-                <Text style={styles.goalText}>Attempt a practice quiz on {activeSubjectName}</Text>
+              <View className="flex-row gap-3 items-center">
+                <HelpCircle size={20} color="#3B82F6" />
+                <Typography color="secondary" className="flex-1">Attempt a practice quiz on {activeSubjectName}</Typography>
               </View>
-            </View>
+            </BentoCard>
 
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Syllabus Coverage</Text>
-              <Text style={styles.subText}>Active Subject: {activeSubjectName}</Text>
-              <View style={styles.progressBarWrapper}>
-                <View style={styles.progressBarBg}>
-                  <View style={[styles.progressBarFill, { width: "45%" }]} />
-                </View>
-                <Text style={styles.progressPercentText}>45% of Syllabus Covered</Text>
+            <BentoCard variant="secondary" padding="md" className="border border-border-subtle">
+              <Typography variant="heading" weight="bold" color="primary" className="mb-1">Syllabus Coverage</Typography>
+              <Typography variant="caption" color="secondary" className="mb-4">Active Subject: {activeSubjectName}</Typography>
+              <View className="h-2.5 bg-border-subtle rounded-full overflow-hidden mb-2">
+                <View className="h-full bg-accent-primary rounded-full w-[45%]" />
               </View>
-            </View>
+              <Typography variant="caption" weight="bold" color="primary">45% of Syllabus Covered</Typography>
+            </BentoCard>
           </MotiView>
         )}
 
         {activeTab === "chapters" && (
-          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-4">
             {chapters.length > 0 ? chapters.map((chapter, idx) => (
-              <View key={chapter.id} style={styles.card}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <Text style={styles.cardTitle}>{chapter.name}</Text>
-                  <Text style={styles.badgeText}>Progress: {chapter.progress}%</Text>
+              <BentoCard key={chapter.id} variant="secondary" padding="md" className="border border-border-subtle">
+                <View className="flex-row justify-between items-center mb-4">
+                  <Typography variant="heading" weight="bold" color="primary">{chapter.name}</Typography>
+                  <View className="bg-green-500/10 px-2 py-1 rounded-lg">
+                    <Typography variant="caption" weight="bold" className="text-green-600">Progress: {chapter.progress}%</Typography>
+                  </View>
                 </View>
-                <View style={{ marginTop: 12, gap: 10 }}>
-                  <TouchableOpacity style={styles.listItem}>
-                    <BookOpen size={16} color="#1C4966" />
-                    <Text style={styles.listItemText}>View Study Materials</Text>
-                    <ChevronRight size={14} color="#8FBDD7" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )) : <Text style={styles.emptyText}>No chapters available for {activeSubjectName}.</Text>}
+                <BentoCardPressable variant="flat" padding="sm" className="flex-row items-center border border-border-subtle bg-surface-primary">
+                  <BookOpen size={16} color="#4f378a" className="mr-3" />
+                  <Typography weight="bold" color="primary" className="flex-1">View Study Materials</Typography>
+                  <ChevronRight size={16} color="#79747e" />
+                </BentoCardPressable>
+              </BentoCard>
+            )) : <Typography color="secondary" className="text-center py-8">No chapters available for {activeSubjectName}.</Typography>}
           </MotiView>
         )}
 
         {activeTab === "live" && (
-          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Upcoming Live Classes</Text>
-              {liveClasses.length > 0 ? liveClasses.map((cls, idx) => (
-                <View key={cls.id} style={[styles.classCard, { marginTop: idx > 0 ? 12 : 0 }]}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.classSubject}>{activeSubjectName}</Text>
-                    <Text style={styles.classTopic}>{cls.topic}</Text>
-                    <Text style={styles.classTime}>{new Date(cls.scheduled_time).toLocaleString()}</Text>
-                  </View>
-                  <TouchableOpacity style={[styles.joinBtn, cls.status !== 'ongoing' && { backgroundColor: "#8FBDD7" }]}>
-                    <Text style={styles.joinBtnText}>{cls.status === 'ongoing' ? 'Join' : 'Notify'}</Text>
-                  </TouchableOpacity>
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-4">
+            {liveClasses.length > 0 ? liveClasses.map((cls, idx) => (
+              <BentoCard key={cls.id} variant="secondary" padding="md" className="border border-border-subtle flex-row items-center">
+                <View className="flex-1 pr-4">
+                  <Typography variant="caption" weight="bold" color="secondary" className="mb-1 text-accent-primary uppercase tracking-wider">{activeSubjectName}</Typography>
+                  <Typography variant="heading" weight="bold" color="primary" className="mb-2">{cls.topic}</Typography>
+                  <Typography variant="caption" color="secondary">{new Date(cls.scheduled_time).toLocaleString()}</Typography>
                 </View>
-              )) : <Text style={styles.emptyText}>No live classes scheduled.</Text>}
-            </View>
+                <Button 
+                  size="sm" 
+                  variant={cls.status === 'ongoing' ? "primary" : "outline"}
+                >
+                  {cls.status === 'ongoing' ? 'Join' : 'Notify'}
+                </Button>
+              </BentoCard>
+            )) : <Typography color="secondary" className="text-center py-8">No live classes scheduled.</Typography>}
           </MotiView>
         )}
 
         {activeTab === "tests" && (
-          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Practice Mock Exams</Text>
-              {mockTests.length > 0 ? mockTests.map((test) => (
-                <View key={test.id} style={styles.testCard}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.testName}>{test.name}</Text>
-                    <Text style={styles.testMeta}>{test.questions_count} Questions • {Math.round(test.duration / 60)} Minutes</Text>
-                  </View>
-                  <TouchableOpacity onPress={() => handleStartTest(test.name)} style={styles.startTestBtn}>
-                    <Text style={styles.startTestBtnText}>Start</Text>
-                  </TouchableOpacity>
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-4">
+            {mockTests.length > 0 ? mockTests.map((test) => (
+              <BentoCard key={test.id} variant="secondary" padding="md" className="border border-border-subtle flex-row items-center">
+                <View className="flex-1 pr-4">
+                  <Typography variant="heading" weight="bold" color="primary" className="mb-1">{test.name}</Typography>
+                  <Typography variant="caption" color="secondary">{test.questions_count} Questions • {Math.round(test.duration / 60)} Minutes</Typography>
                 </View>
-              )) : <Text style={styles.emptyText}>No mock tests available.</Text>}
-            </View>
+                <Button 
+                  size="sm" 
+                  onPress={() => handleStartTest(test.name)}
+                >
+                  Start
+                </Button>
+              </BentoCard>
+            )) : <Typography color="secondary" className="text-center py-8">No mock tests available.</Typography>}
           </MotiView>
         )}
 
         {activeTab === "pyqs" && (
-          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Previous Year Question Papers</Text>
-              {[2025, 2024, 2023, 2022].map((year) => (
-                <TouchableOpacity key={year} style={styles.listItem} onPress={() => alert(`Downloading PDF: PYQ ${year} Paper...`)}>
-                  <FileText size={16} color="#5F8B70" />
-                  <Text style={styles.listItemText}>{activeSubjectName} - PYQ Paper {year}</Text>
-                  <Text style={{ fontSize: 11, color: "#8FBDD7" }}>PDF 📥</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-3">
+            {[2025, 2024, 2023, 2022].map((year) => (
+              <BentoCardPressable 
+                key={year} 
+                variant="secondary" 
+                padding="md" 
+                className="flex-row items-center border border-border-subtle"
+                onPress={() => alert(`Downloading PDF: PYQ ${year} Paper...`)}
+              >
+                <LinearGradient
+                  colors={["#fdf7ff", "#e9ddff"]}
+                  className="w-10 h-10 rounded-lg items-center justify-center mr-4"
+                >
+                  <FileText size={18} color="#4f378a" />
+                </LinearGradient>
+                <Typography weight="bold" color="primary" className="flex-1">{activeSubjectName} - PYQ Paper {year}</Typography>
+                <Typography variant="caption" color="secondary" weight="bold" className="text-accent-primary">PDF 📥</Typography>
+              </BentoCardPressable>
+            ))}
           </MotiView>
         )}
 
         {activeTab === "doubt" && (
-          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Ask a Doubt</Text>
-              <Text style={styles.subText}>Write your question below. An expert mentor will answer within 24 hours.</Text>
-              <View style={styles.doubtInputRow}>
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-4">
+            <BentoCard variant="secondary" padding="md" className="border border-border-subtle">
+              <Typography variant="heading" weight="bold" color="primary" className="mb-2">Ask a Doubt</Typography>
+              <Typography variant="caption" color="secondary" className="mb-4">Write your question below. An expert mentor will answer within 24 hours.</Typography>
+              <View className="flex-row gap-3">
                 <TextInput
                   placeholder="Type your question..."
-                  placeholderTextColor="#8FBDD7"
+                  placeholderTextColor="#79747e"
                   value={doubtText}
                   onChangeText={setDoubtText}
-                  style={styles.doubtInput}
+                  className="flex-1 bg-white border border-border-subtle rounded-xl px-4 py-3 font-inter text-primary text-base"
                 />
-                <TouchableOpacity onPress={handleAddDoubt} style={styles.sendDoubtBtn}>
-                  <Send size={16} color="white" />
+                <TouchableOpacity 
+                  onPress={handleAddDoubt} 
+                  className="w-12 h-12 bg-primary rounded-xl items-center justify-center shadow-sm"
+                >
+                  <Send size={18} color="white" />
                 </TouchableOpacity>
               </View>
-            </View>
+            </BentoCard>
 
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Doubts Queue</Text>
+            <View className="mt-4 gap-3">
+              <Typography variant="heading" weight="bold" color="primary" className="mb-2">Doubts Queue</Typography>
               {currentDoubts.length > 0 ? (
                 currentDoubts.map((doubt) => (
-                  <View key={doubt.id} style={styles.doubtItem}>
-                    <Text style={styles.doubtQuestion}>{doubt.description}</Text>
-                    <View style={styles.doubtMetaRow}>
-                      <Text style={styles.doubtStatusText}>Status: {doubt.status.toUpperCase()}</Text>
-                      <Text style={styles.doubtTimeText}>{new Date(doubt.createdAt).toLocaleDateString()}</Text>
+                  <BentoCard key={doubt.id} variant="secondary" padding="md" className="border border-border-subtle bg-white">
+                    <Typography weight="bold" color="primary" className="mb-3">{doubt.description}</Typography>
+                    <View className="flex-row justify-between items-center pt-3 border-t border-border-subtle">
+                      <View className="bg-orange-500/10 px-2 py-1 rounded-md">
+                        <Typography variant="caption" weight="bold" className="text-orange-600">Status: {doubt.status.toUpperCase()}</Typography>
+                      </View>
+                      <Typography variant="caption" color="secondary">{new Date(doubt.createdAt).toLocaleDateString()}</Typography>
                     </View>
-                  </View>
+                  </BentoCard>
                 ))
               ) : (
-                <Text style={styles.emptyText}>No doubts submitted yet for {activeSubjectName}.</Text>
+                <Typography color="secondary" className="text-center py-4">No doubts submitted yet for {activeSubjectName}.</Typography>
               )}
             </View>
           </MotiView>
         )}
 
         {activeTab === "analytics" && (
-          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Test History</Text>
-              {testAttempts.length > 0 ? (
-                testAttempts.map((attempt) => (
-                  <View key={attempt.testId} style={styles.testAttemptItem}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.testAttemptName}>{attempt.testName}</Text>
-                      <Text style={styles.testAttemptDate}>{new Date(attempt.date).toLocaleDateString()}</Text>
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-4">
+            <Typography variant="heading" weight="bold" color="primary" className="mb-2">Test History</Typography>
+            {testAttempts.length > 0 ? (
+              <View className="gap-3">
+                {testAttempts.map((attempt) => (
+                  <BentoCard key={attempt.testId} variant="secondary" padding="md" className="border border-border-subtle flex-row items-center bg-white">
+                    <View className="flex-1">
+                      <Typography weight="bold" color="primary" className="mb-1">{attempt.testName}</Typography>
+                      <Typography variant="caption" color="secondary">{new Date(attempt.date).toLocaleDateString()}</Typography>
                     </View>
-                    <Text style={styles.testAttemptScore}>{attempt.score}%</Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.emptyText}>No tests attempted yet. Go to Mock Tests tab and try an exam!</Text>
-              )}
-            </View>
+                    <View className="items-end">
+                      <Typography variant="heading" weight="bold" className="text-accent-primary">{attempt.score}%</Typography>
+                      <Typography variant="caption" color="secondary">Score</Typography>
+                    </View>
+                  </BentoCard>
+                ))}
+              </View>
+            ) : (
+              <Typography color="secondary" className="text-center py-8">No tests attempted yet. Go to Mock Tests tab and try an exam!</Typography>
+            )}
           </MotiView>
         )}
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  header: {
-    padding: 20,
-    paddingTop: 44,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "white",
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.85)",
-  },
-  streamSelector: {
-    marginTop: 16,
-  },
-  streamSelectorLabel: {
-    fontSize: 11,
-    fontWeight: "bold",
-    color: "#DDEEE3",
-    marginBottom: 8,
-  },
-  streamScroll: {
-    gap: 8,
-  },
-  streamChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.25)",
-    marginRight: 8,
-  },
-  streamChipActive: {
-    backgroundColor: "white",
-    borderColor: "white",
-  },
-  streamChipText: {
-    fontSize: 12,
-    color: "white",
-    fontWeight: "600",
-  },
-  streamChipTextActive: {
-    color: "#1C4966",
-  },
-  tabsRow: {
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.08)",
-  },
-  tabsScroll: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  tabChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "rgba(143, 189, 215, 0.1)",
-    marginRight: 8,
-  },
-  tabChipActive: {
-    backgroundColor: "#1C4966",
-  },
-  tabChipText: {
-    fontSize: 12,
-    color: "#1C4966",
-    fontWeight: "bold",
-  },
-  tabChipTextActive: {
-    color: "white",
-  },
-  scrollContent: {
-    padding: 16,
-    gap: 16,
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.05)",
-    marginBottom: 16,
-  },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginBottom: 12,
-  },
-  subText: {
-    fontSize: 12,
-    color: "#8FBDD7",
-    marginBottom: 8,
-  },
-  goalRow: {
-    flexDirection: "row",
-    gap: 10,
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  goalText: {
-    fontSize: 13,
-    color: "#5F8B70",
-    flex: 1,
-  },
-  progressBarWrapper: {
-    marginTop: 8,
-  },
-  progressBarBg: {
-    height: 8,
-    backgroundColor: "#F5F7FA",
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  progressBarFill: {
-    height: "100%",
-    backgroundColor: "#5F8B70",
-    borderRadius: 4,
-  },
-  progressPercentText: {
-    fontSize: 11,
-    color: "#8FBDD7",
-    marginTop: 6,
-    fontWeight: "bold",
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#5CB85C",
-    backgroundColor: "rgba(92, 184, 92, 0.12)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  listItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(143, 189, 215, 0.03)",
-    borderWidth: 1,
-    borderColor: "rgba(143, 189, 215, 0.15)",
-    borderRadius: 16,
-    padding: 12,
-    gap: 12,
-  },
-  listItemText: {
-    flex: 1,
-    fontSize: 13,
-    color: "#1C4966",
-    fontWeight: "600",
-  },
-  classCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(143, 189, 215, 0.06)",
-    padding: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(143, 189, 215, 0.15)",
-  },
-  classSubject: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#5F8B70",
-  },
-  classTopic: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1C4966",
-    marginTop: 4,
-  },
-  classTime: {
-    fontSize: 12,
-    color: "#8FBDD7",
-    marginTop: 4,
-  },
-  joinBtn: {
-    backgroundColor: "#1C4966",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-  },
-  joinBtnText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  testCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.1)",
-    padding: 16,
-    borderRadius: 20,
-    marginBottom: 10,
-  },
-  testName: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  testMeta: {
-    fontSize: 11,
-    color: "#8FBDD7",
-    marginTop: 4,
-  },
-  startTestBtn: {
-    backgroundColor: "#5F8B70",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-  },
-  startTestBtnText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  doubtInputRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 12,
-  },
-  doubtInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.15)",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 44,
-    fontSize: 13,
-    color: "#1C4966",
-  },
-  sendDoubtBtn: {
-    width: 44,
-    height: 44,
-    backgroundColor: "#1C4966",
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  doubtItem: {
-    backgroundColor: "rgba(28, 73, 102, 0.02)",
-    borderWidth: 1,
-    borderColor: "rgba(28, 73, 102, 0.08)",
-    padding: 14,
-    borderRadius: 16,
-    marginBottom: 10,
-  },
-  doubtQuestion: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#1C4966",
-  },
-  doubtMetaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 8,
-  },
-  doubtStatusText: {
-    fontSize: 10,
-    color: "#F0AD4E",
-    fontWeight: "bold",
-  },
-  doubtTimeText: {
-    fontSize: 10,
-    color: "#8FBDD7",
-  },
-  testAttemptItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderColor: "#F5F7FA",
-    paddingVertical: 10,
-  },
-  testAttemptName: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "#1C4966",
-  },
-  testAttemptDate: {
-    fontSize: 11,
-    color: "#8FBDD7",
-    marginTop: 2,
-  },
-  testAttemptScore: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "#5F8B70",
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 32,
-  },
-  emptyText: {
-    fontSize: 13,
-    color: "#8FBDD7",
-    textAlign: "center",
-  },
-  btn: {
-    backgroundColor: "#1C4966",
-    height: 44,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-});

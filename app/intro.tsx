@@ -1,11 +1,15 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
+import { View, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
-import { MotiView, MotiText } from "moti";
+import { MotiView } from "moti";
 import { Heart, GraduationCap, Sparkles } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { AppScreen } from "../components/AppScreen";
+import { Typography } from "../components/Typography";
+import { Button } from "../components/Button";
+import { GlassSurface } from "../components/GlassSurface";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 export default function AppIntro() {
   const router = useRouter();
@@ -14,52 +18,52 @@ export default function AppIntro() {
     {
       icon: Heart,
       label: "Counselling",
-      colors: ["#1C4966", "#5F8B70"],
+      colors: ["#e9ddff", "#cfbcff"],
+      iconColor: "#4f378a",
     },
     {
       icon: GraduationCap,
       label: "Learning",
-      colors: ["#5F8B70", "#8FBDD7"],
+      colors: ["#f2ecf4", "#e6e0e9"],
+      iconColor: "#494551",
     },
     {
       icon: Sparkles,
       label: "Mindfulness",
-      colors: ["#8FBDD7", "#DDEEE3"],
+      colors: ["#ffdf93", "#e7c365"],
+      iconColor: "#765b00",
     },
   ];
 
   return (
-    <LinearGradient
-      colors={["#1C4966", "#5F8B70", "#8FBDD7"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.container}
-    >
+    <AppScreen backgroundColor="primary" className="items-center justify-center px-8 pb-12">
       <MotiView
         from={{ opacity: 0, translateY: 20 }}
         animate={{ opacity: 1, translateY: 0 }}
         transition={{ type: "timing", duration: 800 }}
-        style={styles.header}
+        className="items-center mb-16 mt-12"
       >
-        <MotiText
+        <MotiView
           from={{ scale: 0.9 }}
           animate={{ scale: 1 }}
           transition={{ type: "timing", duration: 500, delay: 200 }}
-          style={styles.title}
         >
-          Relicus
-        </MotiText>
-        <MotiText
+          <Typography variant="display" weight="bold" color="primary" className="mb-4 text-center tracking-tighter">
+            Relicus
+          </Typography>
+        </MotiView>
+        <MotiView
           from={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ type: "timing", duration: 500, delay: 400 }}
-          style={styles.subtitle}
         >
-          One App. Multiple Growth Experiences.
-        </MotiText>
+          <Typography variant="title" weight="regular" color="secondary" className="text-center" style={{ maxWidth: width * 0.8 }}>
+            One App. Multiple Growth Experiences.
+          </Typography>
+        </MotiView>
       </MotiView>
 
-      <View style={styles.phoneContainer}>
+      <View className="flex-row gap-4 mb-16">
         {phones.map((phone, index) => (
           <MotiView
             key={phone.label}
@@ -71,99 +75,37 @@ export default function AppIntro() {
               delay: 600 + index * 200,
             }}
           >
-            <LinearGradient
-              colors={phone.colors}
-              style={styles.phoneMockup}
-            >
-              <phone.icon color="white" size={48} strokeWidth={1.5} />
-              <Text style={styles.phoneLabel}>{phone.label}</Text>
-            </LinearGradient>
+            <GlassSurface intensity={30} rounded="2xl" className="w-24 h-48 border-white/20 p-4 items-center justify-center">
+              <LinearGradient
+                colors={phone.colors as [string, string]}
+                className="absolute inset-0 opacity-50"
+              />
+              <phone.icon color={phone.iconColor} size={40} strokeWidth={1.5} />
+              <Typography variant="caption" weight="medium" className="text-center mt-4" style={{ color: phone.iconColor }}>
+                {phone.label}
+              </Typography>
+            </GlassSurface>
           </MotiView>
         ))}
       </View>
 
+      <View className="flex-1" />
+
       <MotiView
-        from={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        from={{ opacity: 0, translateY: 20 }}
+        animate={{ opacity: 1, translateY: 0 }}
         transition={{ type: "timing", duration: 500, delay: 1400 }}
-        style={styles.footer}
+        className="w-full"
       >
-        <TouchableOpacity
+        <Button
+          variant="primary"
+          size="lg"
           onPress={() => router.push("/landing" as any)}
-          activeOpacity={0.8}
-          style={styles.button}
+          className="w-full shadow-sm"
         >
-          <Text style={styles.buttonText}>Get Started</Text>
-        </TouchableOpacity>
+          Get Started
+        </Button>
       </MotiView>
-    </LinearGradient>
+    </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 32,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 48,
-  },
-  title: {
-    fontSize: 64,
-    fontWeight: "bold",
-    color: "white",
-    marginBottom: 16,
-    letterSpacing: -1,
-  },
-  subtitle: {
-    fontSize: 20,
-    color: "rgba(255, 255, 255, 0.9)",
-    textAlign: "center",
-    maxWidth: width * 0.8,
-  },
-  phoneContainer: {
-    flexDirection: "row",
-    gap: 16,
-    marginBottom: 48,
-  },
-  phoneMockup: {
-    width: 96,
-    height: 192,
-    borderRadius: 32,
-    borderWidth: 4,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    padding: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  phoneLabel: {
-    color: "white",
-    fontSize: 10,
-    marginTop: 8,
-    fontWeight: "500",
-    textAlign: "center",
-  },
-  footer: {
-    width: "100%",
-    alignItems: "center",
-  },
-  button: {
-    backgroundColor: "white",
-    paddingHorizontal: 48,
-    paddingVertical: 16,
-    borderRadius: 99,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  buttonText: {
-    color: "#1C4966",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-});
