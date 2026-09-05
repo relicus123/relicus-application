@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { BookOpen, GraduationCap, Compass, HelpCircle, ShieldCheck, Heart, Users } from "lucide-react";
+import { BookOpen, GraduationCap, Compass, HelpCircle, ShieldCheck, Heart } from "lucide-react";
 import { supabase } from "../../services/supabaseClient";
 
 export function AdminOverview() {
@@ -12,7 +12,6 @@ export function AdminOverview() {
     colleges: 4,
     scholarships: 4,
     mockTests: 12,
-    tuitionClasses: 5,
     mindfulnessActivities: 3,
   });
   const [loading, setLoading] = useState(true);
@@ -33,7 +32,6 @@ export function AdminOverview() {
           { count: collegeCount },
           { count: scholarshipCount },
           { count: mockTestCount },
-          { count: tuitionCount },
           { count: mindfulnessCount }
         ] = await Promise.all([
           supabase.from("skills_courses").select("*", { count: "exact", head: true }),
@@ -42,7 +40,6 @@ export function AdminOverview() {
           supabase.from("knownext_colleges").select("*", { count: "exact", head: true }),
           supabase.from("knownext_scholarships").select("*", { count: "exact", head: true }),
           supabase.from("coaching_mock_tests").select("*", { count: "exact", head: true }),
-          supabase.from("tuition_classes").select("*", { count: "exact", head: true }),
           supabase.from("mindfulness_activities").select("*", { count: "exact", head: true }),
         ]);
 
@@ -53,7 +50,6 @@ export function AdminOverview() {
           colleges: collegeCount || 0,
           scholarships: scholarshipCount || 0,
           mockTests: mockTestCount || 0,
-          tuitionClasses: tuitionCount || 0,
           mindfulnessActivities: mindfulnessCount || 0,
         });
       } catch (err) {
@@ -84,19 +80,11 @@ export function AdminOverview() {
     },
     {
       title: "KnowNext Guidance",
-      desc: "Careers list, roadmaps, colleges comparison, scholarships",
+      desc: "Careers list, roadmaps, colleges comparison, tuition & scholarships",
       icon: Compass,
       color: "from-amber-500 to-orange-600",
       path: "/admin/knownext",
       stats: `${stats.careers} Careers | ${stats.colleges} Colleges`,
-    },
-    {
-      title: "Tuition Classes",
-      desc: "Manage classes, students, assignments, and analytics",
-      icon: Users,
-      color: "from-rose-500 to-pink-600",
-      path: "/admin/tuition",
-      stats: `${stats.tuitionClasses} Classes Active`,
     },
     {
       title: "Mindfulness",

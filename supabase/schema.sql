@@ -694,30 +694,8 @@ create policy "Tuition enrollments read viewable by all" on tuition_enrollments 
 create policy "Tuition enrollments write by admin only" on tuition_enrollments for all using (exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin'));
 
 -- -----------------------------------------------------------------------------
--- 7. COUNSELLING MODULE
+-- 7. (REMOVED: COUNSELLING MODULE MIGRATED TO EXTERNAL PORTAL HTTPS://WWW.RELICUS.IN/)
 -- -----------------------------------------------------------------------------
-create table if not exists therapist_details (
-  id text primary key,
-  name text not null,
-  photo text,
-  experience text,
-  rating numeric default 5.0,
-  reviews integer default 0,
-  specialization text[],
-  about text,
-  languages text[],
-  fee text,
-  location text,
-  education text,
-  availability text[],
-  created_at timestamp with time zone default timezone('utc'::text, now())
-);
-
-alter table therapist_details enable row level security;
-create policy "Therapist details read viewable by all" on therapist_details for select using (true);
-create policy "Therapist details write by admin only" on therapist_details for all using (
-  exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin')
-);
 
 -- -----------------------------------------------------------------------------
 -- 8. USER ACTIVITIES, ATTEMPTS & PROGRESS EXTENSIONS

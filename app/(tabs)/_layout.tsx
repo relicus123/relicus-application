@@ -1,28 +1,31 @@
 import React from "react";
 import { Tabs } from "expo-router";
 import { Home, MessageSquare, GraduationCap, Bell, User } from "lucide-react-native";
-import { Platform } from "react-native";
+import { Platform, View } from "react-native";
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#4f378a", // primary
-        tabBarInactiveTintColor: "#79747e", // secondary
+        tabBarActiveTintColor: "#7C3AED",
+        tabBarInactiveTintColor: "#64748B",
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#fdf7ff", // surface-primary
+          backgroundColor: "#FFFFFF",
           borderTopWidth: 1,
-          borderTopColor: "rgba(103, 80, 164, 0.1)", // primary with low opacity
+          borderTopColor: "#F1F5F9",
           height: Platform.OS === 'ios' ? 88 : 68,
           paddingBottom: Platform.OS === 'ios' ? 28 : 8,
           paddingTop: 8,
-          elevation: 0,
-          shadowOpacity: 0,
+          elevation: 8,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 8,
         },
         tabBarLabelStyle: {
-          fontFamily: "Inter-Medium",
           fontSize: 11,
+          fontWeight: "600",
           marginTop: 2,
         },
       }}
@@ -31,35 +34,62 @@ export default function TabLayout() {
         name="home"
         options={{
           title: "Home",
-          tabBarIcon: ({ color }) => <Home color={color} size={22} strokeWidth={2.5} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ alignItems: "center" }}>
+              <Home color={color} size={22} strokeWidth={focused ? 2.5 : 2} />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="sessions"
         options={{
-          title: "Sessions",
-          tabBarIcon: ({ color }) => <MessageSquare color={color} size={22} strokeWidth={2.5} />,
+          title: "Counselling",
+          tabBarIcon: ({ color, focused }) => (
+            <MessageSquare color={color} size={22} strokeWidth={focused ? 2.5 : 2} />
+          ),
         }}
       />
       <Tabs.Screen
         name="learning"
         options={{
           title: "Coaching",
-          tabBarIcon: ({ color }) => <GraduationCap color={color} size={22} strokeWidth={2.5} />,
+          tabBarIcon: ({ color, focused }) => (
+            <GraduationCap color={color} size={22} strokeWidth={focused ? 2.5 : 2} />
+          ),
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
           title: "Alerts",
-          tabBarIcon: ({ color }) => <Bell color={color} size={22} strokeWidth={2.5} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ position: "relative" }}>
+              <Bell color={color} size={22} strokeWidth={focused ? 2.5 : 2} />
+              <View
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  right: 0,
+                  width: 7,
+                  height: 7,
+                  borderRadius: 3.5,
+                  backgroundColor: "#EF4444",
+                  borderWidth: 1,
+                  borderColor: "#FFFFFF",
+                }}
+              />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color }) => <User color={color} size={22} strokeWidth={2.5} />,
+          tabBarIcon: ({ color, focused }) => (
+            <User color={color} size={22} strokeWidth={focused ? 2.5 : 2} />
+          ),
         }}
       />
     </Tabs>

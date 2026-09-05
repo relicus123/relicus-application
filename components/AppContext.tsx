@@ -29,10 +29,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [bookings, setBookings] = useState<Booking[]>([
-    { id: "b1", practitioner: "Dr. Sarah Johnson", specialty: "Anxiety & Trauma", date: "Today", time: "3:00 PM", mode: "Video Session", status: "Upcoming", type: "counselling" },
-    { id: "b2", practitioner: "Dr. Rajesh Kumar", specialty: "Stress Management", date: "May 28, 2026", time: "11:00 AM", mode: "Chat Session", status: "Completed", type: "counselling" },
     { id: "b3", practitioner: "Mr. John Smith", specialty: "Mathematics Tuition", date: "May 27, 2026", time: "4:00 PM", mode: "1-to-1 Tuition", status: "Completed", type: "tuition" },
-    { id: "b4", practitioner: "Dr. Priya Sharma", specialty: "Family Counseling", date: "May 24, 2026", time: "5:30 PM", mode: "Video Session", status: "Completed", type: "counselling" },
   ]);
 
   const [testResults, setTestResults] = useState<TestResult[]>([

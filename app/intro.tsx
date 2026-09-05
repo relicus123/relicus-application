@@ -1,111 +1,229 @@
 import React from "react";
-import { View, Dimensions } from "react-native";
+import { View, Dimensions, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { MotiView } from "moti";
-import { Heart, GraduationCap, Sparkles } from "lucide-react-native";
+import { Heart, GraduationCap, Sparkles, Compass, ArrowRight, ShieldCheck } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { AppScreen } from "../components/AppScreen";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Typography } from "../components/Typography";
 import { Button } from "../components/Button";
-import { GlassSurface } from "../components/GlassSurface";
 
 const { width } = Dimensions.get("window");
 
 export default function AppIntro() {
   const router = useRouter();
 
-  const phones = [
+  const pillars = [
     {
       icon: Heart,
-      label: "Counselling",
-      colors: ["#e9ddff", "#cfbcff"],
-      iconColor: "#4f378a",
+      title: "Counselling",
+      badge: "Therapy",
+      description: "Web portal & therapy support",
+      bgGradient: ["#FAF5FF", "#F3E8FF"] as [string, string],
+      borderColor: "#E9D5FF",
+      iconColor: "#7C3AED",
+      iconBg: "#EDE9FE",
     },
     {
       icon: GraduationCap,
-      label: "Learning",
-      colors: ["#f2ecf4", "#e6e0e9"],
-      iconColor: "#494551",
+      title: "Coaching",
+      badge: "CUET & Exams",
+      description: "Structured test prep & mocks",
+      bgGradient: ["#EFF6FF", "#DBEAFE"] as [string, string],
+      borderColor: "#BFDBFE",
+      iconColor: "#2563EB",
+      iconBg: "#DBEAFE",
     },
     {
       icon: Sparkles,
-      label: "Mindfulness",
-      colors: ["#ffdf93", "#e7c365"],
-      iconColor: "#765b00",
+      title: "Skills Academy",
+      badge: "Careers",
+      description: "Masterclasses & certificates",
+      bgGradient: ["#ECFDF5", "#D1FAE5"] as [string, string],
+      borderColor: "#A7F3D0",
+      iconColor: "#059669",
+      iconBg: "#D1FAE5",
+    },
+    {
+      icon: Compass,
+      title: "KnowNext",
+      badge: "Guidance",
+      description: "Tuition & college roadmaps",
+      bgGradient: ["#FFF7ED", "#FFEDD5"] as [string, string],
+      borderColor: "#FED7AA",
+      iconColor: "#EA580C",
+      iconBg: "#FFEDD5",
     },
   ];
 
   return (
-    <AppScreen backgroundColor="primary" className="items-center justify-center px-8 pb-12">
-      <MotiView
-        from={{ opacity: 0, translateY: 20 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "timing", duration: 800 }}
-        className="items-center mb-16 mt-12"
-      >
+    <View className="flex-1 bg-surface-primary">
+      <LinearGradient
+        colors={["#FAF5FF", "#F3EEFF", "#FDF7FF"]}
+        className="absolute inset-0"
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+
+      <SafeAreaView className="flex-1 justify-between px-6 py-4">
+        {/* Top Header Section */}
         <MotiView
-          from={{ scale: 0.9 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "timing", duration: 500, delay: 200 }}
+          from={{ opacity: 0, translateY: -20 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: "timing", duration: 700 }}
+          className="items-center pt-2"
         >
-          <Typography variant="display" weight="bold" color="primary" className="mb-4 text-center tracking-tighter">
+          {/* Brand Emblem */}
+          <View className="w-14 h-14 rounded-2xl bg-primary/10 items-center justify-center border border-primary/20 mb-3 shadow-sm">
+            <LinearGradient
+              colors={["#6750A4", "#4F378A"]}
+              className="w-10 h-10 rounded-xl items-center justify-center"
+            >
+              <Sparkles color="#ffffff" size={22} strokeWidth={2} />
+            </LinearGradient>
+          </View>
+
+          <Typography
+            variant="display"
+            weight="bold"
+            color="primary"
+            className="tracking-tight text-center text-4xl"
+          >
             Relicus
           </Typography>
-        </MotiView>
-        <MotiView
-          from={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ type: "timing", duration: 500, delay: 400 }}
-        >
-          <Typography variant="title" weight="regular" color="secondary" className="text-center" style={{ maxWidth: width * 0.8 }}>
+
+          <Typography
+            variant="title"
+            weight="semibold"
+            color="primary"
+            className="text-center mt-2 text-lg"
+          >
             One App. Multiple Growth Experiences.
           </Typography>
-        </MotiView>
-      </MotiView>
 
-      <View className="flex-row gap-4 mb-16">
-        {phones.map((phone, index) => (
-          <MotiView
-            key={phone.label}
-            from={{ opacity: 0, translateY: 50 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{
-              type: "timing",
-              duration: 600,
-              delay: 600 + index * 200,
-            }}
+          <Typography
+            variant="caption"
+            color="secondary"
+            className="text-center mt-1 max-w-[280px]"
           >
-            <GlassSurface intensity={30} rounded="2xl" className="w-24 h-48 border-white/20 p-4 items-center justify-center">
-              <LinearGradient
-                colors={phone.colors as [string, string]}
-                className="absolute inset-0 opacity-50"
-              />
-              <phone.icon color={phone.iconColor} size={40} strokeWidth={1.5} />
-              <Typography variant="caption" weight="medium" className="text-center mt-4" style={{ color: phone.iconColor }}>
-                {phone.label}
-              </Typography>
-            </GlassSurface>
-          </MotiView>
-        ))}
-      </View>
+            Empowering your academic success, career mastery, and mental wellness in one unified platform.
+          </Typography>
+        </MotiView>
 
-      <View className="flex-1" />
+        {/* 4 Pillars Grid Showcase */}
+        <View className="my-auto py-4">
+          <View className="flex-row flex-wrap justify-between gap-y-3.5">
+            {pillars.map((pillar, index) => {
+              const Icon = pillar.icon;
+              return (
+                <MotiView
+                  key={pillar.title}
+                  from={{ opacity: 0, scale: 0.92, translateY: 20 }}
+                  animate={{ opacity: 1, scale: 1, translateY: 0 }}
+                  transition={{
+                    type: "timing",
+                    duration: 500,
+                    delay: 200 + index * 100,
+                  }}
+                  style={{ width: (width - 48 - 12) / 2 }}
+                >
+                  <LinearGradient
+                    colors={pillar.bgGradient}
+                    style={{ borderColor: pillar.borderColor }}
+                    className="rounded-2xl border p-3.5 min-h-[128px] justify-between shadow-sm"
+                  >
+                    <View className="flex-row items-center justify-between mb-2">
+                      <View
+                        style={{ backgroundColor: pillar.iconBg }}
+                        className="w-9 h-9 rounded-xl items-center justify-center"
+                      >
+                        <Icon color={pillar.iconColor} size={20} strokeWidth={2} />
+                      </View>
+                      <View className="bg-white/80 px-2 py-0.5 rounded-full border border-black/5">
+                        <Typography
+                          variant="caption"
+                          weight="semibold"
+                          style={{ color: pillar.iconColor, fontSize: 10 }}
+                        >
+                          {pillar.badge}
+                        </Typography>
+                      </View>
+                    </View>
 
-      <MotiView
-        from={{ opacity: 0, translateY: 20 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "timing", duration: 500, delay: 1400 }}
-        className="w-full"
-      >
-        <Button
-          variant="primary"
-          size="lg"
-          onPress={() => router.push("/landing" as any)}
-          className="w-full"
+                    <View>
+                      <Typography
+                        variant="body"
+                        weight="bold"
+                        color="primary"
+                        className="text-sm font-semibold"
+                        numberOfLines={1}
+                      >
+                        {pillar.title}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="secondary"
+                        className="text-xs mt-0.5 opacity-80"
+                        numberOfLines={2}
+                      >
+                        {pillar.description}
+                      </Typography>
+                    </View>
+                  </LinearGradient>
+                </MotiView>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Bottom CTA Section */}
+        <MotiView
+          from={{ opacity: 0, translateY: 30 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: "timing", duration: 600, delay: 600 }}
+          className="w-full pb-2"
         >
-          Get Started
-        </Button>
-      </MotiView>
-    </AppScreen>
+          <Button
+            variant="primary"
+            size="lg"
+            onPress={() => router.push("/landing" as any)}
+            className="w-full py-4 rounded-2xl shadow-md"
+          >
+            <View className="flex-row items-center justify-center gap-2">
+              <Typography weight="bold" color="white" className="text-base">
+                Get Started
+              </Typography>
+              <ArrowRight color="#ffffff" size={18} strokeWidth={2.5} />
+            </View>
+          </Button>
+
+          <View className="flex-row justify-center items-center gap-1.5 mt-3.5">
+            <Typography variant="bodySecondary" color="secondary">
+              Already have an account?
+            </Typography>
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: "/landing" as any,
+                  params: { initialMode: "login" },
+                })
+              }
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Typography variant="bodySecondary" weight="bold" color="primary">
+                Log In
+              </Typography>
+            </TouchableOpacity>
+          </View>
+
+          <View className="flex-row items-center justify-center gap-1 mt-3 opacity-60">
+            <ShieldCheck color="#79747e" size={12} />
+            <Typography variant="caption" color="secondary" className="text-[11px]">
+              Trusted by 10,000+ students & professionals
+            </Typography>
+          </View>
+        </MotiView>
+      </SafeAreaView>
+    </View>
   );
 }
