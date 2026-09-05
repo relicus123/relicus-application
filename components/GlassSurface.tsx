@@ -7,7 +7,7 @@ import { twMerge } from "tailwind-merge";
 interface GlassSurfaceProps extends BlurViewProps {
   children: React.ReactNode;
   intensity?: number;
-  tint?: "light" | "dark" | "default" | "transparent" | "regular" | "prominent" | "systemThickMaterial" | "systemMaterial" | "systemThinMaterial" | "systemUltraThinMaterial" | "systemChromeMaterial";
+  tint?: "light" | "dark" | "default";
   className?: string;
   rounded?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "none" | "full";
   hasBorder?: boolean;

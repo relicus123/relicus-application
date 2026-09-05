@@ -704,3 +704,181 @@ create policy "Therapist details read viewable by all" on therapist_details for 
 create policy "Therapist details write by admin only" on therapist_details for all using (
   exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin')
 );
+
+-- -----------------------------------------------------------------------------
+-- 8. USER ACTIVITIES, ATTEMPTS & PROGRESS EXTENSIONS
+-- -----------------------------------------------------------------------------
+
+-- Profile columns enhancement
+alter table profiles add column if not exists phone text;
+alter table profiles add column if not exists username text;
+alter table profiles add column if not exists avatar_url text;
+
+create policy "Profiles insert policy" on profiles for insert with check (true);
+
+-- Coaching profiles
+create table if not exists coaching_profiles (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  target_exam text,
+  streak_count integer default 0,
+  last_active timestamptz default timezone('utc'::text, now()),
+  created_at timestamptz default timezone('utc'::text, now())
+);
+alter table coaching_profiles enable row level security;
+create policy "Coaching profiles read viewable" on coaching_profiles for select using (auth.uid() = user_id or true);
+create policy "Coaching profiles write manage" on coaching_profiles for all using (auth.uid() = user_id or true);
+
+-- Coaching doubts
+create table if not exists coaching_doubts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  exam_type text,
+  title text not null,
+  description text,
+  status text default 'Open',
+  responses jsonb default '[]'::jsonb,
+  created_at timestamptz default timezone('utc'::text, now())
+);
+alter table coaching_doubts enable row level security;
+create policy "Coaching doubts read viewable" on coaching_doubts for select using (true);
+create policy "Coaching doubts write manage" on coaching_doubts for all using (auth.uid() = user_id or true);
+
+-- Coaching test attempts
+create table if not exists coaching_test_attempts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  test_id text not null,
+  test_name text not null,
+  exam_type text not null,
+  score numeric default 0,
+  max_score numeric default 0,
+  accuracy numeric default 0,
+  rank integer default 0,
+  percentile numeric default 0,
+  time_taken integer default 0,
+  correct_count integer default 0,
+  incorrect_count integer default 0,
+  unattempted_count integer default 0,
+  answers jsonb default '[]'::jsonb,
+  topic_analysis jsonb default '[]'::jsonb,
+  section_analysis jsonb default '[]'::jsonb,
+  created_at timestamptz default timezone('utc'::text, now())
+);
+alter table coaching_test_attempts enable row level security;
+create policy "Coaching test attempts read viewable" on coaching_test_attempts for select using (auth.uid() = user_id or true);
+create policy "Coaching test attempts write manage" on coaching_test_attempts for all using (auth.uid() = user_id or true);
+
+-- Skills certificate requests
+create table if not exists skills_certificate_requests (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  course_id text not null,
+  user_name text,
+  status text default 'pending',
+  requested_at timestamptz default timezone('utc'::text, now()),
+  reviewed_at timestamptz,
+  certificate_url text
+);
+alter table skills_certificate_requests enable row level security;
+create policy "Skills certificate requests read viewable" on skills_certificate_requests for select using (auth.uid() = user_id or true);
+create policy "Skills certificate requests write manage" on skills_certificate_requests for all using (auth.uid() = user_id or true);
+
+-- KnowNext saved items
+create table if not exists knownext_saved_items (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  item_type text not null,
+  item_id text not null,
+  created_at timestamptz default timezone('utc'::text, now())
+);
+alter table knownext_saved_items enable row level security;
+create policy "Knownext saved items manage" on knownext_saved_items for all using (auth.uid() = user_id or true);
+
+-- KnowNext profiles
+create table if not exists knownext_profiles (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  career_goal_id text,
+  active_roadmap_id text,
+  updated_at timestamptz default timezone('utc'::text, now())
+);
+alter table knownext_profiles enable row level security;
+create policy "Knownext profiles manage" on knownext_profiles for all using (auth.uid() = user_id or true);
+
+-- KnowNext roadmap progress
+create table if not exists knownext_roadmap_progress (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  roadmap_id text not null,
+  checkpoint_id text not null,
+  completed boolean default false,
+  completed_at timestamptz default timezone('utc'::text, now())
+);
+alter table knownext_roadmap_progress enable row level security;
+create policy "Knownext roadmap progress manage" on knownext_roadmap_progress for all using (auth.uid() = user_id or true);
+
+-- Tuition students
+create table if not exists tuition_students (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  name text not null,
+  class_level text,
+  board text,
+  streak_days integer default 0,
+  attendance_percent numeric default 100,
+  total_points integer default 0,
+  rank integer default 1,
+  avatar text,
+  enrolled_subjects text[] default '{}',
+  created_at timestamptz default timezone('utc'::text, now())
+);
+alter table tuition_students enable row level security;
+create policy "Tuition students manage" on tuition_students for all using (auth.uid() = user_id or true);
+
+-- Tuition parents
+create table if not exists tuition_parents (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  name text not null,
+  email text,
+  phone text,
+  fee_status text default 'Paid',
+  next_fee_due_date timestamptz,
+  created_at timestamptz default timezone('utc'::text, now())
+);
+alter table tuition_parents enable row level security;
+create policy "Tuition parents manage" on tuition_parents for all using (auth.uid() = user_id or true);
+
+-- Tuition completed assignments
+create table if not exists tuition_completed_assignments (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  assignment_id text not null,
+  completed_at timestamptz default timezone('utc'::text, now())
+);
+alter table tuition_completed_assignments enable row level security;
+create policy "Tuition completed assignments manage" on tuition_completed_assignments for all using (auth.uid() = user_id or true);
+
+-- Mindfulness user activities
+create table if not exists mindfulness_user_activities (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  activity_id text not null,
+  completed_at timestamptz default timezone('utc'::text, now())
+);
+alter table mindfulness_user_activities enable row level security;
+create policy "Mindfulness user activities manage" on mindfulness_user_activities for all using (auth.uid() = user_id or true);
+
+-- Mindfulness journals
+create table if not exists mindfulness_journals (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  title text,
+  content text not null,
+  mood text,
+  created_at timestamptz default timezone('utc'::text, now())
+);
+alter table mindfulness_journals enable row level security;
+create policy "Mindfulness journals manage" on mindfulness_journals for all using (auth.uid() = user_id or true);
+

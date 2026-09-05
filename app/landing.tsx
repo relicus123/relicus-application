@@ -146,23 +146,25 @@ export default function Landing() {
         </View>
 
         <View className="px-6 gap-6">
-          <GlassSurface rounded="xl" intensity={40} className="flex-row p-1 bg-surface-variant/30">
-            <Pressable 
-              style={{ flex: 1 }}
-              onPress={() => setMode("signup")}
-            >
-              <View className={twMerge(clsx("py-3 items-center rounded-lg", mode === "signup" && "bg-primary shadow-sm"))}>
-                <Typography weight="semibold" color={mode === "signup" ? "white" : "secondary"}>Sign Up</Typography>
-              </View>
-            </Pressable>
-            <Pressable 
-              style={{ flex: 1 }}
-              onPress={() => setMode("login")}
-            >
-              <View className={twMerge(clsx("py-3 items-center rounded-lg", mode === "login" && "bg-primary shadow-sm"))}>
-                <Typography weight="semibold" color={mode === "login" ? "white" : "secondary"}>Log In</Typography>
-              </View>
-            </Pressable>
+          <GlassSurface rounded="xl" intensity={40} className="p-1">
+            <View className="flex-row">
+              <Pressable 
+                style={{ flex: 1 }}
+                onPress={() => setMode("signup")}
+              >
+                <View className={twMerge(clsx("py-3 items-center rounded-lg", mode === "signup" && "bg-primary"))}>
+                  <Typography weight="semibold" color={mode === "signup" ? "white" : "secondary"}>Sign Up</Typography>
+                </View>
+              </Pressable>
+              <Pressable 
+                style={{ flex: 1 }}
+                onPress={() => setMode("login")}
+              >
+                <View className={twMerge(clsx("py-3 items-center rounded-lg", mode === "login" && "bg-primary"))}>
+                  <Typography weight="semibold" color={mode === "login" ? "white" : "secondary"}>Log In</Typography>
+                </View>
+              </Pressable>
+            </View>
           </GlassSurface>
 
           <MotiView

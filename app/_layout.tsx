@@ -23,6 +23,9 @@ export default function RootLayout() {
           >
             <Stack.Screen name="index" />
             <Stack.Screen name="intro" />
+            <Stack.Screen name="landing" />
+            <Stack.Screen name="otp" />
+            <Stack.Screen name="(tabs)" />
           </Stack>
           <StatusBar style="auto" />
         </AppProvider>

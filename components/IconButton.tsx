@@ -5,7 +5,7 @@ import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 interface IconButtonProps extends TouchableOpacityProps {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "glass";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "glass" | "flat" | "inverse";
   size?: "sm" | "md" | "lg";
   icon: React.ReactNode;
   className?: string;
@@ -33,6 +33,8 @@ export function IconButton({
     outline: "bg-transparent border-2 border-primary",
     ghost: "bg-transparent",
     glass: "bg-white/20 border border-white/30",
+    flat: "bg-surface-primary border border-border-subtle",
+    inverse: "bg-white border border-primary/20",
   };
 
   const sizeClasses = {

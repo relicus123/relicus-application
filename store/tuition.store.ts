@@ -6,13 +6,18 @@ export interface Student {
   user_id: string;
   name: string;
   class_level: string;
+  classLevel?: string;
   board: string;
   streak_days: number;
+  streakDays?: number;
   attendance_percent: number;
+  attendancePercent?: number;
   total_points: number;
+  totalPoints?: number;
   rank: number;
-  avatar: string;
+  avatar?: string;
   enrolled_subjects: string[];
+  enrolledSubjects?: string[];
 }
 
 export interface Parent {
@@ -20,6 +25,8 @@ export interface Parent {
   name: string;
   email: string;
   phone: string;
+  feeStatus?: "Paid" | "Pending" | "Overdue";
+  nextFeeDueDate?: string;
 }
 
 interface TuitionStore {
@@ -37,7 +44,7 @@ interface TuitionStore {
   fetchProfile: () => Promise<void>;
   createProfile: (name: string, classLevel: string, board: string) => Promise<void>;
   toggleAssignmentComplete: (id: string) => Promise<void>;
-  submitAssessment: (assessment: any) => void;
+  submitAssessment: (assessmentIdOrObj: any, score?: number) => void;
 }
 
 export const useTuitionStore = create<TuitionStore>((set, get) => ({
@@ -75,9 +82,24 @@ export const useTuitionStore = create<TuitionStore>((set, get) => ({
         .select('assignment_id')
         .eq('user_id', currentUser.id);
 
+      const formattedStudent: Student | null = student ? {
+        ...student,
+        classLevel: (student as any).class_level || (student as any).classLevel,
+        streakDays: (student as any).streak_days || (student as any).streakDays || 0,
+        attendancePercent: (student as any).attendance_percent || (student as any).attendancePercent || 0,
+        totalPoints: (student as any).total_points || (student as any).totalPoints || 0,
+        enrolledSubjects: (student as any).enrolled_subjects || (student as any).enrolledSubjects || [],
+      } : null;
+
+      const formattedParent: Parent | null = parent ? {
+        ...parent,
+        feeStatus: (parent as any).fee_status || (parent as any).feeStatus || "Paid",
+        nextFeeDueDate: (parent as any).next_fee_due_date || (parent as any).nextFeeDueDate || new Date().toISOString(),
+      } : null;
+
       set({ 
-        student: student || null, 
-        parent: parent || null,
+        student: formattedStudent, 
+        parent: formattedParent,
         completedAssignments: assignments ? assignments.map(a => a.assignment_id) : [],
       });
     } catch (e) {
@@ -152,5 +174,7 @@ export const useTuitionStore = create<TuitionStore>((set, get) => ({
     }
   },
 
-  submitAssessment: () => {},
+  submitAssessment: (assessmentIdOrObj: any, score?: number) => {
+    console.log("Submitting assessment", assessmentIdOrObj, score);
+  },
 }));

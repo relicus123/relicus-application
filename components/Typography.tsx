@@ -16,7 +16,7 @@ export type TypographyVariant =
 export interface TypographyProps extends TextProps {
   variant?: TypographyVariant;
   weight?: "regular" | "medium" | "semibold" | "bold";
-  color?: "primary" | "secondary" | "tertiary" | "accent" | "white" | "error" | "success";
+  color?: "primary" | "secondary" | "tertiary" | "accent" | "white" | "error" | "success" | "inverse";
   className?: string;
   children: React.ReactNode;
 }
@@ -59,6 +59,7 @@ export function Typography({
     white: "text-white",
     error: "text-error",
     success: "text-success",
+    inverse: "text-white",
   };
 
   const classes = twMerge(

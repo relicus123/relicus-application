@@ -218,7 +218,6 @@ export default function VideoPlayerScreen() {
             rel: false,
             preventFullScreen: false,
             iv_load_policy: 3,
-            modestbranding: true as any
           }}
         />
 

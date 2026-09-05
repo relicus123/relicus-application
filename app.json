@@ -2,6 +2,7 @@
   "expo": {
     "name": "Relicus",
     "slug": "relicus-native",
+    "scheme": "relicus",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -23,7 +24,8 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true

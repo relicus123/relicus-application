@@ -5,7 +5,7 @@ import { twMerge } from "tailwind-merge";
 
 interface BentoCardBaseProps {
   children: React.ReactNode;
-  variant?: "primary" | "secondary" | "elevated" | "accent";
+  variant?: "primary" | "secondary" | "elevated" | "accent" | "flat";
   rounded?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
   padding?: "none" | "sm" | "md" | "lg" | "xl";
   className?: string;
@@ -85,6 +85,7 @@ function getBentoClasses({ variant, rounded, padding, className, hasShadow }: an
     secondary: "bg-bg-secondary border border-transparent",
     elevated: "bg-surface-elevated",
     accent: "bg-accent-primary border border-transparent",
+    flat: "bg-surface-primary border border-border-subtle",
   };
 
   const roundedClasses = {

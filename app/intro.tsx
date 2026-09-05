@@ -101,7 +101,7 @@ export default function AppIntro() {
           variant="primary"
           size="lg"
           onPress={() => router.push("/landing" as any)}
-          className="w-full shadow-sm"
+          className="w-full"
         >
           Get Started
         </Button>

@@ -145,10 +145,14 @@ export interface ActivityLog {
 }
 
 export interface CourseReview {
+  id?: string;
   courseId: string;
+  userId?: string;
   rating: number;
-  reviewText: string;
-  completionDate: string;
+  reviewText?: string;
+  comment?: string;
+  completionDate?: string;
+  date?: string;
 }
 
 // Helper to convert snake_case to camelCase

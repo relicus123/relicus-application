@@ -1,13 +1,14 @@
 import React from "react";
-import { TouchableOpacity, TouchableOpacityProps, ViewStyle } from "react-native";
+import { TouchableOpacity, TouchableOpacityProps, ViewStyle, ActivityIndicator } from "react-native";
 import { MotiView } from "moti";
 import { Typography } from "./Typography";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 interface ButtonProps extends TouchableOpacityProps {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "glass";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "glass" | "inverse" | "flat";
   size?: "sm" | "md" | "lg";
+  loading?: boolean;
   children: React.ReactNode;
   className?: string;
   style?: ViewStyle;
@@ -19,6 +20,7 @@ export function Button({
   variant = "primary",
   size = "md",
   disabled = false,
+  loading = false,
   className,
   style,
   children,
@@ -34,6 +36,8 @@ export function Button({
     outline: "bg-transparent border-2 border-primary",
     ghost: "bg-transparent",
     glass: "bg-white/20 border border-white/30",
+    inverse: "bg-white border border-primary/20",
+    flat: "bg-surface-primary border border-border-subtle",
   };
 
   const sizeClasses = {
@@ -48,6 +52,8 @@ export function Button({
     outline: "primary",
     ghost: "primary",
     glass: "white",
+    inverse: "primary",
+    flat: "primary",
   } as const;
 
   const containerClasses = twMerge(
@@ -55,7 +61,7 @@ export function Button({
       baseClasses,
       variantClasses[variant],
       sizeClasses[size],
-      disabled && "opacity-50",
+      (disabled || loading) && "opacity-50",
       className
     )
   );
@@ -72,7 +78,7 @@ export function Button({
       transition={{ type: "timing", duration: 300 }}
     >
       <TouchableOpacity
-        disabled={disabled}
+        disabled={disabled || loading}
         activeOpacity={0.8}
         style={style}
         onPressIn={(e) => {
@@ -86,6 +92,13 @@ export function Button({
         {...props}
       >
         <Animated.View className={containerClasses} style={animatedStyle}>
+          {loading && (
+            <ActivityIndicator 
+              size="small" 
+              color={variant === "primary" ? "#ffffff" : "#6750A4"} 
+              style={{ marginRight: 8 }} 
+            />
+          )}
           <Typography 
             variant={size === "sm" ? "bodySecondary" : "button"} 
             weight="semibold" 
