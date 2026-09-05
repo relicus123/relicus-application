@@ -24,6 +24,20 @@ create policy "Profiles are viewable by everyone"
 create policy "Users can update their own profiles" 
   on profiles for update using (auth.uid() = id);
 
+-- App Users Table (for Mobile App phone login)
+create table if not exists users (
+  id uuid primary key default gen_random_uuid(),
+  phone text unique not null,
+  username text not null,
+  email text,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+alter table users enable row level security;
+create policy "Users read viewable" on users for select using (true);
+create policy "Users insert viewable" on users for insert with check (true);
+create policy "Users update viewable" on users for update using (true);
+
 -- -----------------------------------------------------------------------------
 -- 1. SKILLS ACADEMY MODULE
 -- -----------------------------------------------------------------------------

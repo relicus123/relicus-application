@@ -32,7 +32,7 @@ export const useAuthStore = create<AuthState>()(
       signup: async (phone, username, email) => {
         // Check if user already exists
         const { data: existing } = await supabase
-          .from("profiles")
+          .from("users")
           .select("*")
           .eq("phone", phone)
           .maybeSingle();
@@ -42,8 +42,8 @@ export const useAuthStore = create<AuthState>()(
         }
 
         const { data, error } = await supabase
-          .from("profiles")
-          .insert([{ phone, username, email, role: 'student' }])
+          .from("users")
+          .insert([{ phone, username, email }])
           .select()
           .single();
 
@@ -57,7 +57,7 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (phone) => {
         const { data, error } = await supabase
-          .from("profiles")
+          .from("users")
           .select("*")
           .eq("phone", phone)
           .maybeSingle();
@@ -76,7 +76,7 @@ export const useAuthStore = create<AuthState>()(
 
       getUserById: async (id) => {
         const { data } = await supabase
-          .from("profiles")
+          .from("users")
           .select("*")
           .eq("id", id)
           .maybeSingle();
@@ -91,7 +91,7 @@ export const useAuthStore = create<AuthState>()(
         if (!currentUser) return;
 
         const { error, data } = await supabase
-          .from("profiles")
+          .from("users")
           .update(updates)
           .eq("id", currentUser.id)
           .select()
