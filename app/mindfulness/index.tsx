@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { View, ScrollView, TouchableOpacity, TextInput, RefreshControl } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { MotiView } from "moti";
@@ -19,77 +19,51 @@ export default function Mindfulness() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [moodText, setMoodText] = useState("");
 
-  const [activities, setActivities] = useState<any[]>([]);
-  const [affirmations, setAffirmations] = useState<string[]>([]);
-  const [todoItems, setTodoItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
   const [refreshing, setRefreshing] = useState(false);
   const store = useMindfulnessStore();
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [actsRes, affsRes, tasksRes] = await Promise.all([
-        supabase.from("mindfulness_activities").select("*"),
-        supabase.from("mindfulness_affirmations").select("*"),
-        supabase.from("mindfulness_tasks").select("*")
-      ]);
-
-      if (actsRes.data) {
-        setActivities(actsRes.data.map((a: any) => {
-          const iconMatch = a.icon_type;
-          const icon = iconMatch === "Wind" ? Wind : iconMatch === "Heart" ? Heart : Activity;
-          let colors = ["#a584ef", "#d3c3f7"];
-          if (a.gradient) {
-            const matched = a.gradient.match(/\[(.*?)\]/g);
-            if (matched && matched.length >= 2) {
-              colors = [matched[0].replace(/[\[\]]/g, ''), matched[1].replace(/[\[\]]/g, '')];
-            }
-          }
-          return {
-            title: a.title,
-            icon: icon,
-            description: a.description || "Guided session",
-            duration: a.duration ? `${a.duration} min` : "5 min",
-            colors: colors,
-          };
-        }));
-      }
-
-      if (affsRes.data) {
-        setAffirmations(affsRes.data.map((a: any) => a.text));
-      }
-
-      if (tasksRes.data) {
-        setTodoItems(tasksRes.data.map((t: any) => ({
-          id: t.id,
-          text: t.title,
-          completed: false
-        })));
-      }
-      
-      await store.fetchMindfulnessData();
-    } catch (error) {
-      console.error("Error fetching mindfulness data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useFocusEffect(
     useCallback(() => {
-      fetchData();
-    }, [fetchData])
+      store.fetchAllMindfulnessContent();
+    }, [])
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchData();
+    await store.fetchAllMindfulnessContent(true);
     setRefreshing(false);
   };
 
+  const activities = useMemo(() => {
+    return (store.activities || []).map((a: any) => {
+      const iconMatch = a.icon_type;
+      const icon = iconMatch === "Wind" ? Wind : iconMatch === "Heart" ? Heart : Activity;
+      let colors = ["#a584ef", "#d3c3f7"];
+      if (a.gradient) {
+        const matched = a.gradient.match(/\[(.*?)\]/g);
+        if (matched && matched.length >= 2) {
+          colors = [matched[0].replace(/[\[\]]/g, ''), matched[1].replace(/[\[\]]/g, '')];
+        }
+      }
+      return {
+        title: a.title,
+        icon: icon,
+        description: a.description || "Guided session",
+        duration: a.duration ? `${a.duration} min` : "5 min",
+        colors: colors,
+      };
+    });
+  }, [store.activities]);
+
+  const affirmations = store.affirmations || [];
+  const todoItems = (store.tasks || []).map((t: any) => ({
+    id: t.id,
+    text: t.title,
+    completed: store.completedActivities.includes(String(t.id)),
+  }));
+
   const toggleTodo = (id: string | number) => {
-    setTodoItems(items => items.map(item => item.id === id ? { ...item, completed: !item.completed } : item));
+    store.toggleActivityComplete(String(id));
   };
 
   return (

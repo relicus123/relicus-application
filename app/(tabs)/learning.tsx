@@ -20,42 +20,24 @@ import { BentoCardPressable, BentoCard } from "../../components/BentoCard";
 
 export default function LearningScreen() {
   const router = useRouter();
-  const { setSelectedExam } = useCoachingStore();
+  const { categories, exams, fetchCategoriesAndExams, setSelectedExam, isLoading } = useCoachingStore();
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({
     undergraduate: false,
     postgraduate: false,
     state: false,
   });
 
-  const [categories, setCategories] = useState<any[]>([]);
-  const [exams, setExams] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    try {
-      const [catsRes, examsRes] = await Promise.all([
-        supabase.from("coaching_exam_categories").select("*").order("sequence_number"),
-        supabase.from("coaching_exams").select("*")
-      ]);
-      if (catsRes.data) setCategories(catsRes.data);
-      if (examsRes.data) setExams(examsRes.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      fetchData();
-    }, [fetchData])
+      fetchCategoriesAndExams();
+    }, [fetchCategoriesAndExams])
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchData();
+    await fetchCategoriesAndExams(true);
     setRefreshing(false);
   };
 
@@ -101,7 +83,7 @@ export default function LearningScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4f378a" />}
       >
         <View className="gap-4">
-          {loading ? (
+          {isLoading && categories.length === 0 ? (
             <View className="py-12 items-center">
               <ActivityIndicator size="large" color="#4f378a" />
               <Typography color="secondary" className="mt-4">Loading Exams...</Typography>

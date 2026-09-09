@@ -12,13 +12,18 @@ import { Button } from "../../components/Button";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+import { useCoachingStore } from "../../store/coaching.store";
+
 export default function ExamInfoScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const examType = params.examType as string;
 
-  const [exam, setExam] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { exams } = useCoachingStore();
+  const cachedExam = exams.find((e) => e.id === examType);
+
+  const [exam, setExam] = useState<any>(cachedExam || null);
+  const [loading, setLoading] = useState(!cachedExam);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchExam = useCallback(async () => {
@@ -39,8 +44,22 @@ export default function ExamInfoScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      fetchExam();
-    }, [fetchExam])
+      if (!cachedExam) {
+        fetchExam();
+      } else {
+        // Silently revalidate in background without blocking screen
+        (async () => {
+          try {
+            const { data } = await supabase
+              .from("coaching_exams")
+              .select("*")
+              .eq("id", examType)
+              .single();
+            if (data) setExam(data);
+          } catch {}
+        })();
+      }
+    }, [examType, cachedExam, fetchExam])
   );
 
   const onRefresh = async () => {

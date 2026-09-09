@@ -38,71 +38,57 @@ export default function CoachingDashboard() {
   const params = useLocalSearchParams();
   const examType = params.examType as string;
 
-  const [exam, setExam] = useState<any>(null);
-  const [subjects, setSubjects] = useState<any[]>([]);
-  const [chapters, setChapters] = useState<any[]>([]);
-  const [liveClasses, setLiveClasses] = useState<any[]>([]);
-  const [mockTests, setMockTests] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  React.useEffect(() => {
-    async function fetchExam() {
-      try {
-        const { data: examData } = await supabase
-          .from("coaching_exams")
-          .select("*")
-          .eq("id", examType)
-          .single();
-        if (examData) setExam(examData);
+  const {
+    exams,
+    subjectsByExam,
+    chaptersBySubject,
+    liveClassesByExam,
+    mockTestsByExam,
+    fetchExamDashboard,
+    fetchChapters,
+    doubts,
+    addDoubt,
+    learningStreak,
+    testAttempts,
+    addTestAttempt,
+    fetchCoachingData,
+  } = useCoachingStore();
 
-        const { data: subjectsData } = await supabase
-          .from("coaching_subjects")
-          .select("*")
-          .eq("exam_id", examType);
-        if (subjectsData) setSubjects(subjectsData);
-
-        const { data: liveData } = await supabase
-          .from("coaching_live_classes")
-          .select("*")
-          .eq("exam_id", examType);
-        if (liveData) setLiveClasses(liveData);
-
-        const { data: testsData } = await supabase
-          .from("coaching_mock_tests")
-          .select("*")
-          .eq("exam_id", examType);
-        if (testsData) setMockTests(testsData);
-
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchExam();
-  }, [examType]);
+  const exam = exams.find((e) => e.id === examType) || null;
+  const subjects = subjectsByExam[examType] || [];
+  const liveClasses = liveClassesByExam[examType] || [];
+  const mockTests = mockTestsByExam[examType] || [];
 
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
+  const [loading, setLoading] = useState(!exam && subjects.length === 0);
+
+  React.useEffect(() => {
+    async function loadData() {
+      if (!exam && subjects.length === 0) {
+        setLoading(true);
+      }
+      await fetchExamDashboard(examType);
+      setLoading(false);
+    }
+    loadData();
+  }, [examType]);
 
   React.useEffect(() => {
     if (subjects.length > 0 && !selectedSubjectId) {
       setSelectedSubjectId(subjects[0].id);
     }
-  }, [subjects]);
+  }, [subjects, selectedSubjectId]);
 
   React.useEffect(() => {
-    if (!selectedSubjectId) return;
-    async function fetchChapters() {
-      const { data } = await supabase.from("coaching_chapters").select("*").eq("subject_id", selectedSubjectId);
-      if (data) setChapters(data);
+    if (selectedSubjectId) {
+      fetchChapters(selectedSubjectId);
     }
-    fetchChapters();
-  }, [selectedSubjectId]);
-  
-  const [activeTab, setActiveTab] = useState<"overview" | "chapters" | "live" | "tests" | "pyqs" | "doubt" | "analytics">("overview");
+  }, [selectedSubjectId, fetchChapters]);
 
+  const chapters = (selectedSubjectId && chaptersBySubject[selectedSubjectId]) || [];
+
+  const [activeTab, setActiveTab] = useState<"overview" | "chapters" | "live" | "tests" | "pyqs" | "doubt" | "analytics">("overview");
   const [doubtText, setDoubtText] = useState("");
-  const { doubts, addDoubt, learningStreak, testAttempts, addTestAttempt, fetchCoachingData } = useCoachingStore();
 
   React.useEffect(() => {
     fetchCoachingData();
@@ -202,7 +188,7 @@ export default function CoachingDashboard() {
               <ArrowLeft color="#4f378a" size={20} />
             </TouchableOpacity>
             <View className="flex-1">
-              <Typography variant="title" weight="bold" color="primary">{exam.name} Prep Hub</Typography>
+              <Typography variant="title" weight="bold" color="primary">{(exam.full_name || exam.name || examType)} Prep Hub</Typography>
               <Typography variant="caption" color="secondary">Streak: {learningStreak} days 🔥</Typography>
             </View>
           </View>
