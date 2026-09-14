@@ -77,8 +77,8 @@ export const useTuitionStore = create<TuitionStore>()(
             { data: parentData },
             { data: assignments }
           ] = await Promise.all([
-            supabase.from('tuition_students').select('*').eq('user_id', currentUser.id).single(),
-            supabase.from('tuition_parents').select('*').eq('user_id', currentUser.id).single(),
+            supabase.from('tuition_students').select('*').eq('user_id', currentUser.id).maybeSingle(),
+            supabase.from('tuition_parents').select('*').eq('user_id', currentUser.id).maybeSingle(),
             supabase.from('tuition_completed_assignments').select('assignment_id').eq('user_id', currentUser.id)
           ]);
 
@@ -161,7 +161,7 @@ export const useTuitionStore = create<TuitionStore>()(
             await supabase
               .from('tuition_completed_assignments')
               .delete()
-              .match({ user_id: currentUser.id, activity_id: assignmentId });
+              .match({ user_id: currentUser.id, assignment_id: assignmentId });
           } else {
             await supabase
               .from('tuition_completed_assignments')

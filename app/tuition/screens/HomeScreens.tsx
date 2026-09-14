@@ -48,7 +48,7 @@ export function HomeDashboard({ onNavigate }: ScreenProps) {
   return (
     <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#fdf7ff", "#e9ddff", "#cfbcff"]}
+        colors={["#FFFFFF", "#EDF5F8", "#E1EFF5"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="px-6 pb-8 pt-8 rounded-b-[40px]"

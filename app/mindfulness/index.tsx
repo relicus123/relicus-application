@@ -1,14 +1,15 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { View, ScrollView, TouchableOpacity, TextInput, RefreshControl } from "react-native";
+import { View, ScrollView, TouchableOpacity, TextInput, RefreshControl, Alert } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { MotiView } from "moti";
-import { Wind, Heart, Activity, BookOpen, Smile, CheckSquare, Play, Pause, ArrowLeft } from "lucide-react-native";
+import { Wind, Heart, Activity, BookOpen, Smile, CheckSquare, Play, Pause, ArrowLeft, ShieldAlert } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Typography } from "../../components/Typography";
 import { BentoCard } from "../../components/BentoCard";
 import { Button } from "../../components/Button";
+import { CrisisDisclaimerModal } from "../../components/CrisisDisclaimerModal";
 import { supabase } from "../../lib/supabase";
 import { useMindfulnessStore } from "../../store/mindfulness.store";
 import { clsx } from "clsx";
@@ -18,6 +19,7 @@ export default function Mindfulness() {
   const router = useRouter();
   const [isPlaying, setIsPlaying] = useState(false);
   const [moodText, setMoodText] = useState("");
+  const [showCrisisModal, setShowCrisisModal] = useState(false);
 
   const [refreshing, setRefreshing] = useState(false);
   const store = useMindfulnessStore();
@@ -71,24 +73,34 @@ export default function Mindfulness() {
       <ScrollView 
         contentContainerStyle={{ paddingBottom: 40 }} 
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4f378a" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1C4966" />}
       >
         <LinearGradient
-          colors={["#fdf7ff", "#e9ddff", "#cfbcff"]}
+          colors={["#FFFFFF", "#EDF5F8", "#E1EFF5"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           className="px-6 pb-12 pt-10 rounded-b-[40px]"
         >
           <SafeAreaView edges={["top"]}>
-            <View className="flex-row items-center gap-4 mb-2">
+            <View className="flex-row items-center justify-between mb-2">
+              <View className="flex-row items-center gap-4">
+                <TouchableOpacity
+                  onPress={() => router.back()}
+                  className="w-10 h-10 rounded-full bg-white/70 items-center justify-center border border-border-subtle"
+                  activeOpacity={0.7}
+                >
+                  <ArrowLeft color="#1C4966" size={20} />
+                </TouchableOpacity>
+                <Typography variant="heading" weight="bold" color="primary">Mindfulness</Typography>
+              </View>
               <TouchableOpacity
-                onPress={() => router.back()}
-                className="w-10 h-10 rounded-full bg-white/40 items-center justify-center border border-white/50"
-                activeOpacity={0.7}
+                onPress={() => setShowCrisisModal(true)}
+                className="flex-row items-center gap-1.5 bg-red-500/15 border border-red-500/30 px-3 py-1.5 rounded-full"
+                activeOpacity={0.8}
               >
-                <ArrowLeft color="#4f378a" size={20} />
+                <ShieldAlert color="#DC2626" size={14} />
+                <Typography variant="caption" className="text-red-700 font-bold text-[11px]">Crisis Help</Typography>
               </TouchableOpacity>
-              <Typography variant="heading" weight="bold" color="primary">Mindfulness</Typography>
             </View>
             <Typography variant="body" color="secondary" className="ml-14">
               Find your inner peace
@@ -234,7 +246,7 @@ export default function Mindfulness() {
                     mood: "neutral"
                   });
                   setMoodText("");
-                  alert("Journal entry saved successfully!");
+                  Alert.alert("Success", "Journal entry saved successfully!");
                 }}
                 variant="primary"
                 className="w-full"
@@ -292,8 +304,33 @@ export default function Mindfulness() {
               </View>
             </BentoCard>
           </MotiView>
+
+          {/* Medical & Crisis Helpline Notice Banner */}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setShowCrisisModal(true)}
+            className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex-row items-center gap-3 mt-1"
+          >
+            <View className="w-10 h-10 rounded-xl bg-amber-500/20 items-center justify-center">
+              <ShieldAlert color="#B45309" size={20} />
+            </View>
+            <View className="flex-1">
+              <Typography variant="caption" weight="bold" className="text-amber-900 text-xs">
+                Need Immediate Help or In Crisis?
+              </Typography>
+              <Typography variant="caption" className="text-amber-800 text-[11px] leading-4 mt-0.5">
+                Relicus is not an emergency medical service. Tap to view 24/7 confidential crisis helplines (Tele-MANAS 14416, 988, 112).
+              </Typography>
+            </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Emergency & Crisis Support Modal */}
+      <CrisisDisclaimerModal
+        visible={showCrisisModal}
+        onClose={() => setShowCrisisModal(false)}
+      />
     </View>
   );
 }

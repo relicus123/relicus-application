@@ -1,17 +1,45 @@
-import React, { useState, useEffect, useRef } from "react";
-import { View, Dimensions, ScrollView, Pressable, TouchableOpacity, ActivityIndicator } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  Dimensions,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Image,
+  Modal,
+  StyleSheet,
+} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { MotiView, AnimatePresence } from "moti";
-import { Heart, GraduationCap, Sparkles, BookOpen, Users, ArrowRight } from "lucide-react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import * as WebBrowser from "expo-web-browser";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  KeyRound,
+  X,
+  Mail,
+  ShieldCheck,
+} from "lucide-react-native";
 import Svg, { Path } from "react-native-svg";
 import { Button } from "../components/Button";
 import { Input } from "../components/Input";
 import { AppScreen } from "../components/AppScreen";
 import { Typography } from "../components/Typography";
 import { useAuthStore } from "../store/auth.store";
+import { supabase } from "../lib/supabase";
+import { formatAuthError } from "../lib/errorHandler";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import {
+  CustomDialog,
+  CustomDialogCard,
+  DialogButton,
+  DialogConfig,
+  DialogType,
+  detectDialogType,
+} from "../components/CustomDialog";
 
 const { width } = Dimensions.get("window");
 
@@ -43,92 +71,334 @@ export default function Landing() {
   const params = useLocalSearchParams();
   const authStore = useAuthStore();
 
+  const currentUser = useAuthStore((state) => state.currentUser);
+
+  // Log In first by default, as requested
   const [mode, setMode] = useState<"login" | "signup">(
-    params.initialMode === "login" ? "login" : "signup"
+    params.initialMode === "signup" ? "signup" : "login"
   );
-  const [phone, setPhone] = useState("");
+
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  const banners = [
-    {
-      category: "Mental Health",
-      title: "Book Therapy Sessions",
-      description: "Connect 1-on-1 with licensed therapists & counsellors",
-      icon: Heart,
-      colors: ["#4f378a", "#6750a4"],
-    },
-    {
-      category: "Entrance Coaching",
-      title: "CUET, JEE & NEET Prep",
-      description: "Expert guidance, mock tests & syllabus coverage",
-      icon: GraduationCap,
-      colors: ["#2563eb", "#1d4ed8"],
-    },
-    {
-      category: "Skill Enhancement",
-      title: "Skills Academy",
-      description: "Industry certifications, AI tools & live masterclasses",
-      icon: Sparkles,
-      colors: ["#059669", "#047857"],
-    },
-    {
-      category: "Academic & Career",
-      title: "KnowNext Guidance",
-      description: "Personalized roadmaps, college finder & tuition guidance",
-      icon: BookOpen,
-      colors: ["#d97706", "#b45309"],
-    },
-    {
-      category: "Mindfulness",
-      title: "Daily Wellness & Breathing",
-      description: "Guided meditations, stress relief & daily streaks",
-      icon: Users,
-      colors: ["#7c3aed", "#5b21b6"],
-    },
-  ];
+  // Forgot Password Modal State
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [resetStep, setResetStep] = useState<"email" | "otp" | "link_new_password">("email");
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetOtp, setResetOtp] = useState("");
+  const [resetNewPassword, setResetNewPassword] = useState("");
+  const [showResetNewPassword, setShowResetNewPassword] = useState(false);
+  const [isResetLoading, setIsResetLoading] = useState(false);
 
-  // Auto-advance carousel banner every 4.5 seconds
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Custom Dialog State
+  const [dialogConfig, setDialogConfig] = useState<DialogConfig | null>(null);
 
-  useEffect(() => {
-    timerRef.current = setInterval(() => {
-      setCurrentSlide((prev) => (prev === banners.length - 1 ? 0 : prev + 1));
-    }, 4500);
+  React.useEffect(() => {
+    if (params.mode === "reset_password") {
+      setShowForgotModal(true);
+      setResetStep("link_new_password");
+    }
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setShowForgotModal(true);
+        setResetStep("link_new_password");
+      }
+    });
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      authListener?.subscription?.unsubscribe();
     };
-  }, [banners.length]);
+  }, [params.mode]);
 
-  const handleContinue = () => {
-    if (phone && agreed) {
-      if (mode === "signup" && (!username || !email)) {
-        alert("Please fill in all fields");
+  React.useEffect(() => {
+    if (params.logout === "true" || params.mode === "reset_password" || resetStep === "link_new_password") {
+      if (params.logout === "true") {
+        useAuthStore.setState({ currentUser: null });
+      }
+      return;
+    }
+    if (currentUser) {
+      router.replace("/(tabs)/home");
+    }
+  }, [currentUser, params.logout, params.mode, resetStep]);
+
+  const showAlert = (
+    title: string,
+    message?: string,
+    buttons?: DialogButton[],
+    type?: DialogType
+  ) => {
+    setDialogConfig({
+      title,
+      message,
+      type: type || detectDialogType(title, message),
+      buttons:
+        buttons && buttons.length > 0
+          ? buttons.map((b) => ({
+              ...b,
+              onPress: () => {
+                setDialogConfig(null);
+                if (b.onPress) b.onPress();
+              },
+            }))
+          : [
+              {
+                text: "OK",
+                style: "primary",
+                onPress: () => setDialogConfig(null),
+              },
+            ],
+      onClose: () => setDialogConfig(null),
+    });
+  };
+
+  const handleContinue = async () => {
+    if (!email.trim() || !password) {
+      showAlert(
+        "Missing Details",
+        "Please provide both your email address and password.",
+        undefined,
+        "warning"
+      );
+      return;
+    }
+
+    if (!agreed) {
+      showAlert(
+        "Terms & Privacy Required",
+        "Please agree to the Terms & Conditions and Privacy Policy before continuing.",
+        undefined,
+        "warning"
+      );
+      return;
+    }
+
+    if (mode === "signup") {
+      if (!username.trim()) {
+        showAlert("Username Required", "Please choose a username for your profile.", undefined, "warning");
         return;
       }
-      router.push({
-        pathname: "/otp",
-        params: { mode, phone, username, email },
-      });
+      if (password.length < 6) {
+        showAlert("Weak Password", "Password must be at least 6 characters long.", undefined, "warning");
+        return;
+      }
+      if (password !== confirmPassword) {
+        showAlert("Password Mismatch", "Passwords do not match. Please re-enter.", undefined, "warning");
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        const user = await authStore.signup(email.trim(), password, username.trim());
+        const { data: sessionData } = await supabase.auth.getSession();
+        
+        if (!sessionData.session) {
+          showAlert(
+            "Account Registered!",
+            "Your account was created. Please switch to Log In to enter the app.",
+            [
+              {
+                text: "Go to Log In",
+                style: "primary",
+                onPress: () => setMode("login"),
+              },
+            ],
+            "success"
+          );
+          return;
+        }
+
+        router.replace("/(tabs)/home");
+      } catch (err: any) {
+        showAlert("Sign Up Failed", formatAuthError(err), undefined, "error");
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      setIsSubmitting(true);
+      try {
+        await authStore.login(email.trim(), password);
+        router.replace("/(tabs)/home");
+      } catch (err: any) {
+        const errorMsg = formatAuthError(err);
+        if (errorMsg.includes("Google") || errorMsg.includes("Forgot Password")) {
+          showAlert(
+            "Account Notice",
+            errorMsg,
+            [
+              {
+                text: "Continue with Google",
+                style: "primary",
+                onPress: () => handleGoogleSignIn(),
+              },
+              {
+                text: "Forgot Password",
+                style: "secondary",
+                onPress: () => {
+                  setResetEmail(email.trim());
+                  setShowForgotModal(true);
+                },
+              },
+              { text: "Try Again", style: "cancel" },
+            ],
+            "info"
+          );
+        } else {
+          showAlert("Login Failed", errorMsg, undefined, "error");
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
   const handleGoogleSignIn = async () => {
+    if (!agreed) {
+      showAlert(
+        "Terms & Privacy Required",
+        "Please agree to the Terms & Conditions and Privacy Policy before continuing with Google.",
+        undefined,
+        "warning"
+      );
+      return;
+    }
+
     setIsGoogleLoading(true);
     try {
-      await authStore.loginWithGoogle({
-        email: "ashok.google@relicus.com",
-        username: "ashok",
-      });
-      router.replace("/(tabs)/home");
+      const user = await authStore.loginWithGoogle();
+      if (user) {
+        router.replace("/(tabs)/home");
+      }
     } catch (err: any) {
-      alert("Google Sign-In error: " + (err?.message || "Please try again."));
+      const msg = formatAuthError(err);
+      if (msg && msg !== "Sign-in was cancelled.") {
+        showAlert("Notice", msg, undefined, "info");
+      }
     } finally {
       setIsGoogleLoading(false);
+    }
+  };
+
+  const handleSendResetEmail = async () => {
+    if (!resetEmail.trim()) {
+      showAlert("Email Required", "Please enter your registered email address.", undefined, "warning");
+      return;
+    }
+
+    setIsResetLoading(true);
+    try {
+      await authStore.sendPasswordResetEmail(resetEmail.trim());
+      setResetStep("otp");
+      showAlert(
+        "Code Sent",
+        `We have sent a password reset OTP code to ${resetEmail.trim()}. Please enter the code below.`,
+        [
+          {
+            text: "Enter Code",
+            style: "primary",
+            onPress: () => setDialogConfig(null),
+          },
+        ],
+        "info"
+      );
+    } catch (err: any) {
+      showAlert("Reset Error", formatAuthError(err), undefined, "error");
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+
+  const handleVerifyOtpAndReset = async () => {
+    if (!resetOtp.trim()) {
+      showAlert("OTP Required", "Please enter the OTP verification code from your email.", undefined, "warning");
+      return;
+    }
+
+    if (!resetNewPassword || resetNewPassword.length < 6) {
+      showAlert("Password Too Short", "New password must be at least 6 characters.", undefined, "warning");
+      return;
+    }
+
+    setIsResetLoading(true);
+    try {
+      await authStore.verifyOtpAndResetPassword(
+        resetEmail.trim(),
+        resetOtp.trim(),
+        resetNewPassword
+      );
+      showAlert(
+        "Password Updated",
+        "Your password has been successfully reset! You can now log in.",
+        [
+          {
+            text: "Log In Now",
+            style: "primary",
+            onPress: () => {
+              setPassword(resetNewPassword);
+              setShowForgotModal(false);
+              setResetOtp("");
+              setResetNewPassword("");
+              setResetStep("email");
+            },
+          },
+        ],
+        "success"
+      );
+    } catch (err: any) {
+      showAlert("Verification Failed", formatAuthError(err), undefined, "error");
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+
+  const handleDirectPasswordReset = async () => {
+    if (!resetNewPassword || resetNewPassword.length < 6) {
+      showAlert("Password Too Short", "New password must be at least 6 characters.", undefined, "warning");
+      return;
+    }
+
+    setIsResetLoading(true);
+    try {
+      await authStore.updateUserPassword(resetNewPassword);
+      showAlert(
+        "Password Updated",
+        "Your password has been successfully updated! You can now use your new password.",
+        [
+          {
+            text: "Continue to App",
+            style: "primary",
+            onPress: () => {
+              setShowForgotModal(false);
+              setResetNewPassword("");
+              setResetStep("email");
+              router.replace("/(tabs)/home");
+            },
+          },
+        ],
+        "success"
+      );
+    } catch (err: any) {
+      showAlert("Update Failed", formatAuthError(err), undefined, "error");
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+
+  const openExternalLink = async (url: string) => {
+    try {
+      await WebBrowser.openBrowserAsync(url);
+    } catch {
+      Linking.openURL(url).catch(() => {
+        showAlert("Notice", "Unable to open link in external browser: " + url, undefined, "info");
+      });
     }
   };
 
@@ -140,146 +410,47 @@ export default function Landing() {
         keyboardShouldPersistTaps="handled"
       >
         {/* Brand Top Header */}
-        <View className="flex-row justify-between items-center px-6 pt-4 pb-3">
-          <View className="flex-row items-center gap-2">
-            <View className="w-8 h-8 rounded-xl bg-primary items-center justify-center">
-              <Sparkles color="#ffffff" size={16} strokeWidth={2.5} />
-            </View>
-            <Typography variant="heading" weight="bold" color="primary" className="text-2xl tracking-tight">
-              Relicus
-            </Typography>
+        <View className="items-center px-6 pt-5 pb-4">
+          <View className="w-14 h-14 rounded-2xl bg-white items-center justify-center border border-[#E5EDF2] mb-2.5">
+            <Image
+              source={require("../assets/relicus-icon.png")}
+              style={{ width: 38, height: 38 }}
+              resizeMode="contain"
+            />
           </View>
-        </View>
-
-        {/* Modern Featured Offering Card (Clean, no overlapping clunky arrows) */}
-        <View className="px-6 mb-6">
-          <TouchableOpacity
-            activeOpacity={0.95}
-            onPress={() =>
-              setCurrentSlide((prev) => (prev === banners.length - 1 ? 0 : prev + 1))
-            }
+          <Typography
+            variant="heading"
+            weight="bold"
+            color="primary"
+            className="text-2xl font-black tracking-tight text-[#1C4966]"
           >
-            <AnimatePresence exitBeforeEnter>
-              <MotiView
-                key={currentSlide}
-                from={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.96 }}
-                transition={{ type: "timing", duration: 320 }}
-                className="rounded-3xl overflow-hidden h-56 shadow-md"
-              >
-                <LinearGradient
-                  colors={banners[currentSlide].colors as [string, string]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  className="flex-1 p-6 justify-between"
-                >
-                  <View className="flex-row justify-between items-center">
-                    <View className="bg-white/20 px-3 py-1 rounded-full backdrop-blur-md border border-white/20">
-                      <Typography
-                        variant="caption"
-                        weight="semibold"
-                        color="white"
-                        className="text-[11px] uppercase tracking-wider"
-                      >
-                        {banners[currentSlide].category}
-                      </Typography>
-                    </View>
-
-                    <View className="w-10 h-10 rounded-2xl bg-white/15 items-center justify-center border border-white/20">
-                      {(() => {
-                        const Icon = banners[currentSlide].icon;
-                        return <Icon color="white" size={20} strokeWidth={2} />;
-                      })()}
-                    </View>
-                  </View>
-
-                  <View>
-                    <Typography
-                      variant="title"
-                      weight="bold"
-                      color="white"
-                      className="text-xl mb-1.5"
-                    >
-                      {banners[currentSlide].title}
-                    </Typography>
-                    <Typography
-                      variant="body"
-                      color="white"
-                      className="text-sm opacity-90 leading-5"
-                    >
-                      {banners[currentSlide].description}
-                    </Typography>
-                  </View>
-                </LinearGradient>
-              </MotiView>
-            </AnimatePresence>
-          </TouchableOpacity>
-
-          {/* Clean Pagination Dots */}
-          <View className="flex-row justify-center items-center gap-1.5 mt-3">
-            {banners.map((_, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => setCurrentSlide(index)}
-                hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
-              >
-                <View
-                  className={twMerge(
-                    clsx(
-                      "h-1.5 rounded-full transition-all",
-                      index === currentSlide
-                        ? "w-7 bg-primary"
-                        : "w-2 bg-primary/25"
-                    )
-                  )}
-                />
-              </TouchableOpacity>
-            ))}
-          </View>
+            {mode === "login" ? "Welcome Back" : "Create Your Account"}
+          </Typography>
+          <Typography
+            variant="caption"
+            color="secondary"
+            className="text-xs text-[#60727F] mt-1 text-center max-w-[280px]"
+          >
+            {mode === "login"
+              ? "Sign in to continue your courses, mock tests & sessions"
+              : "Join Relicus to begin your learning & growth journey"}
+          </Typography>
         </View>
 
         {/* Auth Box */}
         <View className="px-6 gap-5">
-          {/* Sleek Segmented Switch */}
+          {/* Sleek Segmented Switch: Log In first, Sign Up second */}
           <View className="bg-primary/5 p-1 rounded-2xl border border-primary/10 flex-row">
-            <Pressable
+            <TouchableOpacity
               style={{ flex: 1 }}
-              onPress={() => setMode("signup")}
-            >
-              <View
-                className={twMerge(
-                  clsx(
-                    "py-3 items-center rounded-xl transition-all",
-                    mode === "signup"
-                      ? "bg-primary shadow-sm"
-                      : "bg-transparent"
-                  )
-                )}
-              >
-                <Typography
-                  weight="bold"
-                  className={clsx(
-                    "text-sm",
-                    mode === "signup" ? "text-white" : "text-secondary"
-                  )}
-                >
-                  Sign Up
-                </Typography>
-              </View>
-            </Pressable>
-
-            <Pressable
-              style={{ flex: 1 }}
+              activeOpacity={0.85}
               onPress={() => setMode("login")}
             >
               <View
                 className={twMerge(
                   clsx(
-                    "py-3 items-center rounded-xl transition-all",
-                    mode === "login"
-                      ? "bg-primary shadow-sm"
-                      : "bg-transparent"
+                    "py-3 items-center rounded-xl",
+                    mode === "login" ? "bg-primary" : "bg-transparent"
                   )
                 )}
               >
@@ -293,7 +464,32 @@ export default function Landing() {
                   Log In
                 </Typography>
               </View>
-            </Pressable>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{ flex: 1 }}
+              activeOpacity={0.85}
+              onPress={() => setMode("signup")}
+            >
+              <View
+                className={twMerge(
+                  clsx(
+                    "py-3 items-center rounded-xl",
+                    mode === "signup" ? "bg-primary" : "bg-transparent"
+                  )
+                )}
+              >
+                <Typography
+                  weight="bold"
+                  className={clsx(
+                    "text-sm",
+                    mode === "signup" ? "text-white" : "text-secondary"
+                  )}
+                >
+                  Sign Up
+                </Typography>
+              </View>
+            </TouchableOpacity>
           </View>
 
           {/* Google Sign In Button */}
@@ -301,10 +497,10 @@ export default function Landing() {
             activeOpacity={0.85}
             onPress={handleGoogleSignIn}
             disabled={isGoogleLoading}
-            className="flex-row items-center justify-center bg-white border border-border-subtle py-3.5 px-4 rounded-2xl shadow-sm"
+            className="flex-row items-center justify-center bg-white border border-border-subtle py-3.5 px-4 rounded-2xl"
           >
             {isGoogleLoading ? (
-              <ActivityIndicator size="small" color="#4f378a" />
+              <ActivityIndicator size="small" color="#1C4966" />
             ) : (
               <View className="flex-row items-center justify-center gap-3">
                 <GoogleIcon size={20} />
@@ -323,89 +519,404 @@ export default function Landing() {
               color="secondary"
               className="mx-3 text-[11px] uppercase tracking-wider font-semibold opacity-70"
             >
-              or continue with phone
+              or continue with email
             </Typography>
             <View className="flex-1 h-[1px] bg-primary/10" />
           </View>
 
-          {/* Dynamic Signup Inputs */}
-          <MotiView
-            animate={{
-              height: mode === "signup" ? 176 : 0,
-              opacity: mode === "signup" ? 1 : 0,
-            }}
-            transition={{ type: "timing", duration: 250 }}
-            className="overflow-hidden"
-            pointerEvents={mode === "signup" ? "auto" : "none"}
-          >
-            <View className="gap-3.5">
+          {/* Dynamic Inputs */}
+          <View className="gap-3.5">
+            {mode === "signup" && (
               <Input
-                label="Username"
+                label="Full Name / Username"
                 placeholder="Choose a username"
                 value={username}
                 onChangeText={setUsername}
+                autoCapitalize="words"
               />
-              <Input
-                label="Email"
-                keyboardType="email-address"
-                placeholder="Enter your email"
-                value={email}
-                onChangeText={setEmail}
-              />
-            </View>
-          </MotiView>
+            )}
 
-          {/* Phone Input */}
-          <Input
-            label="Phone Number"
-            keyboardType="phone-pad"
-            placeholder="Enter your phone number"
-            value={phone}
-            onChangeText={setPhone}
-          />
+            <Input
+              label="Email Address"
+              keyboardType="email-address"
+              placeholder="Enter your email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+            />
 
-          {/* Checkbox agreement */}
-          <Pressable
-            onPress={() => setAgreed(!agreed)}
-            style={{ width: "100%" }}
-          >
-            <View className="flex-row items-start gap-3 mt-1">
-              <View
-                className={twMerge(
-                  clsx(
-                    "w-5 h-5 rounded-md border-2 border-primary mt-0.5 items-center justify-center transition-all",
-                    agreed ? "bg-primary" : "bg-white"
-                  )
-                )}
-              >
-                {agreed && <View className="w-2 h-2 rounded-sm bg-white" />}
+            <Input
+              label="Password"
+              secureTextEntry={!showPassword}
+              placeholder="Enter your password"
+              value={password}
+              onChangeText={setPassword}
+              rightElement={
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  className="p-1"
+                >
+                  {showPassword ? (
+                    <EyeOff size={20} color="#71818B" strokeWidth={2} />
+                  ) : (
+                    <Eye size={20} color="#71818B" strokeWidth={2} />
+                  )}
+                </TouchableOpacity>
+              }
+            />
+
+            {/* Forgot Password Link in Log In Mode */}
+            {mode === "login" && (
+              <View className="flex-row justify-end -mt-1 mb-0.5">
+                <TouchableOpacity
+                  onPress={() => {
+                    setResetEmail(email.trim());
+                    setShowForgotModal(true);
+                    setResetStep("email");
+                  }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Typography
+                    variant="caption"
+                    weight="bold"
+                    className="text-xs text-[#1C4966]"
+                  >
+                    Forgot Password?
+                  </Typography>
+                </TouchableOpacity>
               </View>
+            )}
+
+            {mode === "signup" && (
+              <Input
+                label="Confirm Password"
+                secureTextEntry={!showConfirmPassword}
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                rightElement={
+                  <TouchableOpacity
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    className="p-1"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff size={20} color="#71818B" strokeWidth={2} />
+                    ) : (
+                      <Eye size={20} color="#71818B" strokeWidth={2} />
+                    )}
+                  </TouchableOpacity>
+                }
+              />
+            )}
+          </View>
+
+          {/* Checkbox agreement with clickable Terms & Privacy links */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setAgreed(!agreed)}
+            className="flex-row items-start gap-3 mt-1"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <View
+              className={twMerge(
+                clsx(
+                  "w-5 h-5 rounded-md border-2 border-primary mt-0.5 items-center justify-center",
+                  agreed ? "bg-primary" : "bg-white"
+                )
+              )}
+            >
+              {agreed && <View className="w-2 h-2 rounded-sm bg-white" />}
+            </View>
+            <View className="flex-1 flex-row flex-wrap items-center">
               <Typography
                 variant="bodySecondary"
-                color="primary"
-                className="flex-1 text-xs leading-4 text-text-secondary"
+                color="secondary"
+                className="text-xs leading-4 text-[#5A6F7D]"
               >
-                I agree to the Terms & Conditions and Privacy Policy
+                I agree to the{" "}
               </Typography>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => openExternalLink("https://www.relicus.in/terms-conditions")}
+              >
+                <Typography
+                  variant="bodySecondary"
+                  color="primary"
+                  className="text-xs leading-4 font-bold underline text-primary"
+                >
+                  Terms & Conditions
+                </Typography>
+              </TouchableOpacity>
+              <Typography
+                variant="bodySecondary"
+                color="secondary"
+                className="text-xs leading-4 text-[#5A6F7D]"
+              >
+                {" "}and{" "}
+              </Typography>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => openExternalLink("https://www.relicus.in/privacy-policy")}
+              >
+                <Typography
+                  variant="bodySecondary"
+                  color="primary"
+                  className="text-xs leading-4 font-bold underline text-primary"
+                >
+                  Privacy Policy
+                </Typography>
+              </TouchableOpacity>
             </View>
-          </Pressable>
+          </TouchableOpacity>
 
           {/* Submit Button */}
           <Button
             onPress={handleContinue}
-            disabled={!phone || !agreed}
+            disabled={isSubmitting}
             size="lg"
-            className="w-full mt-2 rounded-2xl shadow-md py-4"
+            className="w-full mt-2 rounded-2xl py-4"
           >
-            <View className="flex-row items-center justify-center gap-2">
-              <Typography weight="bold" color="white" className="text-base">
-                {mode === "signup" ? "Create Account" : "Log In"}
-              </Typography>
-              <ArrowRight color="#ffffff" size={18} strokeWidth={2.5} />
-            </View>
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <View className="flex-row items-center justify-center gap-2">
+                <Typography weight="bold" color="white" className="text-base">
+                  {mode === "login" ? "Log In" : "Create Account"}
+                </Typography>
+                <ArrowRight color="#ffffff" size={18} strokeWidth={2.5} />
+              </View>
+            )}
           </Button>
         </View>
       </ScrollView>
+
+      {/* Forgot Password Modal */}
+      <Modal
+        visible={showForgotModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowForgotModal(false)}
+      >
+        <View className="flex-1 bg-black/60 items-center justify-center px-6">
+          <View className="w-full bg-white rounded-3xl p-6 border border-[#E5EDF2] shadow-xl">
+            {/* Modal Header */}
+            <View className="flex-row items-center justify-between mb-4">
+              <View className="flex-row items-center gap-2.5">
+                <View className="w-10 h-10 rounded-xl bg-[#EDF5F8] items-center justify-center">
+                  <KeyRound size={20} color="#1C4966" strokeWidth={2.2} />
+                </View>
+                <View>
+                  <Typography variant="heading" weight="bold" className="text-lg text-[#172F3D]">
+                    {resetStep === "email"
+                      ? "Reset Password"
+                      : resetStep === "link_new_password"
+                      ? "Choose New Password"
+                      : "Enter Verification Code"}
+                  </Typography>
+                  <Typography variant="caption" className="text-[11px] text-[#71818B]">
+                    {resetStep === "email"
+                      ? "Step 1 of 2"
+                      : resetStep === "link_new_password"
+                      ? "Email Link Verified"
+                      : "Step 2 of 2"}
+                  </Typography>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => setShowForgotModal(false)}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                className="w-8 h-8 rounded-full bg-black/5 items-center justify-center"
+              >
+                <X size={16} color="#71818B" strokeWidth={2.2} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Modal Body */}
+            {resetStep === "email" ? (
+              <View className="gap-3">
+                <Typography variant="bodySecondary" className="text-xs text-[#5A6F7D] leading-5">
+                  Enter your registered email address. We will send an OTP verification code or reset link to securely reset your password.
+                </Typography>
+
+                <Input
+                  label="Registered Email Address"
+                  placeholder="name@example.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={resetEmail}
+                  onChangeText={setResetEmail}
+                />
+
+                <Button
+                  variant="primary"
+                  size="md"
+                  onPress={handleSendResetEmail}
+                  disabled={isResetLoading}
+                  className="w-full mt-2 py-3.5"
+                >
+                  {isResetLoading ? (
+                    <ActivityIndicator size="small" color="#ffffff" />
+                  ) : (
+                    <View className="flex-row items-center justify-center gap-2">
+                      <Typography weight="bold" color="white" className="text-sm">
+                        Send Reset Code
+                      </Typography>
+                      <ArrowRight color="#ffffff" size={16} />
+                    </View>
+                  )}
+                </Button>
+              </View>
+            ) : resetStep === "link_new_password" ? (
+              <View className="gap-3">
+                <Typography variant="bodySecondary" className="text-xs text-[#5A6F7D] leading-5">
+                  Your email reset link has been verified! Enter your new password below to secure your account.
+                </Typography>
+
+                <Input
+                  label="New Password"
+                  placeholder="Enter new password (min. 6 chars)"
+                  secureTextEntry={!showResetNewPassword}
+                  value={resetNewPassword}
+                  onChangeText={setResetNewPassword}
+                  rightElement={
+                    <TouchableOpacity
+                      onPress={() => setShowResetNewPassword(!showResetNewPassword)}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      className="p-1"
+                    >
+                      {showResetNewPassword ? (
+                        <EyeOff size={18} color="#71818B" />
+                      ) : (
+                        <Eye size={18} color="#71818B" />
+                      )}
+                    </TouchableOpacity>
+                  }
+                />
+
+                <Button
+                  variant="primary"
+                  size="md"
+                  onPress={handleDirectPasswordReset}
+                  disabled={isResetLoading}
+                  className="w-full mt-2 py-3.5"
+                >
+                  {isResetLoading ? (
+                    <ActivityIndicator size="small" color="#ffffff" />
+                  ) : (
+                    <View className="flex-row items-center justify-center gap-2">
+                      <Typography weight="bold" color="white" className="text-sm">
+                        Save New Password
+                      </Typography>
+                      <ShieldCheck color="#ffffff" size={16} />
+                    </View>
+                  )}
+                </Button>
+              </View>
+            ) : (
+              <View className="gap-3">
+                <Typography variant="bodySecondary" className="text-xs text-[#5A6F7D] leading-5">
+                  We've sent a verification message to <Typography weight="bold" className="text-[#172F3D]">{resetEmail}</Typography>.
+                </Typography>
+
+                <Input
+                  label="6-Digit OTP Code"
+                  placeholder="e.g. 123456"
+                  keyboardType="number-pad"
+                  value={resetOtp}
+                  onChangeText={setResetOtp}
+                />
+
+                <Input
+                  label="New Password"
+                  placeholder="Enter new password (min. 6 chars)"
+                  secureTextEntry={!showResetNewPassword}
+                  value={resetNewPassword}
+                  onChangeText={setResetNewPassword}
+                  rightElement={
+                    <TouchableOpacity
+                      onPress={() => setShowResetNewPassword(!showResetNewPassword)}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      className="p-1"
+                    >
+                      {showResetNewPassword ? (
+                        <EyeOff size={18} color="#71818B" />
+                      ) : (
+                        <Eye size={18} color="#71818B" />
+                      )}
+                    </TouchableOpacity>
+                  }
+                />
+
+                {/* Helpful note for users who received a link instead of a code */}
+                <View className="bg-[#EDF5F8] p-3 rounded-2xl border border-[#DCE5EA]">
+                  <Typography variant="caption" className="text-[11.5px] text-[#405563] leading-4">
+                    💡 <Typography weight="bold" className="text-[#1C4966]">Got a reset link in your email?</Typography> You can click the "Reset password" button directly in your email to choose your new password!
+                  </Typography>
+                </View>
+
+                <Button
+                  variant="primary"
+                  size="md"
+                  onPress={handleVerifyOtpAndReset}
+                  disabled={isResetLoading}
+                  className="w-full mt-1 py-3.5"
+                >
+                  {isResetLoading ? (
+                    <ActivityIndicator size="small" color="#ffffff" />
+                  ) : (
+                    <View className="flex-row items-center justify-center gap-2">
+                      <Typography weight="bold" color="white" className="text-sm">
+                        Verify & Reset Password
+                      </Typography>
+                      <ShieldCheck color="#ffffff" size={16} />
+                    </View>
+                  )}
+                </Button>
+
+                <TouchableOpacity
+                  onPress={() => setResetStep("email")}
+                  className="items-center py-1 mt-1"
+                >
+                  <Typography variant="caption" weight="bold" className="text-xs text-[#1C4966]">
+                    Didn't receive code? Change email
+                  </Typography>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Custom Dialog inside Forgot Password Modal */}
+          {dialogConfig && (
+            <View
+              style={StyleSheet.absoluteFill}
+              className="bg-black/60 items-center justify-center px-6 z-50"
+            >
+              <CustomDialogCard
+                title={dialogConfig.title}
+                message={dialogConfig.message}
+                type={dialogConfig.type}
+                buttons={dialogConfig.buttons}
+                onClose={() => setDialogConfig(null)}
+              />
+            </View>
+          )}
+        </View>
+      </Modal>
+
+      {/* Custom Dialog for Main Page (when Forgot Modal is closed) */}
+      {!showForgotModal && (
+        <CustomDialog
+          visible={!!dialogConfig}
+          title={dialogConfig?.title || ""}
+          message={dialogConfig?.message}
+          type={dialogConfig?.type}
+          buttons={dialogConfig?.buttons}
+          onClose={() => setDialogConfig(null)}
+        />
+      )}
     </AppScreen>
   );
 }

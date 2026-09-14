@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 
 import { KnowNextView, NavContext } from "./types";
 import { useKnowNextStore } from "../../store/knownext.store";
+import { ComingSoonScreen } from "../../components/ComingSoonScreen";
 
 // ── Screen Imports ──────────────────────────────────
 import { LandingHub } from "./screens/PlanScreens";
@@ -59,6 +60,19 @@ function navReducer(state: NavState, action: NavAction): NavState {
 }
 
 export default function KnowNextMain() {
+  // Feature gate: Show Coming Soon screen for deployment (preserves full implementation below)
+  const SHOW_COMING_SOON = true;
+  if (SHOW_COMING_SOON) {
+    return (
+      <ComingSoonScreen
+        title="KnowNext Guidance"
+        tagline="We are on the way!"
+        subtitle="Intelligent career roadmaps, college trackers, and scholarship guidance are being prepared for your bright future. See you soon!"
+        feature="knowNext"
+      />
+    );
+  }
+
   const router = useRouter();
   const [navState, dispatch] = useReducer(navReducer, initialState);
   const { fetchKnowNextData, isLoading } = useKnowNextStore();

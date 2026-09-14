@@ -157,7 +157,7 @@ export const CollegeExplorer: React.FC<CollegeExplorerProps> = ({ onNavigate, on
   return (
     <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#4f378a", "#6750a4"]}
+        colors={["#1C4966", "#285B78"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="px-6 pb-6 pt-16 rounded-b-[40px] shadow-sm z-10"
@@ -288,7 +288,7 @@ export const CollegeDetails: React.FC<CollegeDetailsProps> = ({ collegeId, onNav
   return (
     <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#4f378a", "#6750a4"]}
+        colors={["#1C4966", "#285B78"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="px-6 pb-6 pt-16 rounded-b-[32px] shadow-sm z-10"
@@ -433,7 +433,7 @@ export const CollegeComparison: React.FC<CollegeComparisonProps> = ({ compareIds
   return (
     <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#4f378a", "#6750a4"]}
+        colors={["#1C4966", "#285B78"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="px-6 pb-6 pt-16 rounded-b-[32px] shadow-sm z-10"

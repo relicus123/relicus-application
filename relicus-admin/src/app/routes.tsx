@@ -8,6 +8,7 @@ import { SkillsManager } from "./screens/Admin/SkillsManager";
 import { CoachingManager } from "./screens/Admin/CoachingManager";
 import { KnowNextManager } from "./screens/Admin/KnowNextManager";
 import { MindfulnessManager } from "./screens/Admin/MindfulnessManager";
+import { UsersManager } from "./screens/Admin/UsersManager";
 
 export const router = createBrowserRouter([
   {
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
     Component: AdminLayout,
     children: [
       { index: true, Component: AdminOverview },
+      { path: "users", Component: UsersManager },
       { path: "skills", Component: SkillsManager },
       { path: "coaching", Component: CoachingManager },
       { path: "knownext", Component: KnowNextManager },

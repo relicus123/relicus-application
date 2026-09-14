@@ -1,21 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
+  Text,
   ScrollView,
   TouchableOpacity,
   Modal,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { MotiView } from "moti";
 import {
   User,
   Bell,
   Lock,
-  Award,
+  Shield,
   ChevronRight,
   LogOut,
   Edit,
-  X
+  X,
+  GraduationCap,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,6 +27,7 @@ import { Button } from "../../components/Button";
 import { Input } from "../../components/Input";
 import { useAuthStore } from "../../store/auth.store";
 import { useSkillsStore } from "../../store/skills.store";
+import { useCoachingStore } from "../../store/coaching.store";
 import { Typography } from "../../components/Typography";
 import { GlassSurface } from "../../components/GlassSurface";
 import { BentoCard, BentoCardPressable } from "../../components/BentoCard";
@@ -35,6 +39,7 @@ export default function ProfileScreen() {
   
   const authStore = useAuthStore();
   const skillsStore = useSkillsStore();
+  const coachingStore = useCoachingStore();
   const user = authStore.currentUser;
   const userId = user?.id;
 
@@ -43,18 +48,44 @@ export default function ProfileScreen() {
   const phone = user?.phone || "No Phone";
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const [tempName, setTempName] = useState(name);
   const [tempEmail, setTempEmail] = useState(email);
   const [tempPhone, setTempPhone] = useState(phone);
+
+  useEffect(() => {
+    coachingStore.fetchCoachingData().then(() => {
+      coachingStore.recordDailyActivity();
+    });
+  }, []);
+
+  const testAttempts = coachingStore.testAttempts || [];
+  const learningStreak = coachingStore.learningStreak ?? 0;
+
+  const avgScore = testAttempts.length > 0
+    ? Math.round(
+        testAttempts.reduce(
+          (acc, t) => acc + (Number(t.score) / (Number(t.maxScore) || 100)) * 100,
+          0
+        ) / testAttempts.length
+      )
+    : 0;
+
+  const stats = [
+    { label: "Mocks Taken", value: String(testAttempts.length) },
+    { label: "Avg Score", value: testAttempts.length > 0 ? `${avgScore}%` : "-" },
+    { label: "Day Streak", value: `${learningStreak}🔥` },
+  ];
 
   const menuItems = [
     {
       icon: User,
       label: "Edit Profile",
       description: "Update your information",
-      colors: ["#fdf7ff", "#e9ddff"],
-      iconColor: "#4f378a",
+      colors: ["#FFFFFF", "#EDF5F8"],
+      iconColor: "#1C4966",
       onPress: () => {
         setTempName(name);
         setTempEmail(email);
@@ -65,42 +96,26 @@ export default function ProfileScreen() {
     {
       icon: Bell,
       label: "Notifications",
-      description: "Manage preferences",
+      description: "Faculty announcements & alerts",
       colors: ["#F0F7FF", "#DBEAFE"],
-      iconColor: "#3B82F6",
-      onPress: () => router.push("/notifications" as any),
+      iconColor: "#1C4966",
+      onPress: () => router.push("/(tabs)/notifications" as any),
     },
     {
-      icon: Lock,
-      label: "Privacy & Security",
-      description: "Control your data",
-      colors: ["#ECFDF5", "#D1FAE5"],
-      iconColor: "#10B981",
+      icon: Shield,
+      label: "Privacy Policy",
+      description: "Terms, privacy & student data protection",
+      colors: ["#F0F7FF", "#DBEAFE"],
+      iconColor: "#1C4966",
       onPress: () => router.push("/profile/privacy" as any),
     },
-    {
-      icon: Award,
-      label: "Certificates",
-      description: "View achievements",
-      colors: ["#FFF7ED", "#FFEDD5"],
-      iconColor: "#F97316",
-      onPress: () => {}, 
-    }
-  ];
-
-  const enrolledCount = userId ? (skillsStore.enrolledCourseIds[userId] || []).length : 0;
-  const certCount = userId ? (skillsStore.certificates[userId] || []).length : 0;
-
-  const stats = [
-    { label: "Courses", value: String(enrolledCount) },
-    { label: "Certificates", value: String(certCount) },
   ];
 
   return (
     <View className="flex-1 bg-surface-primary">
       <ScrollView contentContainerStyle={{ paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
         <LinearGradient
-          colors={["#fdf7ff", "#e9ddff", "#cfbcff"]}
+          colors={["#FFFFFF", "#EDF5F8", "#E1EFF5"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           className="px-6 pb-12 rounded-b-[40px] pt-8"
@@ -109,7 +124,7 @@ export default function ProfileScreen() {
             <View className="flex-row justify-between items-center mb-8 mt-2">
               <Typography variant="title" weight="bold" color="primary">Profile</Typography>
               <TouchableOpacity 
-                className="w-10 h-10 rounded-full bg-white/40 items-center justify-center relative border border-white/50"
+                className="w-10 h-10 rounded-full bg-white/70 items-center justify-center relative border border-border-subtle"
                 onPress={() => {
                   setTempName(name);
                   setTempEmail(email);
@@ -117,7 +132,7 @@ export default function ProfileScreen() {
                   setIsEditing(true);
                 }}
               >
-                <Edit color="#4f378a" size={20} />
+                <Edit color="#1C4966" size={20} />
               </TouchableOpacity>
             </View>
 
@@ -174,43 +189,66 @@ export default function ProfileScreen() {
                   <Typography weight="bold" color="primary" className="mb-0.5">{item.label}</Typography>
                   <Typography variant="caption" color="secondary">{item.description}</Typography>
                 </View>
-                <ChevronRight color="#79747e" size={20} />
+                <ChevronRight color="#71818B" size={20} />
               </BentoCardPressable>
             </MotiView>
           ))}
 
+          {/* Entrance Coaching Mock Test History */}
           <MotiView
-            from={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 500 }}
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ delay: 350 }}
           >
-            <LinearGradient
-              colors={["#fdf7ff", "#e9ddff"]}
-              className="flex-row items-center p-5 rounded-3xl border border-primary/20 mt-2"
-            >
-              <View className="w-12 h-12 bg-primary rounded-xl items-center justify-center mr-4 shadow-sm">
-                <Award color="white" size={24} strokeWidth={2.5} />
+            <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white mt-1">
+              <View className="flex-row justify-between items-center mb-3">
+                <View className="flex-row items-center gap-2">
+                  <GraduationCap size={20} color="#1C4966" />
+                  <Typography variant="heading" weight="bold" color="primary">Mock Test History</Typography>
+                </View>
+                <TouchableOpacity onPress={() => router.push("/(tabs)/learning" as any)}>
+                  <Typography variant="caption" weight="bold" color="primary">Prep Hub →</Typography>
+                </TouchableOpacity>
               </View>
-              <View className="flex-1">
-                <Typography weight="bold" color="primary" className="mb-0.5">Relicus Premium</Typography>
-                <Typography variant="caption" color="secondary">Unlock exclusive features</Typography>
-              </View>
-              <Button size="sm" variant="primary" onPress={() => {}} className="px-4 py-2">
-                Upgrade
-              </Button>
-            </LinearGradient>
+
+              {testAttempts.length === 0 ? (
+                <View className="py-4 items-center">
+                  <Typography variant="caption" color="secondary" className="text-center mb-3">
+                    No mock tests completed yet. Test your preparation with instant grading!
+                  </Typography>
+                  <Button size="sm" variant="primary" onPress={() => router.push("/(tabs)/learning" as any)}>
+                    Take a Mock Test
+                  </Button>
+                </View>
+              ) : (
+                <View className="gap-2.5">
+                  {testAttempts.slice(0, 5).map((attempt: any, i: number) => (
+                    <View key={attempt.id || i} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex-row justify-between items-center">
+                      <View className="flex-1 mr-2">
+                        <Typography weight="bold" color="primary" numberOfLines={1}>{attempt.testName || "Mock Test"}</Typography>
+                        <Typography variant="caption" color="secondary" className="text-[10px]">
+                          {attempt.date ? new Date(attempt.date).toLocaleDateString() : "Recent"} • {attempt.examType || "Entrance"}
+                        </Typography>
+                      </View>
+                      <View className="items-end">
+                        <View className="bg-emerald-100 px-2 py-0.5 rounded-full mb-0.5">
+                          <Typography variant="caption" weight="bold" className="text-emerald-700 text-xs">
+                            {attempt.score}/{attempt.maxScore || 100} ({Math.round(attempt.accuracy || 0)}%)
+                          </Typography>
+                        </View>
+                        <Typography variant="caption" color="secondary" className="text-[9px]">Score</Typography>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </BentoCard>
           </MotiView>
 
           <TouchableOpacity 
             className="flex-row items-center justify-center gap-2 p-5 rounded-3xl bg-red-500/5 border border-red-500/10 mt-2"
-            onPress={() => Alert.alert("Logout", "Are you sure you want to log out from Relicus?", [
-              { text: "Cancel", style: "cancel" },
-              { text: "Log Out", style: "destructive", onPress: () => {
-                skillsStore.resetAll();
-                authStore.logout();
-                router.replace("/landing" as any);
-              }}
-            ])}
+            onPress={() => setShowLogoutModal(true)}
+            activeOpacity={0.8}
           >
             <LogOut color="#EF4444" size={20} />
             <Typography weight="bold" className="text-red-500">Logout</Typography>
@@ -240,7 +278,7 @@ export default function ProfileScreen() {
             <View className="flex-row justify-between items-center mb-6">
               <Typography variant="title" weight="bold" color="primary">Edit Profile</Typography>
               <TouchableOpacity onPress={() => setIsEditing(false)} className="p-2 bg-primary/5 rounded-full">
-                <X color="#4f378a" size={20} />
+                <X color="#1C4966" size={20} />
               </TouchableOpacity>
             </View>
             
@@ -296,6 +334,103 @@ export default function ProfileScreen() {
                   Save
                 </Button>
               </View>
+            </View>
+          </MotiView>
+        </View>
+      </Modal>
+
+      {/* Custom Universal Logout Confirmation Modal */}
+      <Modal
+        visible={showLogoutModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => !isLoggingOut && setShowLogoutModal(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(15, 23, 42, 0.7)", justifyContent: "center", alignItems: "center", paddingHorizontal: 24 }}>
+          <MotiView
+            from={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              width: "100%",
+              maxWidth: 350,
+              backgroundColor: "#FFFFFF",
+              borderRadius: 24,
+              padding: 24,
+              alignItems: "center",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 12 },
+              shadowOpacity: 0.25,
+              shadowRadius: 24,
+              elevation: 12,
+            }}
+          >
+            <View style={{ width: 56, height: 56, borderRadius: 20, backgroundColor: "#FEE2E2", alignItems: "center", justifyContent: "center", marginBottom: 14, borderWidth: 1, borderColor: "#FECACA" }}>
+              <LogOut color="#DC2626" size={26} strokeWidth={2.4} />
+            </View>
+
+            <Text style={{ fontSize: 19, fontWeight: "800", color: "#0F172A", marginBottom: 8, textAlign: "center" }}>
+              Log Out of Relicus?
+            </Text>
+
+            <Text style={{ fontSize: 13, color: "#475569", textAlign: "center", lineHeight: 18, marginBottom: 22, paddingHorizontal: 4 }}>
+              Are you sure you want to log out? You will need to sign in again to access your courses, mock tests, and roadmaps.
+            </Text>
+
+            <View style={{ flexDirection: "row", gap: 12, width: "100%" }}>
+              <TouchableOpacity
+                onPress={() => setShowLogoutModal(false)}
+                disabled={isLoggingOut}
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  borderRadius: 14,
+                  backgroundColor: "#F8FAFC",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 1,
+                  borderColor: "#E2E8F0",
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={{ color: "#475569", fontWeight: "700", fontSize: 14 }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={async () => {
+                  if (isLoggingOut) return;
+                  setIsLoggingOut(true);
+                  try {
+                    skillsStore.resetAll();
+                    await authStore.logout();
+                  } catch (err) {
+                    console.warn("Logout error:", err);
+                  } finally {
+                    setIsLoggingOut(false);
+                    setShowLogoutModal(false);
+                    router.replace({ pathname: "/landing", params: { logout: "true" } } as any);
+                  }
+                }}
+                disabled={isLoggingOut}
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  borderRadius: 14,
+                  backgroundColor: "#DC2626",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                activeOpacity={0.85}
+              >
+                {isLoggingOut ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 14 }}>
+                    Log Out
+                  </Text>
+                )}
+              </TouchableOpacity>
             </View>
           </MotiView>
         </View>

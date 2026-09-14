@@ -6,6 +6,7 @@ import {
   TextInput,
   Dimensions,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
@@ -224,7 +225,7 @@ export const CareerExplorer: React.FC<CareerExplorerProps> = ({ onNavigate, onBa
   return (
     <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#4f378a", "#6750a4"]}
+        colors={["#1C4966", "#285B78"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="px-6 pb-6 pt-16 rounded-b-[40px] shadow-sm z-10"
@@ -357,7 +358,7 @@ export const CareerDetails: React.FC<CareerDetailsProps> = ({ careerId, onNaviga
   return (
     <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#4f378a", "#6750a4"]}
+        colors={["#1C4966", "#285B78"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="px-6 pb-6 pt-16 rounded-b-[32px] shadow-sm z-10"
@@ -420,7 +421,7 @@ export const CareerDetails: React.FC<CareerDetailsProps> = ({ careerId, onNaviga
                 variant="outline"
                 onPress={() => {
                   setCareerGoal(career.id);
-                  alert(`${career.title} has been set as your Career Goal!`);
+                  Alert.alert("Goal Set", `${career.title} has been set as your Career Goal!`);
                 }}
               >
                 Set as Goal
@@ -543,7 +544,7 @@ export const CareerComparison: React.FC<CareerComparisonProps> = ({ compareIds, 
   return (
     <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#4f378a", "#6750a4"]}
+        colors={["#1C4966", "#285B78"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="px-6 pb-6 pt-16 rounded-b-[32px] shadow-sm z-10"
@@ -613,7 +614,7 @@ export const CareerRoadmaps: React.FC<CareerRoadmapsProps> = ({ onNavigate, onBa
   return (
     <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#4f378a", "#6750a4"]}
+        colors={["#1C4966", "#285B78"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="px-6 pb-6 pt-16 rounded-b-[32px] shadow-sm z-10"
@@ -694,7 +695,7 @@ export const LearningPath: React.FC<LearningPathProps> = ({ roadmapId, onBack })
   return (
     <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#4f378a", "#6750a4"]}
+        colors={["#1C4966", "#285B78"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="px-6 pb-6 pt-16 rounded-b-[32px] shadow-sm z-10"

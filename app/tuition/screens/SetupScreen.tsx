@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { View } from "react-native";
+import { View, Alert, Image } from "react-native";
 import { useTuitionStore } from "../../../store/tuition.store";
 import { LinearGradient } from "expo-linear-gradient";
-import { GraduationCap } from "lucide-react-native";
 import { Button } from "../../../components/Button";
 import { Input } from "../../../components/Input";
 import { Typography } from "../../../components/Typography";
@@ -16,7 +15,7 @@ export function SetupScreen() {
 
   const handleCreate = async () => {
     if (!name || !classLevel || !board) {
-      alert("Please fill out all fields");
+      Alert.alert("Missing Information", "Please fill out all fields.");
       return;
     }
     await store.createProfile(name, classLevel, board);
@@ -25,14 +24,18 @@ export function SetupScreen() {
   return (
     <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#fdf7ff", "#e9ddff", "#cfbcff"]}
+        colors={["#FFFFFF", "#EDF5F8", "#E1EFF5"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        className="px-6 pb-12 pt-16 items-center rounded-b-[40px]"
+        className="px-6 pb-8 pt-10 items-center rounded-b-[40px]"
       >
-        <SafeAreaView edges={["top"]}>
-          <View className="bg-white/40 p-4 rounded-full border border-white/50 mb-4 items-center">
-            <GraduationCap size={40} color="#4f378a" strokeWidth={1.5} />
+        <SafeAreaView edges={["top"]} className="items-center">
+          <View className="w-36 h-36 rounded-3xl bg-white shadow-lg shadow-black/10 border-2 border-white overflow-hidden items-center justify-center p-1.5 mb-4">
+            <Image
+              source={require("../../../assets/illustrations/tuition_student.jpg")}
+              style={{ width: "100%", height: "100%", borderRadius: 20 }}
+              resizeMode="contain"
+            />
           </View>
           <Typography variant="heading" weight="bold" color="primary" className="text-center">
             Welcome to Tuition!

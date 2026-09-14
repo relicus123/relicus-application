@@ -72,7 +72,7 @@ export const useKnowNextStore = create<KnowNextStore>()(
         .from('knownext_profiles')
         .select('*')
         .eq('user_id', currentUser.id)
-        .single();
+        .maybeSingle();
         
       const { data: progress } = await supabase
         .from('knownext_roadmap_progress')
@@ -181,7 +181,14 @@ export const useKnowNextStore = create<KnowNextStore>()(
     if (!currentUser) return;
     
     set({ careerGoalId: id });
-    await supabase.from('knownext_profiles').upsert([{ user_id: currentUser.id, career_goal_id: id }]);
+    try {
+      await supabase.from('knownext_profiles').upsert(
+        [{ user_id: currentUser.id, career_goal_id: id }],
+        { onConflict: 'user_id' }
+      );
+    } catch (e) {
+      console.warn('Knownext profile career goal upsert notice:', e);
+    }
   },
   
   setActiveRoadmap: async (id) => {
@@ -189,7 +196,14 @@ export const useKnowNextStore = create<KnowNextStore>()(
     if (!currentUser) return;
     
     set({ activeRoadmapId: id });
-    await supabase.from('knownext_profiles').upsert([{ user_id: currentUser.id, active_roadmap_id: id }]);
+    try {
+      await supabase.from('knownext_profiles').upsert(
+        [{ user_id: currentUser.id, active_roadmap_id: id }],
+        { onConflict: 'user_id' }
+      );
+    } catch (e) {
+      console.warn('Knownext profile roadmap upsert notice:', e);
+    }
   },
   
   completeRoadmapStep: async (roadmapId, stepId) => {

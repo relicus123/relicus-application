@@ -7,37 +7,50 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Core Identity — purple design system
-        primary: "#4f378a",
-        secondary: "#79747e",
-        accent: "#cfbcff",
-        "accent-primary": "#6750a4",
+        // Core Identity — Relicus brand palette (#1C4966 / #8FBDD7)
+        primary: "#1C4966",
+        "primary-dark": "#12354A",
+        "primary-hover": "#285B78",
+        secondary: "#8FBDD7",
+        accent: "#C99545",
+        "accent-primary": "#1C4966",
+        "accent-light": "#FBF1DF",
+        "accent-dark": "#9A6C2D",
         
         // Semantic Backgrounds
-        "bg-primary": "#fdf7ff",
-        "bg-secondary": "#e9ddff",
+        "bg-primary": "#F7F9FB",
+        "bg-secondary": "#EDF5F8",
         
         // Surfaces
-        "surface-primary": "#fdf7ff",
-        "surface-secondary": "#f3eeff",
+        "surface-primary": "#F7F9FB",
+        "surface-secondary": "#EDF5F8",
         "surface-elevated": "#FFFFFF",
-        "surface-variant": "#e9ddff",
-        "surface-glass": "rgba(255, 255, 255, 0.7)",
+        "surface-variant": "#E1EFF5",
+        "surface-blue": "#E1EFF5",
+        "surface-subtle": "#EDF5F8",
+        "surface-glass": "rgba(255, 255, 255, 0.85)",
         
         // Typography
-        "text-primary": "#1d1b20",
-        "text-secondary": "#49454f",
-        "text-tertiary": "#79747e",
+        "text-primary": "#172F3D",
+        "text-secondary": "#405563",
+        "text-tertiary": "#71818B",
+        "text-caption": "#87959D",
+        "text-disabled": "#AAB5BB",
         
         // Borders
-        "border-subtle": "#e6dff7",
-        "border-strong": "#cac4d0",
+        "border-subtle": "#DCE5EA",
+        "border-strong": "#C9D9E2",
+        "border-focus": "#1C4966",
         
         // State
-        success: "#10B981",
-        warning: "#F59E0B",
-        error: "#EF4444",
-        info: "#3B82F6",
+        success: "#287A5A",
+        "success-bg": "#E8F4EE",
+        warning: "#C99545",
+        "warning-bg": "#FBF1DF",
+        error: "#C45151",
+        "error-bg": "#FBEAEA",
+        info: "#1C4966",
+        "info-bg": "#EDF5F8",
       },
       borderRadius: {
         sm: "4px",

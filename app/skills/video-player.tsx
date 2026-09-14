@@ -157,7 +157,7 @@ export default function VideoPlayerScreen() {
       
       {!isFullscreen && (
         <LinearGradient
-          colors={["#fdf7ff", "#e9ddff", "#cfbcff"]}
+          colors={["#FFFFFF", "#EDF5F8", "#E1EFF5"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           className="px-6 pb-6 pt-10"
@@ -166,10 +166,10 @@ export default function VideoPlayerScreen() {
             <View className="flex-row items-center gap-4">
               <TouchableOpacity
                 onPress={handleBack}
-                className="w-10 h-10 rounded-full bg-white/40 items-center justify-center border border-white/50"
+                className="w-10 h-10 rounded-full bg-white/70 items-center justify-center border border-border-subtle"
                 activeOpacity={0.7}
               >
-                <ArrowLeft color="#4f378a" size={20} />
+                <ArrowLeft color="#1C4966" size={20} />
               </TouchableOpacity>
               <View className="flex-1">
                 <Typography variant="caption" color="secondary" className="mb-0.5">Now Playing</Typography>

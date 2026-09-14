@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Image,
+  Alert,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import * as Print from 'expo-print';
@@ -27,12 +28,26 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Typography } from "../../components/Typography";
 import { BentoCard } from "../../components/BentoCard";
 import { Button } from "../../components/Button";
+import { ComingSoonScreen } from "../../components/ComingSoonScreen";
 import { useSkillsStore } from "../../store/skills.store";
 import { useAuthStore } from "../../store/auth.store";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 export default function SkillEnhancementLanding() {
+  // Feature gate: Show Coming Soon screen for deployment (preserves full implementation below)
+  const SHOW_COMING_SOON = true;
+  if (SHOW_COMING_SOON) {
+    return (
+      <ComingSoonScreen
+        title="Skills Academy"
+        tagline="We are on the way!"
+        subtitle="We're curating top industry-ready skill programs, expert mentors, and hands-on projects for you. See you soon!"
+        feature="skills"
+      />
+    );
+  }
+
   const router = useRouter();
   const store = useSkillsStore();
   const authStore = useAuthStore();
@@ -81,7 +96,7 @@ export default function SkillEnhancementLanding() {
 
   const handleEnroll = (courseId: string) => {
     store.enrollInCourse(courseId);
-    alert("Successfully enrolled in course!");
+    Alert.alert("Enrolled", "Successfully enrolled in course!");
   };
 
   const handleOpenCourse = (courseId: string) => {
@@ -113,14 +128,14 @@ export default function SkillEnhancementLanding() {
       await Sharing.shareAsync(uri);
     } catch (error) {
       console.error("Error generating certificate", error);
-      alert("Failed to download certificate.");
+      Alert.alert("Error", "Failed to download certificate.");
     }
   };
 
   return (
     <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#fdf7ff", "#e9ddff", "#cfbcff"]}
+        colors={["#FFFFFF", "#EDF5F8", "#E1EFF5"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="px-6 pb-6 pt-10"
@@ -129,10 +144,10 @@ export default function SkillEnhancementLanding() {
           <View className="flex-row items-center gap-4">
             <TouchableOpacity
               onPress={handleBack}
-              className="w-10 h-10 rounded-full bg-white/40 items-center justify-center border border-white/50"
+              className="w-10 h-10 rounded-full bg-white/70 items-center justify-center border border-border-subtle"
               activeOpacity={0.7}
             >
-              <ArrowLeft color="#4f378a" size={20} />
+              <ArrowLeft color="#1C4966" size={20} />
             </TouchableOpacity>
             <View className="flex-1">
               <Typography variant="caption" color="secondary" className="mb-0.5">Relicus Skills Academy</Typography>
@@ -466,7 +481,7 @@ export default function SkillEnhancementLanding() {
                     </View>
                     {!request && (
                       <TouchableOpacity 
-                        onPress={() => progressPercent >= 100 ? store.requestCertificate(c.id, c.title, authStore.currentUser?.username || authStore.currentUser?.email || "Student") : alert("Please complete the course 100% to request a certificate.")}
+                        onPress={() => progressPercent >= 100 ? store.requestCertificate(c.id, c.title, authStore.currentUser?.username || authStore.currentUser?.email || "Student") : Alert.alert("Course Incomplete", "Please complete the course 100% to request a certificate.")}
                         className={twMerge(clsx(
                           "px-4 py-2 rounded-xl ml-2",
                           progressPercent >= 100 ? "bg-primary" : "bg-surface-secondary border border-border-subtle"

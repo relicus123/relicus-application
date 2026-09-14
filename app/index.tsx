@@ -1,9 +1,8 @@
 import React, { useEffect } from "react";
-import { View, StyleSheet, Dimensions } from "react-native";
+import { View, StyleSheet, Dimensions, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { MotiView } from "moti";
 import { LinearGradient } from "expo-linear-gradient";
-import { Typography } from "../components/Typography";
 import { useAuthStore } from "../store/auth.store";
 
 const { width, height } = Dimensions.get("window");
@@ -26,7 +25,7 @@ export default function Splash() {
   return (
     <View className="flex-1 bg-surface-primary">
       <LinearGradient
-        colors={["#fdf7ff", "#e9ddff", "#cfbcff"]}
+        colors={["#FFFFFF", "#F7F9FB", "#EDF5F8"]}
         style={StyleSheet.absoluteFill}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -36,7 +35,7 @@ export default function Splash() {
           {[...Array(12)].map((_, i) => (
             <MotiView
               key={i}
-              className="absolute w-2 h-2 rounded-full bg-primary/20"
+              className="absolute w-2 h-2 rounded-full bg-secondary/30"
               style={{
                 left: `${Math.random() * 90}%`,
                 top: `${Math.random() * 90}%`,
@@ -55,13 +54,16 @@ export default function Splash() {
 
         <View className="flex-1 items-center justify-center">
           <MotiView
-            from={{ opacity: 0, scale: 0.8, translateY: 20 }}
+            from={{ opacity: 0, scale: 0.85, translateY: 15 }}
             animate={{ opacity: 1, scale: 1, translateY: 0 }}
-            transition={{ type: "timing", duration: 1200 }}
+            transition={{ type: "timing", duration: 1000 }}
+            className="items-center justify-center"
           >
-            <Typography variant="display" weight="bold" color="primary" className="tracking-tighter">
-              Relicus
-            </Typography>
+            <Image
+              source={require("../assets/Relicus Logo Files (1).png")}
+              style={{ width: 180, height: 216 }}
+              resizeMode="contain"
+            />
           </MotiView>
 
           {/* Loader bar */}
@@ -69,10 +71,10 @@ export default function Splash() {
             from={{ width: 0 }}
             animate={{ width: 180 }}
             transition={{ type: "timing", duration: 2000, delay: 500 }}
-            className="h-1 bg-white/40 rounded-full overflow-hidden mt-8"
+            className="h-1 bg-border-subtle rounded-full overflow-hidden mt-8"
           >
             <LinearGradient
-              colors={["#6750A4", "#cfbcff"]}
+              colors={["#1C4966", "#8FBDD7"]}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}

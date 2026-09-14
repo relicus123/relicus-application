@@ -7,6 +7,7 @@ import {
   Dimensions,
   StyleSheet,
   Image,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -31,10 +32,12 @@ import {
   BarChart,
   Wind,
   Smile,
+  Bell,
 } from "lucide-react-native";
 import { MotiView } from "moti";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from "../../store/auth.store";
+import { useNotificationsStore } from "../../store/notifications.store";
 import DynamicSkyHeader, {
   SkyTime,
   SkyWeather,
@@ -47,15 +50,26 @@ const CARD_WIDTH = (width - 32 - 12) / 2; // 2 column layout with 16px screen pa
 export default function Home() {
   const router = useRouter();
   const { currentUser } = useAuthStore();
-  const rawName = currentUser?.username || "Ashok";
+  const rawName = currentUser?.username || currentUser?.email?.split("@")[0] || "Learner";
   const displayName = useMemo(() => {
-    if (!rawName) return "Ashok";
+    if (!rawName) return "Learner";
     return rawName
       .trim()
       .split(/\s+/)
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(" ");
   }, [rawName]);
+
+  // Notifications
+  const { notifications, fetchLiveNotifications } = useNotificationsStore();
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => n.unread).length,
+    [notifications]
+  );
+
+  useEffect(() => {
+    fetchLiveNotifications();
+  }, []);
 
   // Live Location & Real-Time Weather Service
   const { weatherData, refreshWeather } = useLiveWeather();
@@ -118,40 +132,40 @@ export default function Home() {
     return new Date().toLocaleDateString("en-US", options);
   }, []);
 
-  const firstName = displayName ? displayName.split(" ")[0] : "Ashok";
+  const firstName = displayName ? displayName.split(" ")[0] : "Learner";
 
   const learningSlides = useMemo(
     () => [
       {
         tag: "ENTRANCE COACHING",
-        title: `Keep Going, ${firstName}!`,
+        title: "Keep Going!",
         quote: "Consistency today creates opportunities tomorrow.",
         buttonText: "Continue Learning",
         route: "/(tabs)/learning",
       },
       {
-        tag: "SKILL ENHANCEMENT",
-        title: `Master Skills, ${firstName}!`,
+        tag: "SKILL ACADEMY",
+        title: "Master In-Demand Skills",
         quote: "Small daily steps lead to giant leaps in your career.",
         buttonText: "Browse Courses",
-        route: "/skills",
+        route: "/(tabs)/skills",
       },
       {
-        tag: "MINDFULNESS & CALM",
-        title: `Find Your Calm, ${firstName}!`,
+        tag: "KNOW NEXT",
+        title: "Plan Your Future Path",
+        quote: "Explore colleges, roadmaps, and career opportunities.",
+        buttonText: "Explore Now",
+        route: "/(tabs)/knownext",
+      },
+      {
+        tag: "MINDFULNESS & WELLNESS",
+        title: "Find Your Focus & Calm",
         quote: "A peaceful mind is a student's greatest superpower.",
         buttonText: "Start Breathing",
         route: "/mindfulness",
       },
-      {
-        tag: "COUNSELLING & THERAPY",
-        title: `Here For You, ${firstName}!`,
-        quote: "You don't have to carry it all alone. We're here.",
-        buttonText: "Book a Session",
-        route: "/(tabs)/sessions",
-      },
     ],
-    [firstName]
+    []
   );
   const [activeSlide, setActiveSlide] = useState<number>(0);
 
@@ -224,26 +238,24 @@ export default function Home() {
                 </View>
               </View>
 
-              {/* Profile Avatar with Glowing Gradient Ring */}
+              {/* Notification Button */}
               <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => router.push("/(tabs)/profile")}
-                style={styles.avatarContainer}
+                activeOpacity={0.8}
+                onPress={() => router.push("/(tabs)/notifications" as any)}
+                style={styles.notifBtnContainer}
+                accessibilityLabel="Notifications"
+                accessibilityRole="button"
               >
-                <LinearGradient
-                  colors={["#D946EF", "#8B5CF6"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.avatarRing}
-                >
-                  <View style={styles.avatarInner}>
-                    <Text style={styles.avatarLetter}>
-                      {displayName ? displayName[0].toUpperCase() : "A"}
+                <View style={styles.notifBtn}>
+                  <Bell size={18} color="#FFFFFF" strokeWidth={2.2} />
+                </View>
+                {unreadCount > 0 && (
+                  <View style={styles.notifBadge}>
+                    <Text style={styles.notifBadgeText}>
+                      {unreadCount > 9 ? "9+" : unreadCount}
                     </Text>
                   </View>
-                </LinearGradient>
-                {/* Online Indicator Dot */}
-                <View style={styles.avatarStatusDot} />
+                )}
               </TouchableOpacity>
             </View>
 
@@ -331,91 +343,6 @@ export default function Home() {
               </View>
             </View>
           </MotiView>
-
-          {/* 4-Item Quick Actions Card: Daily Relicus Student & Wellness Habits */}
-          <MotiView
-            from={{ opacity: 0, translateY: 15 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: "timing", duration: 450, delay: 100 }}
-            style={styles.quickActionsCard}
-          >
-            {/* 1. Daily Breathe */}
-            <TouchableOpacity
-              activeOpacity={0.78}
-              onPress={() => router.push("/mindfulness" as any)}
-              style={styles.quickActionItem}
-            >
-              <View style={[styles.quickActionIconBox, { backgroundColor: "#ECFDF5" }]}>
-                <Wind color="#059669" size={20} strokeWidth={2.2} />
-              </View>
-              <Text style={styles.quickActionTitle} numberOfLines={1}>
-                Daily Breathe
-              </Text>
-              <Text style={styles.quickActionSubtitle} numberOfLines={1}>
-                3-min calm
-              </Text>
-            </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.quickActionDivider} />
-
-            {/* 2. My Sessions */}
-            <TouchableOpacity
-              activeOpacity={0.78}
-              onPress={() => router.push("/(tabs)/sessions" as any)}
-              style={styles.quickActionItem}
-            >
-              <View style={[styles.quickActionIconBox, { backgroundColor: "#F5F3FF" }]}>
-                <Calendar color="#7C3AED" size={20} strokeWidth={2.2} />
-              </View>
-              <Text style={styles.quickActionTitle} numberOfLines={1}>
-                My Sessions
-              </Text>
-              <Text style={styles.quickActionSubtitle} numberOfLines={1}>
-                Therapy & class
-              </Text>
-            </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.quickActionDivider} />
-
-            {/* 3. Mock Tests */}
-            <TouchableOpacity
-              activeOpacity={0.78}
-              onPress={() => router.push("/(tabs)/learning" as any)}
-              style={styles.quickActionItem}
-            >
-              <View style={[styles.quickActionIconBox, { backgroundColor: "#FFF7ED" }]}>
-                <CheckSquare color="#EA580C" size={20} strokeWidth={2.2} />
-              </View>
-              <Text style={styles.quickActionTitle} numberOfLines={1}>
-                Mock Tests
-              </Text>
-              <Text style={styles.quickActionSubtitle} numberOfLines={1}>
-                Practice & test
-              </Text>
-            </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.quickActionDivider} />
-
-            {/* 4. Mood Journal */}
-            <TouchableOpacity
-              activeOpacity={0.78}
-              onPress={() => router.push("/mindfulness" as any)}
-              style={styles.quickActionItem}
-            >
-              <View style={[styles.quickActionIconBox, { backgroundColor: "#FFF1F2" }]}>
-                <Smile color="#E11D48" size={20} strokeWidth={2.2} />
-              </View>
-              <Text style={styles.quickActionTitle} numberOfLines={1}>
-                Mood Journal
-              </Text>
-              <Text style={styles.quickActionSubtitle} numberOfLines={1}>
-                Daily check-in
-              </Text>
-            </TouchableOpacity>
-          </MotiView>
         </View>
 
         {/* ================================================================= */}
@@ -425,7 +352,7 @@ export default function Home() {
           <Text style={styles.sectionTitle}>Explore Services</Text>
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => router.push("/skills" as any)}
+            onPress={() => router.push("/(tabs)/skills" as any)}
             style={styles.seeAllBtn}
           >
             <Text style={styles.seeAllText}>See All</Text>
@@ -496,7 +423,7 @@ export default function Home() {
           {/* 3. Skills Academy */}
           <TouchableOpacity
             activeOpacity={0.88}
-            onPress={() => router.push("/skills" as any)}
+            onPress={() => router.push("/(tabs)/skills" as any)}
             style={[styles.serviceCard, styles.skillsCard]}
           >
             {/* Real Pastel Growth Chart Illustration Behind Text */}
@@ -525,7 +452,7 @@ export default function Home() {
           {/* 4. KnowNext */}
           <TouchableOpacity
             activeOpacity={0.88}
-            onPress={() => router.push("/knowNext" as any)}
+            onPress={() => router.push("/(tabs)/knownext" as any)}
             style={[styles.serviceCard, styles.knownextCard]}
           >
             {/* Real Pastel Lightbulb Illustration Behind Text */}
@@ -666,9 +593,13 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
     marginTop: 2,
     marginBottom: 3,
-    textShadowColor: "rgba(0, 0, 0, 0.35)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+    ...(Platform.OS === "web"
+      ? ({ textShadow: "0px 1px 4px rgba(0, 0, 0, 0.35)" } as any)
+      : {
+          textShadowColor: "rgba(0, 0, 0, 0.35)",
+          textShadowOffset: { width: 0, height: 1 },
+          textShadowRadius: 4,
+        }),
   },
   greetingSubText: {
     color: "rgba(255, 255, 255, 0.82)",
@@ -676,40 +607,52 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontWeight: "500",
   },
-  avatarContainer: {
+  notifBtnContainer: {
     position: "relative",
   },
-  avatarRing: {
+  notifBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    padding: 2,
+    backgroundColor: "rgba(255, 255, 255, 0.18)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.28)",
     alignItems: "center",
     justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+      web: {
+        backdropFilter: "blur(8px)",
+      },
+    }),
   },
-  avatarInner: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 18,
-    backgroundColor: "#2E1552",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarLetter: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  avatarStatusDot: {
+  notifBadge: {
     position: "absolute",
-    bottom: -1,
-    right: -1,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#10B981",
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#EF4444",
     borderWidth: 2,
-    borderColor: "#1E143B",
+    borderColor: "#0F172A",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+  },
+  notifBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "bold",
+    lineHeight: 11,
   },
   headerScenicImg: {
     position: "absolute",
@@ -813,62 +756,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#6D28D9",
   },
 
-  /* Quick Actions Strip */
-  quickActionsCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    paddingVertical: 14,
-    paddingHorizontal: 8,
-    marginTop: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: "rgba(226, 232, 240, 0.9)",
-    shadowColor: "#2E1A56",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  quickActionItem: {
-    flex: 1,
-    alignItems: "center",
-    paddingHorizontal: 2,
-  },
-  quickActionIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 7,
-  },
-  quickActionTitle: {
-    fontSize: 11.5,
-    fontWeight: "700",
-    color: "#1E293B",
-    textAlign: "center",
-  },
-  quickActionSubtitle: {
-    fontSize: 9.5,
-    color: "#64748B",
-    textAlign: "center",
-    marginTop: 2,
-  },
-  quickActionDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: "#F1F5F9",
-  },
-
   /* 3. Explore Services Styles */
   sectionHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    marginTop: 24,
+    marginTop: 20,
     marginBottom: 14,
   },
   sectionTitle: {

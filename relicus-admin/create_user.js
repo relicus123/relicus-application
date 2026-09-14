@@ -5,10 +5,18 @@ const supabaseKey = 'sb_publishable_9Ezqm-KYQrGrg1XcSiJizw_gkpTKkKy';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function createUser() {
-  console.log('Signing up user...');
+  const email = process.env.ADMIN_EMAIL;
+  const password = process.env.ADMIN_PASSWORD;
+
+  if (!email || !password) {
+    console.error('Please specify ADMIN_EMAIL and ADMIN_PASSWORD environment variables.');
+    return;
+  }
+
+  console.log('Signing up admin user:', email);
   const { data, error } = await supabase.auth.signUp({
-    email: 'relicus@gmail.com',
-    password: 'relicus@123!'
+    email,
+    password,
   });
   
   if (error) {
@@ -30,7 +38,7 @@ async function createUser() {
     // Profile might not exist yet if triggers aren't set up, let's try to insert it
     const { error: insertError } = await supabase
       .from('profiles')
-      .insert([{ id: data.user.id, email: 'relicus@gmail.com', role: 'admin', full_name: 'Admin' }]);
+      .insert([{ id: data.user.id, email, role: 'admin', full_name: 'Admin' }]);
       
     if (insertError) {
       console.error('Error inserting profile:', insertError.message);

@@ -7,6 +7,7 @@ import {
   Linking,
   RefreshControl,
   Image,
+  Alert,
 } from "react-native";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -145,7 +146,7 @@ export default function CourseDashboardScreen() {
       status: "Submitted",
     });
     setGithubUrl("");
-    alert("Assignment submitted successfully!");
+    Alert.alert("Success", "Assignment submitted successfully!");
   };
 
   const handleAddDoubt = () => {
@@ -156,7 +157,7 @@ export default function CourseDashboardScreen() {
       status: "Pending",
     });
     setDoubtText("");
-    alert("Doubt submitted to course Q&A panel!");
+    Alert.alert("Submitted", "Doubt submitted to course Q&A panel!");
   };
 
   if (!course) {
@@ -175,7 +176,7 @@ export default function CourseDashboardScreen() {
     <View className="flex-1 bg-surface-primary">
       {/* Header */}
       <LinearGradient
-        colors={["#fdf7ff", "#e9ddff", "#cfbcff"]}
+        colors={["#FFFFFF", "#EDF5F8", "#E1EFF5"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="px-6 pb-6 pt-10"
@@ -184,10 +185,10 @@ export default function CourseDashboardScreen() {
           <View className="flex-row items-center gap-4">
             <TouchableOpacity
               onPress={handleBack}
-              className="w-10 h-10 rounded-full bg-white/40 items-center justify-center border border-white/50"
+              className="w-10 h-10 rounded-full bg-white/70 items-center justify-center border border-border-subtle"
               activeOpacity={0.7}
             >
-              <ArrowLeft color="#4f378a" size={20} />
+              <ArrowLeft color="#1C4966" size={20} />
             </TouchableOpacity>
             <View className="flex-1">
               <Typography variant="heading" weight="bold" color="primary" numberOfLines={1}>{course.title}</Typography>

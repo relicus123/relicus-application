@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   Dimensions,
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, {
@@ -300,7 +301,7 @@ export default function DynamicSkyHeader({
 
       {/* 3. Motivational Horizon Script */}
       {showQuote && (
-        <View style={styles.quoteBox} pointerEvents="none">
+        <View style={[styles.quoteBox, { pointerEvents: "none" }]}>
           <Text style={styles.scriptQuoteText}>{skyTheme.quote}</Text>
         </View>
       )}
@@ -327,8 +328,12 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     textAlign: "right",
     letterSpacing: 0.3,
-    textShadowColor: "rgba(0, 0, 0, 0.45)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    ...(Platform.OS === "web"
+      ? ({ textShadow: "0px 1px 3px rgba(0, 0, 0, 0.45)" } as any)
+      : {
+          textShadowColor: "rgba(0, 0, 0, 0.45)",
+          textShadowOffset: { width: 0, height: 1 },
+          textShadowRadius: 3,
+        }),
   },
 });

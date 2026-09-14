@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { BookOpen, GraduationCap, Compass, HelpCircle, ShieldCheck, Heart } from "lucide-react";
+import { BookOpen, GraduationCap, Compass, HelpCircle, ShieldCheck, Heart, Users } from "lucide-react";
 import { supabase } from "../../services/supabaseClient";
 
 export function AdminOverview() {
   const navigate = useNavigate();
   const [stats, setStats] = useState({
+    users: 0,
     courses: 3,
     exams: 7,
     careers: 6,
@@ -26,6 +27,7 @@ export function AdminOverview() {
         }
 
         const [
+          { count: userCount },
           { count: courseCount },
           { count: examCount },
           { count: careerCount },
@@ -34,6 +36,7 @@ export function AdminOverview() {
           { count: mockTestCount },
           { count: mindfulnessCount }
         ] = await Promise.all([
+          supabase.from("profiles").select("*", { count: "exact", head: true }),
           supabase.from("skills_courses").select("*", { count: "exact", head: true }),
           supabase.from("coaching_exams").select("*", { count: "exact", head: true }),
           supabase.from("knownext_careers").select("*", { count: "exact", head: true }),
@@ -44,6 +47,7 @@ export function AdminOverview() {
         ]);
 
         setStats({
+          users: userCount || 0,
           courses: courseCount || 0,
           exams: examCount || 0,
           careers: careerCount || 0,
@@ -62,6 +66,14 @@ export function AdminOverview() {
   }, []);
 
   const cards = [
+    {
+      title: "User Management (God Mode)",
+      desc: "Roster, deep inspection, mock tests, mood tracking, roles & credentials",
+      icon: Users,
+      color: "from-blue-600 to-indigo-600",
+      path: "/admin/users",
+      stats: `${stats.users} Registered Users`,
+    },
     {
       title: "Skills Academy",
       desc: "Courses, Modules, Lessons, Resources, & Quizzes",

@@ -16,14 +16,16 @@ import {
   RotateCw,
   X,
   Sparkles,
+  ShieldAlert,
 } from "lucide-react-native";
 import { WebView } from "react-native-webview";
+import { CrisisDisclaimerModal } from "../../components/CrisisDisclaimerModal";
 
 const RELICUS_PORTAL_URL = "https://www.relicus.in/";
 
 export default function SessionsScreen() {
-  const [showPopup, setShowPopup] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(Platform.OS !== "web");
+  const [showCrisisModal, setShowCrisisModal] = useState(false);
   const [key, setKey] = useState(0);
   const webViewRef = useRef<WebView>(null);
 
@@ -55,17 +57,27 @@ export default function SessionsScreen() {
         )}
 
         {Platform.OS === "web" ? (
-          <iframe
-            key={key}
-            src={RELICUS_PORTAL_URL}
-            style={{
-              width: "100%",
-              height: "100%",
-              border: "none",
-            }}
-            title="Relicus In-App Portal"
-            onLoad={() => setIsLoading(false)}
-          />
+          <View style={styles.webFallbackCard}>
+            <View style={styles.modalIconBox}>
+              <Sparkles size={26} color="#1C4966" />
+            </View>
+            <View style={styles.modalBadge}>
+              <Sparkles size={11} color="#15803D" />
+              <Text style={styles.modalBadgeText}>Official Counseling Portal</Text>
+            </View>
+            <Text style={styles.modalTitle}>Relicus 1-on-1 Sessions</Text>
+            <Text style={styles.modalMessage}>
+              Access expert career coaching, mindfulness sessions, and verified counseling directly on our dedicated web portal.
+            </Text>
+            <TouchableOpacity
+              style={styles.primaryModalBtn}
+              onPress={handleOpenInChrome}
+              activeOpacity={0.85}
+            >
+              <ExternalLink size={16} color="#FFFFFF" />
+              <Text style={styles.primaryModalBtnText}>Launch Relicus Portal</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <WebView
             ref={webViewRef}
@@ -85,6 +97,15 @@ export default function SessionsScreen() {
         {/* Discreet Floating Bar (Top Right) */}
         <View style={styles.floatingControls}>
           <TouchableOpacity
+            style={[styles.floatingPill, { backgroundColor: "#DC2626" }]}
+            onPress={() => setShowCrisisModal(true)}
+            activeOpacity={0.85}
+            accessibilityLabel="Crisis Support & Emergency Helplines"
+          >
+            <ShieldAlert size={13} color="#FFFFFF" />
+            <Text style={styles.floatingPillText}>Emergency / Helplines</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.floatingPill}
             onPress={handleOpenInChrome}
             activeOpacity={0.85}
@@ -103,77 +124,13 @@ export default function SessionsScreen() {
             <RotateCw size={13} color="#1C4966" />
           </TouchableOpacity>
         </View>
+
+        {/* Emergency & Crisis Support Modal */}
+        <CrisisDisclaimerModal
+          visible={showCrisisModal}
+          onClose={() => setShowCrisisModal(false)}
+        />
       </View>
-
-      {/* Chrome Recommended Pop-Up Modal */}
-      <Modal
-        visible={showPopup}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowPopup(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            {/* Close Button */}
-            <TouchableOpacity
-              style={styles.closeBtn}
-              onPress={() => setShowPopup(false)}
-              activeOpacity={0.7}
-              accessibilityLabel="Close popup"
-            >
-              <X size={18} color="#64748B" />
-            </TouchableOpacity>
-
-            {/* Icon & Badge */}
-            <View style={styles.modalIconBox}>
-              <Globe size={28} color="#1C4966" />
-            </View>
-
-            <View style={styles.modalBadge}>
-              <Sparkles size={12} color="#15803D" />
-              <Text style={styles.modalBadgeText}>Best Experience</Text>
-            </View>
-
-            {/* Content */}
-            <Text style={styles.modalTitle}>Google Chrome Recommended</Text>
-            <Text style={styles.modalMessage}>
-              For the best and most convenient experience, please open and use in Google Chrome:
-            </Text>
-
-            {/* URL Chip */}
-            <TouchableOpacity
-              style={styles.urlChip}
-              onPress={handleOpenInChrome}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.urlChipText}>{RELICUS_PORTAL_URL}</Text>
-            </TouchableOpacity>
-
-            {/* Action Buttons */}
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.primaryModalBtn}
-                onPress={() => {
-                  setShowPopup(false);
-                  handleOpenInChrome();
-                }}
-                activeOpacity={0.85}
-              >
-                <ExternalLink size={16} color="#FFFFFF" />
-                <Text style={styles.primaryModalBtnText}>Open in Chrome</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.secondaryModalBtn}
-                onPress={() => setShowPopup(false)}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.secondaryModalBtnText}>Continue in App</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -253,6 +210,15 @@ const styles = StyleSheet.create({
     elevation: 4,
     borderWidth: 1,
     borderColor: "#E2E8F0",
+  },
+  webFallbackCard: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 28,
+    maxWidth: 440,
+    alignSelf: "center",
+    width: "100%",
   },
 
   /* Modal Pop-up Styles */

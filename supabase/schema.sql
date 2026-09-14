@@ -11,18 +11,30 @@ create extension if not exists "uuid-ossp";
 create table if not exists profiles (
   id uuid references auth.users on delete cascade primary key,
   email text not null,
+  username text,
+  full_name text,
+  phone text,
+  avatar_url text,
   role text default 'student' check (role in ('admin', 'student', 'therapist')),
+  status text default 'active' check (status in ('active', 'suspended', 'banned')),
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
 -- Row Level Security (RLS) for profiles
 alter table profiles enable row level security;
 
-create policy "Profiles are viewable by everyone" 
-  on profiles for select using (true);
+create policy "Profiles are viewable by authenticated users" 
+  on profiles for select using (auth.role() = 'authenticated');
+
+create policy "Users can insert own profile" 
+  on profiles for insert with check (auth.uid() = id and (role is null or role = 'student'));
 
 create policy "Users can update their own profiles" 
-  on profiles for update using (auth.uid() = id);
+  on profiles for update using (auth.uid() = id)
+  with check (auth.uid() = id and (role is null or role = (select p.role from profiles p where p.id = auth.uid())));
+
+create policy "Admins can manage all profiles" 
+  on profiles for all using (exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin'));
 
 -- App Users Table (for Mobile App phone login)
 create table if not exists users (
@@ -34,9 +46,11 @@ create table if not exists users (
 );
 
 alter table users enable row level security;
-create policy "Users read viewable" on users for select using (true);
-create policy "Users insert viewable" on users for insert with check (true);
-create policy "Users update viewable" on users for update using (true);
+create policy "Users read own" on users for select using (auth.uid() = id);
+create policy "Users insert own" on users for insert with check (auth.uid() = id);
+create policy "Users update own" on users for update using (auth.uid() = id);
+create policy "Users delete own" on users for delete using (auth.uid() = id);
+create policy "Admins manage all users" on users for all using (exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin'));
 
 -- -----------------------------------------------------------------------------
 -- 1. SKILLS ACADEMY MODULE
@@ -175,10 +189,14 @@ create policy "Skills assignments write by admin only" on skills_assignments for
 
 create policy "Doubts are viewable by everyone" on skills_doubts for select using (true);
 create policy "Anyone can insert doubts" on skills_doubts for insert with check (true);
-create policy "Admin can update doubts" on skills_doubts for update using (true); 
+create policy "Admin can update doubts" on skills_doubts for update using (
+  exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin')
+); 
 
 create policy "Responses are viewable by everyone" on skills_doubt_responses for select using (true);
-create policy "Admin can insert responses" on skills_doubt_responses for insert with check (true);
+create policy "Admin can insert responses" on skills_doubt_responses for insert with check (
+  exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin')
+);
 
 
 -- -----------------------------------------------------------------------------
@@ -634,6 +652,8 @@ create policy "Mood entries read by owner" on mood_entries for select using (aut
 create policy "Mood entries insert by owner" on mood_entries for insert with check (auth.uid() = user_id);
 create policy "Mood entries update by owner" on mood_entries for update using (auth.uid() = user_id);
 create policy "Mood entries delete by owner" on mood_entries for delete using (auth.uid() = user_id);
+create policy "Mood entries admin manage" on mood_entries for all using (exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin'));
+
 
 
 -- -----------------------------------------------------------------------------
@@ -706,8 +726,6 @@ alter table profiles add column if not exists phone text;
 alter table profiles add column if not exists username text;
 alter table profiles add column if not exists avatar_url text;
 
-create policy "Profiles insert policy" on profiles for insert with check (true);
-
 -- Coaching profiles
 create table if not exists coaching_profiles (
   id uuid primary key default gen_random_uuid(),
@@ -718,8 +736,8 @@ create table if not exists coaching_profiles (
   created_at timestamptz default timezone('utc'::text, now())
 );
 alter table coaching_profiles enable row level security;
-create policy "Coaching profiles read viewable" on coaching_profiles for select using (auth.uid() = user_id or true);
-create policy "Coaching profiles write manage" on coaching_profiles for all using (auth.uid() = user_id or true);
+create policy "Coaching profiles read viewable" on coaching_profiles for select using (auth.uid() = user_id);
+create policy "Coaching profiles write manage" on coaching_profiles for all using (auth.uid() = user_id);
 
 -- Coaching doubts
 create table if not exists coaching_doubts (
@@ -734,7 +752,7 @@ create table if not exists coaching_doubts (
 );
 alter table coaching_doubts enable row level security;
 create policy "Coaching doubts read viewable" on coaching_doubts for select using (true);
-create policy "Coaching doubts write manage" on coaching_doubts for all using (auth.uid() = user_id or true);
+create policy "Coaching doubts write manage" on coaching_doubts for all using (auth.uid() = user_id);
 
 -- Coaching test attempts
 create table if not exists coaching_test_attempts (
@@ -758,8 +776,9 @@ create table if not exists coaching_test_attempts (
   created_at timestamptz default timezone('utc'::text, now())
 );
 alter table coaching_test_attempts enable row level security;
-create policy "Coaching test attempts read viewable" on coaching_test_attempts for select using (auth.uid() = user_id or true);
-create policy "Coaching test attempts write manage" on coaching_test_attempts for all using (auth.uid() = user_id or true);
+create policy "Coaching test attempts read viewable" on coaching_test_attempts for select using (auth.uid() = user_id);
+create policy "Coaching test attempts write manage" on coaching_test_attempts for all using (auth.uid() = user_id);
+create policy "Coaching test attempts admin manage" on coaching_test_attempts for all using (exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin'));
 
 -- Skills certificate requests
 create table if not exists skills_certificate_requests (
@@ -773,8 +792,9 @@ create table if not exists skills_certificate_requests (
   certificate_url text
 );
 alter table skills_certificate_requests enable row level security;
-create policy "Skills certificate requests read viewable" on skills_certificate_requests for select using (auth.uid() = user_id or true);
-create policy "Skills certificate requests write manage" on skills_certificate_requests for all using (auth.uid() = user_id or true);
+create policy "Skills certificate requests read viewable" on skills_certificate_requests for select using (auth.uid() = user_id);
+create policy "Skills certificate requests write manage" on skills_certificate_requests for all using (auth.uid() = user_id);
+create policy "Skills certificate requests admin manage" on skills_certificate_requests for all using (exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin'));
 
 -- KnowNext saved items
 create table if not exists knownext_saved_items (
@@ -785,7 +805,8 @@ create table if not exists knownext_saved_items (
   created_at timestamptz default timezone('utc'::text, now())
 );
 alter table knownext_saved_items enable row level security;
-create policy "Knownext saved items manage" on knownext_saved_items for all using (auth.uid() = user_id or true);
+create policy "Knownext saved items manage" on knownext_saved_items for all using (auth.uid() = user_id);
+create policy "Knownext saved items admin manage" on knownext_saved_items for all using (exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin'));
 
 -- KnowNext profiles
 create table if not exists knownext_profiles (
@@ -796,7 +817,8 @@ create table if not exists knownext_profiles (
   updated_at timestamptz default timezone('utc'::text, now())
 );
 alter table knownext_profiles enable row level security;
-create policy "Knownext profiles manage" on knownext_profiles for all using (auth.uid() = user_id or true);
+create policy "Knownext profiles manage" on knownext_profiles for all using (auth.uid() = user_id);
+create policy "Knownext profiles admin manage" on knownext_profiles for all using (exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin'));
 
 -- KnowNext roadmap progress
 create table if not exists knownext_roadmap_progress (
@@ -808,7 +830,8 @@ create table if not exists knownext_roadmap_progress (
   completed_at timestamptz default timezone('utc'::text, now())
 );
 alter table knownext_roadmap_progress enable row level security;
-create policy "Knownext roadmap progress manage" on knownext_roadmap_progress for all using (auth.uid() = user_id or true);
+create policy "Knownext roadmap progress manage" on knownext_roadmap_progress for all using (auth.uid() = user_id);
+create policy "Knownext roadmap progress admin manage" on knownext_roadmap_progress for all using (exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin'));
 
 -- Tuition students
 create table if not exists tuition_students (
@@ -826,7 +849,8 @@ create table if not exists tuition_students (
   created_at timestamptz default timezone('utc'::text, now())
 );
 alter table tuition_students enable row level security;
-create policy "Tuition students manage" on tuition_students for all using (auth.uid() = user_id or true);
+create policy "Tuition students manage" on tuition_students for all using (auth.uid() = user_id);
+create policy "Tuition students admin manage" on tuition_students for all using (exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin'));
 
 -- Tuition parents
 create table if not exists tuition_parents (
@@ -840,7 +864,8 @@ create table if not exists tuition_parents (
   created_at timestamptz default timezone('utc'::text, now())
 );
 alter table tuition_parents enable row level security;
-create policy "Tuition parents manage" on tuition_parents for all using (auth.uid() = user_id or true);
+create policy "Tuition parents manage" on tuition_parents for all using (auth.uid() = user_id);
+create policy "Tuition parents admin manage" on tuition_parents for all using (exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin'));
 
 -- Tuition completed assignments
 create table if not exists tuition_completed_assignments (
@@ -850,7 +875,8 @@ create table if not exists tuition_completed_assignments (
   completed_at timestamptz default timezone('utc'::text, now())
 );
 alter table tuition_completed_assignments enable row level security;
-create policy "Tuition completed assignments manage" on tuition_completed_assignments for all using (auth.uid() = user_id or true);
+create policy "Tuition completed assignments manage" on tuition_completed_assignments for all using (auth.uid() = user_id);
+create policy "Tuition completed assignments admin manage" on tuition_completed_assignments for all using (exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin'));
 
 -- Mindfulness user activities
 create table if not exists mindfulness_user_activities (
@@ -860,7 +886,8 @@ create table if not exists mindfulness_user_activities (
   completed_at timestamptz default timezone('utc'::text, now())
 );
 alter table mindfulness_user_activities enable row level security;
-create policy "Mindfulness user activities manage" on mindfulness_user_activities for all using (auth.uid() = user_id or true);
+create policy "Mindfulness user activities manage" on mindfulness_user_activities for all using (auth.uid() = user_id);
+create policy "Mindfulness user activities admin manage" on mindfulness_user_activities for all using (exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin'));
 
 -- Mindfulness journals
 create table if not exists mindfulness_journals (
@@ -872,5 +899,47 @@ create table if not exists mindfulness_journals (
   created_at timestamptz default timezone('utc'::text, now())
 );
 alter table mindfulness_journals enable row level security;
-create policy "Mindfulness journals manage" on mindfulness_journals for all using (auth.uid() = user_id or true);
+create policy "Mindfulness journals manage" on mindfulness_journals for all using (auth.uid() = user_id);
+create policy "Mindfulness journals admin manage" on mindfulness_journals for all using (exists (select 1 from profiles where profiles.id = auth.uid() and profiles.role = 'admin'));
+
+-- -----------------------------------------------------------------------------
+-- 9. SERVER-SIDE ACCOUNT DELETION RPC (APPLE APP STORE GUIDELINE 5.1.1(v))
+-- -----------------------------------------------------------------------------
+create or replace function public.delete_own_user()
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  calling_user_id uuid;
+begin
+  calling_user_id := auth.uid();
+  if calling_user_id is null then
+    raise exception 'Unauthorized: must be logged in to delete your account';
+  end if;
+
+  -- 1. Wipe user data across relational application tables
+  delete from public.mindfulness_journals where user_id = calling_user_id;
+  delete from public.mindfulness_user_activities where user_id = calling_user_id;
+  delete from public.mood_entries where user_id = calling_user_id;
+  delete from public.coaching_test_attempts where user_id = calling_user_id;
+  delete from public.coaching_doubts where user_id = calling_user_id;
+  delete from public.coaching_profiles where user_id = calling_user_id;
+  delete from public.knownext_saved_items where user_id = calling_user_id;
+  delete from public.knownext_profiles where user_id = calling_user_id;
+  delete from public.knownext_roadmap_progress where user_id = calling_user_id;
+  delete from public.skills_certificate_requests where user_id = calling_user_id;
+  delete from public.tuition_completed_assignments where user_id = calling_user_id;
+  delete from public.tuition_students where user_id = calling_user_id;
+  delete from public.tuition_parents where user_id = calling_user_id;
+  delete from public.profiles where id = calling_user_id;
+  delete from public.users where id = calling_user_id;
+
+  -- 2. Delete the user from auth.users (permanently revokes credentials & sessions)
+  delete from auth.users where id = calling_user_id;
+end;
+$$;
+
+grant execute on function public.delete_own_user() to authenticated;
+
 

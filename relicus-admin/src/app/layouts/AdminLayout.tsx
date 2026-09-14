@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import { supabase } from "../services/supabaseClient";
-import { LayoutDashboard, BookOpen, GraduationCap, Compass, LogOut, ShieldAlert, ShieldCheck, Loader2 } from "lucide-react";
+import { LayoutDashboard, BookOpen, GraduationCap, Compass, LogOut, ShieldAlert, ShieldCheck, Loader2, Users, Heart } from "lucide-react";
 
 export function AdminLayout() {
   const location = useLocation();
@@ -65,9 +65,11 @@ export function AdminLayout() {
 
   const navItems = [
     { path: "/admin", icon: LayoutDashboard, label: "Overview" },
+    { path: "/admin/users", icon: Users, label: "Users (God Mode)" },
     { path: "/admin/skills", icon: BookOpen, label: "Skills Academy" },
     { path: "/admin/coaching", icon: GraduationCap, label: "Entrance Coaching" },
     { path: "/admin/knownext", icon: Compass, label: "KnowNext Guidance" },
+    { path: "/admin/mindfulness", icon: Heart, label: "Mindfulness" },
   ];
 
   if (loading) {

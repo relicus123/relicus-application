@@ -1,18 +1,43 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { View, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
+import React, { useState, useCallback } from "react";
+import {
+  View,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+  Modal,
+  TextInput,
+  Alert,
+} from "react-native";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { ArrowLeft, ArrowRight, CheckCircle, Info, List, Star, Briefcase } from "lucide-react-native";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Info,
+  List,
+  Star,
+  Briefcase,
+  X,
+  Send,
+  Calendar,
+  Layers,
+  Video,
+  FileText,
+  MessageSquare,
+  Award,
+  BookOpen,
+} from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../lib/supabase";
 
 import { Typography } from "../../components/Typography";
 import { BentoCard } from "../../components/BentoCard";
 import { Button } from "../../components/Button";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-
+import { useAuthStore } from "../../store/auth.store";
 import { useCoachingStore } from "../../store/coaching.store";
+import { toTitleCase } from "../../constants/coaching/examFormatter";
 
 export default function ExamInfoScreen() {
   const router = useRouter();
@@ -20,20 +45,27 @@ export default function ExamInfoScreen() {
   const examType = params.examType as string;
 
   const { exams } = useCoachingStore();
+  const currentUser = useAuthStore((s) => s.currentUser);
   const cachedExam = exams.find((e) => e.id === examType);
 
   const [exam, setExam] = useState<any>(cachedExam || null);
   const [loading, setLoading] = useState(!cachedExam);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Review Modal State
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [userRating, setUserRating] = useState(5);
+  const [userComment, setUserComment] = useState("");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
   const fetchExam = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("coaching_exams")
         .select("*")
         .eq("id", examType)
-        .single();
-      
+        .maybeSingle();
+
       if (data) setExam(data);
     } catch (err) {
       console.error("Error fetching exam:", err);
@@ -47,14 +79,13 @@ export default function ExamInfoScreen() {
       if (!cachedExam) {
         fetchExam();
       } else {
-        // Silently revalidate in background without blocking screen
         (async () => {
           try {
             const { data } = await supabase
               .from("coaching_exams")
               .select("*")
               .eq("id", examType)
-              .single();
+              .maybeSingle();
             if (data) setExam(data);
           } catch {}
         })();
@@ -75,10 +106,40 @@ export default function ExamInfoScreen() {
     });
   };
 
-  if (loading) {
+  const handleSubmitReview = async () => {
+    if (!userRating) {
+      Alert.alert("Rating Required", "Please select a star rating.");
+      return;
+    }
+
+    setIsSubmittingReview(true);
+    try {
+      const { error } = await supabase.from("coaching_exam_feedbacks").insert({
+        exam_id: examType,
+        user_id: currentUser?.id || null,
+        user_name: currentUser?.username || currentUser?.email?.split("@")[0] || "Student",
+        rating: userRating,
+        comment: userComment.trim() || "Great curriculum and study resources!",
+      });
+
+      if (error) throw error;
+
+      Alert.alert("Review Submitted", "Thank you! Your rating and feedback have been received.");
+      setShowReviewModal(false);
+      setUserComment("");
+      setUserRating(5);
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to submit review.");
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  if (loading && !exam) {
     return (
       <View className="flex-1 bg-surface-primary justify-center items-center">
-        <ActivityIndicator size="large" color="#4f378a" />
+        <ActivityIndicator size="large" color="#1C4966" />
+        <Typography color="secondary" className="mt-4">Loading Exam Details...</Typography>
       </View>
     );
   }
@@ -94,123 +155,399 @@ export default function ExamInfoScreen() {
     );
   }
 
-  const eligibility = Array.isArray(exam.eligibility) ? exam.eligibility : JSON.parse(exam.eligibility || '[]');
-  const examPattern = Array.isArray(exam.pattern) ? exam.pattern : JSON.parse(exam.pattern || '[]');
-  const careers = Array.isArray(exam.careers) ? exam.careers : JSON.parse(exam.careers || '[]');
+  // Parse helper for lists that can be arrays, comma-separated strings, or JSON strings
+  const parseList = (val: any): string[] => {
+    if (!val) return [];
+    if (Array.isArray(val)) return val.filter(Boolean);
+    if (typeof val === "string") {
+      const trimmed = val.trim();
+      if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) return parsed.filter(Boolean);
+        } catch {}
+      }
+      return trimmed.split(",").map((s) => s.trim()).filter(Boolean);
+    }
+    return [];
+  };
+
+  // Extract clean, single-sentence tagline (defensively strips any accidental table/field dumps)
+  const getCleanTagline = (raw?: string) => {
+    if (!raw) return "";
+    const clean = raw.split(/(?:Expected Exam Date|\t|\r?\n|Difficulty Index|Overview Description)/i)[0].trim();
+    return clean.length > 160 ? clean.slice(0, 160) + "..." : clean;
+  };
+
+  const cleanTitle = toTitleCase(exam.full_name || exam.id);
+  const examDifficulty = Number(exam.difficulty_level) || 3;
+  const examOverview = (exam.overview || "").trim();
+  const cleanTagline = getCleanTagline(exam.tagline);
+  const eligibility = parseList(exam.eligibility);
+  const careers = parseList(exam.career_opportunities);
+  const syllabusHighlights = parseList(exam.syllabus_topics);
+  const examPattern = Array.isArray(exam.pattern) ? exam.pattern : [];
 
   return (
     <View className="flex-1 bg-surface-primary">
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4f378a" />}
+        contentContainerStyle={{ paddingBottom: 140 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1C4966" />}
       >
-        <LinearGradient 
-          colors={["#fdf7ff", "#e9ddff", "#cfbcff"]} 
-          start={{ x: 0, y: 0 }} 
+        {/* Hero Header */}
+        <LinearGradient
+          colors={["#FFFFFF", "#EDF5F8", "#E1EFF5"]}
+          start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          className="px-6 pb-12 pt-8 rounded-b-[40px]"
+          className="px-6 pb-6 pt-3 rounded-b-[32px] shadow-xs"
         >
           <SafeAreaView edges={["top"]}>
-            <View className="flex-row items-center gap-4 mb-4">
-              <TouchableOpacity 
+            {/* Top Navigation Bar */}
+            <View className="flex-row items-center justify-between mb-3.5">
+              <TouchableOpacity
                 onPress={() => router.back()}
-                className="w-10 h-10 rounded-full bg-white/40 items-center justify-center border border-white/50"
+                className="w-10 h-10 rounded-full bg-white/90 items-center justify-center border border-border-subtle shadow-xs"
+                activeOpacity={0.8}
               >
-                <ArrowLeft color="#4f378a" size={20} />
+                <ArrowLeft color="#1C4966" size={20} />
               </TouchableOpacity>
-              <View className="flex-1">
-                <Typography variant="caption" weight="bold" color="secondary" className="uppercase tracking-wider opacity-80">Exam Overview</Typography>
-                <Typography variant="title" weight="bold" color="primary" numberOfLines={1}>{exam.name}</Typography>
-              </View>
+
+              <TouchableOpacity
+                onPress={() => setShowReviewModal(true)}
+                className="flex-row items-center gap-1.5 bg-white/90 px-3 py-1.5 rounded-full border border-border-subtle shadow-xs"
+                activeOpacity={0.8}
+              >
+                <Star size={13} color="#F59E0B" fill="#F59E0B" />
+                <Typography variant="caption" weight="bold" color="primary">Rate Exam</Typography>
+              </TouchableOpacity>
             </View>
-            <View className="flex-row items-center gap-1.5 ml-14">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star 
-                  key={i} 
-                  size={16} 
-                  color={i < (exam.difficulty || 3) ? "#F59E0B" : "rgba(79, 55, 138, 0.2)"} 
-                  fill={i < (exam.difficulty || 3) ? "#F59E0B" : "transparent"} 
-                />
-              ))}
+
+            {/* Badges Row */}
+            <View className="flex-row items-center gap-2 mb-2.5 flex-wrap">
+              <View className="bg-primary/10 px-3 py-1 rounded-lg border border-primary/15">
+                <Typography variant="caption" weight="bold" color="primary" className="text-xs">
+                  {exam.id}
+                </Typography>
+              </View>
+              {exam.next_exam_date && (
+                <View className="flex-row items-center gap-1.5 bg-white/90 px-3 py-1 rounded-lg border border-border-subtle shadow-2xs">
+                  <Calendar size={12} color="#71818B" />
+                  <Typography variant="caption" weight="medium" color="secondary" className="text-[11px]">
+                    Target: {exam.next_exam_date}
+                  </Typography>
+                </View>
+              )}
+            </View>
+
+            {/* Exam Title */}
+            <Typography variant="title" weight="bold" color="primary" className="text-xl leading-snug mb-1.5">
+              {cleanTitle}
+            </Typography>
+
+            {/* Clean Tagline */}
+            {cleanTagline ? (
+              <Typography color="secondary" className="text-sm leading-relaxed mb-3">
+                {cleanTagline}
+              </Typography>
+            ) : null}
+
+            {/* Difficulty Rating Bar */}
+            <View className="flex-row items-center justify-between pt-2.5 border-t border-border-subtle/70">
+              <Typography variant="caption" weight="medium" color="secondary">
+                Difficulty Index: <Typography variant="caption" weight="bold" color="primary">{examDifficulty}/5 (Moderate)</Typography>
+              </Typography>
+              <View className="flex-row items-center gap-1">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star
+                    key={i}
+                    size={14}
+                    color={i < examDifficulty ? "#F59E0B" : "#CBD5E1"}
+                    fill={i < examDifficulty ? "#F59E0B" : "transparent"}
+                  />
+                ))}
+              </View>
             </View>
           </SafeAreaView>
         </LinearGradient>
 
-        <View className="px-6 pb-10 -mt-6 gap-4">
-          <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white">
-            <View className="flex-row items-center gap-2.5 mb-3">
-              <Info size={20} color="#4f378a" />
-              <Typography variant="heading" weight="bold" color="primary">About the Exam</Typography>
-            </View>
-            <Typography weight="bold" color="primary" className="mb-2 text-accent-primary">
-              {exam.tagline || 'National Level Entrance Exam'}
-            </Typography>
-            <Typography color="secondary" className="leading-relaxed">
-              {exam.description || 'Description not available.'}
-            </Typography>
-          </BentoCard>
-
-          <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white">
-            <View className="flex-row items-center gap-2.5 mb-4">
-              <CheckCircle size={20} color="#10B981" />
-              <Typography variant="heading" weight="bold" color="primary">Eligibility Criteria</Typography>
-            </View>
-            {eligibility.map((crit: string, idx: number) => (
-              <View key={idx} className="flex-row gap-3 mb-2.5">
-                <Typography weight="bold" className="text-green-500">✓</Typography>
-                <Typography color="secondary" className="flex-1">{crit}</Typography>
+        {/* Content Body */}
+        <View className="px-5 pt-4 gap-3.5">
+          {/* About The Exam Card */}
+          <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white shadow-xs">
+            <View className="flex-row items-center gap-2.5 mb-2.5">
+              <View className="w-8 h-8 rounded-xl bg-primary/10 items-center justify-center">
+                <Info size={16} color="#1C4966" />
               </View>
-            ))}
+              <Typography variant="heading" weight="bold" color="primary" className="text-base">
+                About the Exam
+              </Typography>
+            </View>
+
+            <Typography color="secondary" className="leading-relaxed text-sm">
+              {examOverview || "A state-level entrance examination for admission to undergraduate engineering and other professional courses. Comprehensive preparation course covering all sectional chapters, video lectures, and practice mock tests."}
+            </Typography>
+
+            {exam.next_exam_date && (
+              <View className="flex-row items-center justify-between mt-3 p-3 rounded-xl bg-surface-secondary/70 border border-border-subtle">
+                <Typography variant="caption" weight="medium" color="secondary">Upcoming Target Date</Typography>
+                <Typography variant="caption" weight="bold" color="primary">{exam.next_exam_date}</Typography>
+              </View>
+            )}
           </BentoCard>
 
-          <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white">
-            <View className="flex-row items-center gap-2.5 mb-4">
-              <List size={20} color="#3B82F6" />
-              <Typography variant="heading" weight="bold" color="primary">Exam Pattern</Typography>
-            </View>
-            {examPattern.map((pattern: any, idx: number) => (
-              <View key={idx} className="bg-primary/5 rounded-2xl p-4 border border-primary/10 mb-3">
-                <Typography weight="bold" color="primary" className="mb-3">{pattern.section}</Typography>
-                <View className="flex-row justify-around">
-                  <View className="items-center">
-                    <Typography variant="heading" weight="bold" className="text-accent-primary">{pattern.questions}</Typography>
-                    <Typography variant="caption" color="secondary">Questions</Typography>
-                  </View>
-                  <View className="w-[1px] h-full bg-border-subtle" />
-                  <View className="items-center">
-                    <Typography variant="heading" weight="bold" className="text-accent-primary">{pattern.marks}</Typography>
-                    <Typography variant="caption" color="secondary">Marks</Typography>
-                  </View>
+          {/* Preparation Modules Included (Clean 2x2 Grid) */}
+          <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white shadow-xs">
+            <Typography variant="heading" weight="bold" color="primary" className="text-base mb-3">
+              Preparation Modules Included
+            </Typography>
+            <View className="flex-row flex-wrap gap-2.5">
+              <View className="w-[48%] flex-row items-center gap-2.5 bg-surface-secondary/60 p-3 rounded-xl border border-border-subtle/60">
+                <View className="w-8 h-8 rounded-lg bg-primary/10 items-center justify-center">
+                  <Video size={15} color="#1C4966" />
+                </View>
+                <View className="flex-1">
+                  <Typography weight="bold" color="primary" className="text-xs">Video Lessons</Typography>
+                  <Typography variant="caption" color="secondary" className="text-[10px]">Lectures</Typography>
                 </View>
               </View>
-            ))}
-          </BentoCard>
 
-          <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white">
-            <View className="flex-row items-center gap-2.5 mb-4">
-              <Briefcase size={20} color="#F59E0B" />
-              <Typography variant="heading" weight="bold" color="primary">Career Scope</Typography>
-            </View>
-            {careers.map((op: string, idx: number) => (
-              <View key={idx} className="flex-row gap-3 mb-2.5">
-                <Typography weight="bold" className="text-orange-500">✦</Typography>
-                <Typography color="secondary" className="flex-1">{op}</Typography>
+              <View className="w-[48%] flex-row items-center gap-2.5 bg-surface-secondary/60 p-3 rounded-xl border border-border-subtle/60">
+                <View className="w-8 h-8 rounded-lg bg-primary/10 items-center justify-center">
+                  <Award size={15} color="#1C4966" />
+                </View>
+                <View className="flex-1">
+                  <Typography weight="bold" color="primary" className="text-xs">Mock Tests</Typography>
+                  <Typography variant="caption" color="secondary" className="text-[10px]">CBT Series</Typography>
+                </View>
               </View>
-            ))}
+
+              <View className="w-[48%] flex-row items-center gap-2.5 bg-surface-secondary/60 p-3 rounded-xl border border-border-subtle/60">
+                <View className="w-8 h-8 rounded-lg bg-primary/10 items-center justify-center">
+                  <FileText size={15} color="#1C4966" />
+                </View>
+                <View className="flex-1">
+                  <Typography weight="bold" color="primary" className="text-xs">Revision Notes</Typography>
+                  <Typography variant="caption" color="secondary" className="text-[10px]">PDF Summary</Typography>
+                </View>
+              </View>
+
+              <View className="w-[48%] flex-row items-center gap-2.5 bg-surface-secondary/60 p-3 rounded-xl border border-border-subtle/60">
+                <View className="w-8 h-8 rounded-lg bg-primary/10 items-center justify-center">
+                  <MessageSquare size={15} color="#1C4966" />
+                </View>
+                <View className="flex-1">
+                  <Typography weight="bold" color="primary" className="text-xs">Doubt Desk</Typography>
+                  <Typography variant="caption" color="secondary" className="text-[10px]">Faculty Help</Typography>
+                </View>
+              </View>
+            </View>
           </BentoCard>
 
-          <Button 
-            onPress={handleStart} 
-            variant="primary" 
-            className="w-full mt-2"
-          >
-            <View className="flex-row items-center justify-center gap-2">
-              <Typography weight="bold" color="inverse">Start Preparation</Typography>
-              <ArrowRight size={18} color="white" />
-            </View>
-          </Button>
+          {/* Eligibility Criteria (Clean Card List) */}
+          {eligibility.length > 0 && (
+            <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white shadow-xs">
+              <View className="flex-row items-center gap-2.5 mb-3">
+                <View className="w-8 h-8 rounded-xl bg-emerald-50 items-center justify-center">
+                  <Check size={16} color="#059669" strokeWidth={2.5} />
+                </View>
+                <Typography variant="heading" weight="bold" color="primary" className="text-base">
+                  Eligibility Criteria
+                </Typography>
+              </View>
+              <View className="gap-2">
+                {eligibility.map((crit: string, idx: number) => (
+                  <View
+                    key={idx}
+                    className="flex-row items-start gap-2.5 p-2.5 rounded-xl bg-surface-secondary/40 border border-border-subtle/50"
+                  >
+                    <View className="w-4 h-4 rounded-full bg-emerald-500/15 items-center justify-center mt-0.5">
+                      <Check size={10} color="#059669" strokeWidth={3} />
+                    </View>
+                    <Typography color="secondary" className="flex-1 text-xs leading-relaxed font-medium">
+                      {crit}
+                    </Typography>
+                  </View>
+                ))}
+              </View>
+            </BentoCard>
+          )}
+
+          {/* Syllabus Highlights (Clean Wrapped Chips) */}
+          {syllabusHighlights.length > 0 && (
+            <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white shadow-xs">
+              <View className="flex-row items-center gap-2.5 mb-3">
+                <View className="w-8 h-8 rounded-xl bg-indigo-50 items-center justify-center">
+                  <BookOpen size={16} color="#4338CA" />
+                </View>
+                <Typography variant="heading" weight="bold" color="primary" className="text-base">
+                  Syllabus Highlights
+                </Typography>
+              </View>
+              <View className="flex-row flex-wrap gap-2">
+                {syllabusHighlights.map((topic: string, idx: number) => {
+                  const cleanTopic = topic.replace(/^[•\s\-\*]+/, "").trim();
+                  return (
+                    <View
+                      key={idx}
+                      className="bg-indigo-50/70 border border-indigo-200/60 px-3 py-1.5 rounded-xl"
+                    >
+                      <Typography variant="caption" weight="medium" className="text-indigo-900 text-xs">
+                        {cleanTopic}
+                      </Typography>
+                    </View>
+                  );
+                })}
+              </View>
+            </BentoCard>
+          )}
+
+          {/* Exam Pattern (Clean Sections) */}
+          {examPattern.length > 0 && (
+            <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white shadow-xs">
+              <View className="flex-row items-center gap-2.5 mb-3">
+                <View className="w-8 h-8 rounded-xl bg-primary/10 items-center justify-center">
+                  <Layers size={16} color="#1C4966" />
+                </View>
+                <Typography variant="heading" weight="bold" color="primary" className="text-base">
+                  Exam Pattern
+                </Typography>
+              </View>
+              <View className="gap-2.5">
+                {examPattern.map((pattern: any, idx: number) => (
+                  <View key={idx} className="bg-surface-secondary/70 rounded-xl p-3 border border-border-subtle">
+                    <Typography weight="bold" color="primary" className="text-xs mb-1.5">{pattern.section}</Typography>
+                    <View className="flex-row justify-between items-center bg-white py-1.5 px-3 rounded-lg border border-border-subtle">
+                      <View className="flex-row items-center gap-1.5">
+                        <Typography variant="caption" color="secondary">Questions:</Typography>
+                        <Typography variant="caption" weight="bold" color="primary">{pattern.questions}</Typography>
+                      </View>
+                      <View className="w-[1px] h-3 bg-border-subtle" />
+                      <View className="flex-row items-center gap-1.5">
+                        <Typography variant="caption" color="secondary">Marks:</Typography>
+                        <Typography variant="caption" weight="bold" color="primary">{pattern.marks}</Typography>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </BentoCard>
+          )}
+
+          {/* Career Opportunities (Clean 2-Column Badges) */}
+          {careers.length > 0 && (
+            <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white shadow-xs">
+              <View className="flex-row items-center gap-2.5 mb-3">
+                <View className="w-8 h-8 rounded-xl bg-amber-50 items-center justify-center">
+                  <Briefcase size={16} color="#D97706" />
+                </View>
+                <Typography variant="heading" weight="bold" color="primary" className="text-base">
+                  Career Scope & Opportunities
+                </Typography>
+              </View>
+              <View className="flex-row flex-wrap gap-2">
+                {careers.map((op: string, idx: number) => {
+                  const cleanCareer = op.replace(/^[•\s\-\*]+/, "").trim();
+                  return (
+                    <View
+                      key={idx}
+                      className="flex-row items-center gap-1.5 bg-amber-50/70 border border-amber-200/60 px-3 py-1.5 rounded-xl"
+                    >
+                      <View className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      <Typography variant="caption" weight="medium" className="text-amber-950 text-xs">
+                        {cleanCareer}
+                      </Typography>
+                    </View>
+                  );
+                })}
+              </View>
+            </BentoCard>
+          )}
         </View>
       </ScrollView>
+
+      {/* Docked Bottom CTA Bar */}
+      <View className="absolute bottom-0 left-0 right-0 bg-white/95 border-t border-border-subtle px-6 py-3 pb-7 shadow-lg">
+        <Button
+          onPress={handleStart}
+          variant="primary"
+          className="w-full py-3.5 rounded-2xl shadow-sm"
+        >
+          <View className="flex-row items-center justify-center gap-2">
+            <Typography weight="bold" color="inverse" className="text-sm">Start Preparation</Typography>
+            <ArrowRight size={16} color="white" />
+          </View>
+        </Button>
+      </View>
+
+      {/* Review Modal */}
+      <Modal
+        visible={showReviewModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowReviewModal(false)}
+      >
+        <View className="flex-1 bg-black/60 justify-end">
+          <View className="bg-white rounded-t-[32px] p-6 gap-4">
+            <View className="flex-row justify-between items-center border-b border-border-subtle pb-3">
+              <Typography variant="heading" weight="bold" color="primary">Rate & Review Exam</Typography>
+              <TouchableOpacity onPress={() => setShowReviewModal(false)}>
+                <X size={22} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            <Typography variant="caption" color="secondary">
+              Share your feedback for {cleanTitle}.
+            </Typography>
+
+            {/* Stars selector */}
+            <View className="flex-row justify-center gap-3 py-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity
+                  key={star}
+                  onPress={() => setUserRating(star)}
+                  className="p-1"
+                >
+                  <Star
+                    size={36}
+                    color={star <= userRating ? "#F59E0B" : "#CBD5E1"}
+                    fill={star <= userRating ? "#F59E0B" : "transparent"}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View className="gap-1">
+              <Typography variant="caption" weight="bold" color="secondary">Your Review & Comments</Typography>
+              <TextInput
+                value={userComment}
+                onChangeText={setUserComment}
+                placeholder="Share your thoughts about this exam course..."
+                multiline
+                numberOfLines={4}
+                className="w-full border border-border-subtle rounded-2xl p-3 text-sm bg-slate-50"
+                textAlignVertical="top"
+              />
+            </View>
+
+            <Button
+              onPress={handleSubmitReview}
+              variant="primary"
+              className="w-full py-3.5"
+              disabled={isSubmittingReview}
+            >
+              {isSubmittingReview ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <View className="flex-row items-center justify-center gap-2">
+                  <Send size={16} color="white" />
+                  <Typography weight="bold" color="inverse">Submit Review</Typography>
+                </View>
+              )}
+            </Button>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

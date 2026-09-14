@@ -43,3 +43,6 @@ dist/
 *.swp
 *.swo
 *~
+
+# Temporary emulator screenshots
+emulator_*.png

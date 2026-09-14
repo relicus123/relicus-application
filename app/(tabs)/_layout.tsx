@@ -1,19 +1,30 @@
-import React from "react";
-import { Tabs } from "expo-router";
-import { Home, MessageSquare, GraduationCap, Bell, User } from "lucide-react-native";
+import React, { useEffect } from "react";
+import { Tabs, useRouter } from "expo-router";
+import { Home, Sparkles, GraduationCap, Compass, User } from "lucide-react-native";
 import { Platform, View } from "react-native";
+import { useAuthStore } from "../../store/auth.store";
 
 export default function TabLayout() {
+  const router = useRouter();
+  const currentUser = useAuthStore((s) => s.currentUser);
+  const isHydrated = useAuthStore((s) => s.isHydrated);
+
+  useEffect(() => {
+    if (isHydrated && !currentUser) {
+      router.replace("/landing" as any);
+    }
+  }, [isHydrated, currentUser]);
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#7C3AED",
-        tabBarInactiveTintColor: "#64748B",
+        tabBarActiveTintColor: "#1C4966",
+        tabBarInactiveTintColor: "#71818B",
         headerShown: false,
         tabBarStyle: {
           backgroundColor: "#FFFFFF",
           borderTopWidth: 1,
-          borderTopColor: "#F1F5F9",
+          borderTopColor: "#DCE5EA",
           height: Platform.OS === 'ios' ? 88 : 68,
           paddingBottom: Platform.OS === 'ios' ? 28 : 8,
           paddingTop: 8,
@@ -42,11 +53,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="sessions"
+        name="skills"
         options={{
-          title: "Counselling",
+          title: "Skill Academy",
           tabBarIcon: ({ color, focused }) => (
-            <MessageSquare color={color} size={22} strokeWidth={focused ? 2.5 : 2} />
+            <Sparkles color={color} size={22} strokeWidth={focused ? 2.5 : 2} />
           ),
         }}
       />
@@ -60,26 +71,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="notifications"
+        name="knownext"
         options={{
-          title: "Alerts",
+          title: "Know Next",
           tabBarIcon: ({ color, focused }) => (
-            <View style={{ position: "relative" }}>
-              <Bell color={color} size={22} strokeWidth={focused ? 2.5 : 2} />
-              <View
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  right: 0,
-                  width: 7,
-                  height: 7,
-                  borderRadius: 3.5,
-                  backgroundColor: "#EF4444",
-                  borderWidth: 1,
-                  borderColor: "#FFFFFF",
-                }}
-              />
-            </View>
+            <Compass color={color} size={22} strokeWidth={focused ? 2.5 : 2} />
           ),
         }}
       />
@@ -90,6 +86,18 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <User color={color} size={22} strokeWidth={focused ? 2.5 : 2} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="sessions"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

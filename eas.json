@@ -15,10 +15,28 @@
       "android": {
         "buildType": "apk"
       },
-      "channel": "preview"
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://vaubwtgxvgvyjhvtvokq.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_9Ezqm-KYQrGrg1XcSiJizw_gkpTKkKy",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "396897916129-aie5h4ie4gve19rntd5albt6f31fr7f5.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "396897916129-aie5h4ie4gve19rntd5albt6f31fr7f5.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "396897916129-c0ugphm8r3g94ploj6q8q4e2a65k70uo.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "396897916129-gi53mr7q7evs025gs1v8fmr7b5tttj4t.apps.googleusercontent.com",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.relicus.app/v1"
+      }
     },
     "production": {
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://vaubwtgxvgvyjhvtvokq.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_9Ezqm-KYQrGrg1XcSiJizw_gkpTKkKy",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "396897916129-aie5h4ie4gve19rntd5albt6f31fr7f5.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "396897916129-aie5h4ie4gve19rntd5albt6f31fr7f5.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "396897916129-c0ugphm8r3g94ploj6q8q4e2a65k70uo.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "396897916129-gi53mr7q7evs025gs1v8fmr7b5tttj4t.apps.googleusercontent.com",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.relicus.app/v1"
+      }
     }
   },
   "submit": {
