@@ -5,6 +5,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MotiView } from "moti";
@@ -33,6 +34,7 @@ interface PracticeQuestionItem {
   options: string[];
   correctAnswer: number;
   explanation: string;
+  imageUrl?: string;
 }
 
 export default function ChapterPracticeScreen() {
@@ -114,6 +116,7 @@ export default function ChapterPracticeScreen() {
               options: rawOptions,
               correctAnswer: correctIdx,
               explanation: q.explanation || "",
+              imageUrl: q.image_url || q.imageUrl || "",
             };
           });
 
@@ -285,6 +288,18 @@ export default function ChapterPracticeScreen() {
                         {q.question}
                       </Typography>
                     </View>
+
+                    {/* Question Figure / Image if available */}
+                    {Boolean(q.imageUrl) && (
+                      <View className="mb-3 rounded-xl overflow-hidden border border-border-subtle bg-slate-50 items-center justify-center p-2">
+                        <Image
+                          source={{ uri: q.imageUrl }}
+                          style={{ width: "100%", height: 160 }}
+                          resizeMode="contain"
+                          className="rounded-lg"
+                        />
+                      </View>
+                    )}
 
                     {/* Options */}
                     <View className="gap-2 mb-2">

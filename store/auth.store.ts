@@ -1,11 +1,16 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
+import { Platform, Alert } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { supabase } from "../lib/supabase";
 import { formatAuthError } from "../lib/errorHandler";
+import {
+  registerCurrentDevice,
+  isCurrentDeviceActive,
+  removeCurrentDevice,
+} from "../lib/deviceService";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -104,6 +109,14 @@ export const useAuthStore = create<AuthState>()(
           };
 
           set({ currentUser: user, isLoading: false });
+
+          // Register device session with Supabase (enforces max 2 devices)
+          try {
+            await registerCurrentDevice();
+          } catch (devErr) {
+            console.warn("[Auth] Device registration error during signup:", devErr);
+          }
+
           return user;
         } catch (error: any) {
           set({ isLoading: false });
@@ -153,6 +166,14 @@ export const useAuthStore = create<AuthState>()(
           };
 
           set({ currentUser: user, isLoading: false });
+
+          // Register device session with Supabase (enforces max 2 devices)
+          try {
+            await registerCurrentDevice();
+          } catch (devErr) {
+            console.warn("[Auth] Device registration error during login:", devErr);
+          }
+
           return user;
         } catch (error: any) {
           set({ isLoading: false });
@@ -201,9 +222,14 @@ export const useAuthStore = create<AuthState>()(
             const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
 
             if (res.type === "cancel" || res.type === "dismiss") {
-              // User closed or dismissed browser sheet
-              set({ isLoading: false });
-              return null;
+              // On Android, Custom Tabs can dismiss when the deep link switches back to the app.
+              // Wait briefly for the deep link or session listener to record the session.
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+              const { data: checkSession } = await supabase.auth.getSession();
+              if (!checkSession?.session?.user) {
+                set({ isLoading: false });
+                return null;
+              }
             }
 
             if (res.type === "success" && res.url) {
@@ -299,6 +325,14 @@ export const useAuthStore = create<AuthState>()(
             } catch {}
 
             set({ currentUser: user, isLoading: false });
+
+            // Register device session with Supabase (enforces max 2 devices)
+            try {
+              await registerCurrentDevice();
+            } catch (devErr) {
+              console.warn("[Auth] Device registration error during google login:", devErr);
+            }
+
             return user;
           }
 
@@ -311,6 +345,11 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
+        // 0. Remove device registration from server so another device slot is freed
+        try {
+          await removeCurrentDevice();
+        } catch {}
+
         // 1. Immediately reset currentUser in memory so no rebound can ever happen
         set({ currentUser: null });
 
@@ -395,6 +434,32 @@ export const useAuthStore = create<AuthState>()(
               await AsyncStorage.removeItem("relicus-auth-storage");
               await supabase.auth.signOut();
               return;
+            }
+
+            // Verify device is still authorized (max 2 devices constraint)
+            const deviceActive = await isCurrentDeviceActive();
+            if (!deviceActive) {
+              // Check if user has any devices registered or if this is a fresh migration
+              const { count } = await supabase
+                .from("user_devices")
+                .select("id", { count: "exact", head: true })
+                .eq("user_id", authUser.id);
+
+              if (count === 0) {
+                // First-time setup: auto-register this current device
+                await registerCurrentDevice();
+              } else {
+                console.warn("[Auth] Device has been evicted due to 2-device limit.");
+                await get().logout();
+                Alert.alert(
+                  "Logged Out on This Device",
+                  "Your account is active on 2 other devices. You have been signed out from this device."
+                );
+                return;
+              }
+            } else {
+              // Refresh active timestamp on app start
+              registerCurrentDevice().catch(() => {});
             }
 
             const { data: profile } = await supabase

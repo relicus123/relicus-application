@@ -19,6 +19,7 @@ import {
   Edit,
   X,
   GraduationCap,
+  Smartphone,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -28,6 +29,12 @@ import { Input } from "../../components/Input";
 import { useAuthStore } from "../../store/auth.store";
 import { useSkillsStore } from "../../store/skills.store";
 import { useCoachingStore } from "../../store/coaching.store";
+import {
+  fetchUserDevices,
+  revokeDevice,
+  getOrCreateDeviceId,
+  type UserDevice,
+} from "../../lib/deviceService";
 import { Typography } from "../../components/Typography";
 import { GlassSurface } from "../../components/GlassSurface";
 import { BentoCard, BentoCardPressable } from "../../components/BentoCard";
@@ -54,6 +61,28 @@ export default function ProfileScreen() {
   const [tempName, setTempName] = useState(name);
   const [tempEmail, setTempEmail] = useState(email);
   const [tempPhone, setTempPhone] = useState(phone);
+
+  const [showDevicesModal, setShowDevicesModal] = useState(false);
+  const [devices, setDevices] = useState<UserDevice[]>([]);
+  const [currentDeviceId, setCurrentDeviceId] = useState<string>("");
+  const [loadingDevices, setLoadingDevices] = useState(false);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+
+  const loadDevices = async () => {
+    setLoadingDevices(true);
+    try {
+      const [devs, curId] = await Promise.all([
+        fetchUserDevices(),
+        getOrCreateDeviceId(),
+      ]);
+      setDevices(devs);
+      setCurrentDeviceId(curId);
+    } catch (e) {
+      console.warn("Failed to load devices:", e);
+    } finally {
+      setLoadingDevices(false);
+    }
+  };
 
   useEffect(() => {
     coachingStore.fetchCoachingData().then(() => {
@@ -91,6 +120,17 @@ export default function ProfileScreen() {
         setTempEmail(email);
         setTempPhone(phone);
         setIsEditing(true);
+      },
+    },
+    {
+      icon: Smartphone,
+      label: "Devices & Security",
+      description: "Manage your 2 active logged-in devices",
+      colors: ["#F0FDF4", "#DCFCE7"],
+      iconColor: "#15803D",
+      onPress: () => {
+        setShowDevicesModal(true);
+        loadDevices();
       },
     },
     {
@@ -432,6 +472,178 @@ export default function ProfileScreen() {
                 )}
               </TouchableOpacity>
             </View>
+          </MotiView>
+        </View>
+      </Modal>
+
+      {/* Devices & Active Sessions Management Modal */}
+      <Modal
+        visible={showDevicesModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowDevicesModal(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(15, 23, 42, 0.7)", justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
+          <MotiView
+            from={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              width: "100%",
+              maxWidth: 420,
+              backgroundColor: "#FFFFFF",
+              borderRadius: 24,
+              padding: 24,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 12 },
+              shadowOpacity: 0.25,
+              shadowRadius: 24,
+              elevation: 12,
+            }}
+          >
+            {/* Header */}
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "#DCFCE7", alignItems: "center", justifyContent: "center" }}>
+                  <Smartphone color="#15803D" size={22} />
+                </View>
+                <View>
+                  <Text style={{ fontSize: 17, fontWeight: "800", color: "#0F172A" }}>
+                    Logged In Devices
+                  </Text>
+                  <Text style={{ fontSize: 12, color: "#64748B" }}>
+                    {devices.length}/2 Active Devices
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowDevicesModal(false)}
+                style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center" }}
+              >
+                <X color="#64748B" size={18} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Info notice */}
+            <View style={{ backgroundColor: "#F8FAFC", borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: "#E2E8F0" }}>
+              <Text style={{ fontSize: 12, color: "#475569", lineHeight: 17 }}>
+                Relicus limits each student account to <Text style={{ fontWeight: "700" }}>2 active devices</Text>. Logging in from a 3rd device automatically signs out your oldest session.
+              </Text>
+            </View>
+
+            {/* Device List */}
+            {loadingDevices ? (
+              <View style={{ paddingVertical: 32, alignItems: "center" }}>
+                <ActivityIndicator size="small" color="#1C4966" />
+                <Text style={{ marginTop: 8, fontSize: 12, color: "#64748B" }}>Checking active devices...</Text>
+              </View>
+            ) : devices.length === 0 ? (
+              <View style={{ paddingVertical: 24, alignItems: "center" }}>
+                <Text style={{ fontSize: 13, color: "#64748B" }}>No active devices recorded yet.</Text>
+              </View>
+            ) : (
+              <View style={{ gap: 10, marginBottom: 16 }}>
+                {devices.map((device) => {
+                  const isCurrent = device.device_id === currentDeviceId;
+                  const isRevoking = revokingId === device.device_id;
+                  const formattedDate = new Date(device.last_active_at).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+
+                  return (
+                    <View
+                      key={device.id}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: 14,
+                        borderRadius: 16,
+                        backgroundColor: isCurrent ? "#F0FDF4" : "#F8FAFC",
+                        borderWidth: 1,
+                        borderColor: isCurrent ? "#BBF7D0" : "#E2E8F0",
+                      }}
+                    >
+                      <View style={{ flex: 1, marginRight: 10 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                          <Text style={{ fontSize: 14, fontWeight: "700", color: "#0F172A" }} numberOfLines={1}>
+                            {device.device_name || "Unknown Device"}
+                          </Text>
+                          {isCurrent && (
+                            <View style={{ backgroundColor: "#22C55E", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                              <Text style={{ fontSize: 10, fontWeight: "800", color: "#FFFFFF" }}>THIS DEVICE</Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text style={{ fontSize: 11, color: "#64748B" }}>
+                          Active: {formattedDate}
+                        </Text>
+                      </View>
+
+                      {!isCurrent && (
+                        <TouchableOpacity
+                          disabled={isRevoking}
+                          onPress={() => {
+                            Alert.alert(
+                              "Log Out Device?",
+                              `Disconnect ${device.device_name || "this device"} from your account?`,
+                              [
+                                { text: "Cancel", style: "cancel" },
+                                {
+                                  text: "Log Out",
+                                  style: "destructive",
+                                  onPress: async () => {
+                                    setRevokingId(device.device_id);
+                                    await revokeDevice(device.device_id);
+                                    setRevokingId(null);
+                                    loadDevices();
+                                  },
+                                },
+                              ]
+                            );
+                          }}
+                          style={{
+                            paddingHorizontal: 12,
+                            paddingVertical: 6,
+                            borderRadius: 10,
+                            backgroundColor: "#FEE2E2",
+                            borderWidth: 1,
+                            borderColor: "#FECACA",
+                          }}
+                        >
+                          {isRevoking ? (
+                            <ActivityIndicator size="small" color="#DC2626" />
+                          ) : (
+                            <Text style={{ fontSize: 12, fontWeight: "700", color: "#DC2626" }}>Log Out</Text>
+                          )}
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+
+            {/* Close Button */}
+            <TouchableOpacity
+              onPress={() => setShowDevicesModal(false)}
+              style={{
+                width: "100%",
+                paddingVertical: 12,
+                borderRadius: 14,
+                backgroundColor: "#1C4966",
+                alignItems: "center",
+                justifyContent: "center",
+                marginTop: 8,
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 14 }}>
+                Done
+              </Text>
+            </TouchableOpacity>
           </MotiView>
         </View>
       </Modal>

@@ -28,6 +28,10 @@ import {
   MessageSquare,
   Award,
   BookOpen,
+  Lock,
+  CheckCircle2,
+  Clock,
+  ShieldAlert,
 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../lib/supabase";
@@ -44,13 +48,18 @@ export default function ExamInfoScreen() {
   const params = useLocalSearchParams();
   const examType = params.examType as string;
 
-  const { exams } = useCoachingStore();
+  const { exams, userEnrollments, fetchUserEnrollment, requestCourseEnrollment } = useCoachingStore();
   const currentUser = useAuthStore((s) => s.currentUser);
   const cachedExam = exams.find((e) => e.id === examType);
 
   const [exam, setExam] = useState<any>(cachedExam || null);
   const [loading, setLoading] = useState(!cachedExam);
   const [refreshing, setRefreshing] = useState(false);
+  const [isRequestingAccess, setIsRequestingAccess] = useState(false);
+
+  const enrollmentStatus = userEnrollments[examType]?.status || "none";
+  const isAdmin = currentUser?.role === "admin";
+  const hasAccess = isAdmin || enrollmentStatus === "active";
 
   // Review Modal State
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -76,6 +85,7 @@ export default function ExamInfoScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      fetchUserEnrollment(examType);
       if (!cachedExam) {
         fetchExam();
       } else {
@@ -90,20 +100,38 @@ export default function ExamInfoScreen() {
           } catch {}
         })();
       }
-    }, [examType, cachedExam, fetchExam])
+    }, [examType, cachedExam, fetchExam, fetchUserEnrollment])
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchExam();
+    await Promise.all([fetchExam(), fetchUserEnrollment(examType)]);
     setRefreshing(false);
   };
 
   const handleStart = () => {
+    if (!hasAccess) {
+      handleRequestAccess();
+      return;
+    }
     router.push({
       pathname: "/coaching/dashboard" as any,
       params: { examType },
     });
+  };
+
+  const handleRequestAccess = async () => {
+    setIsRequestingAccess(true);
+    const res = await requestCourseEnrollment(examType, currentUser?.username, currentUser?.email);
+    setIsRequestingAccess(false);
+    if (res.success) {
+      Alert.alert(
+        "Request Submitted! 🎉",
+        "Your access request to this coaching program has been sent to the Admin team. Once approved, all video lectures, study materials, and tests will be unlocked for you."
+      );
+    } else {
+      Alert.alert("Request Failed", res.error || "Could not submit access request. Please try again.");
+    }
   };
 
   const handleSubmitReview = async () => {
@@ -273,6 +301,65 @@ export default function ExamInfoScreen() {
 
         {/* Content Body */}
         <View className="px-5 pt-4 gap-3.5">
+          {/* Enrollment & Course Access Banner */}
+          {hasAccess ? (
+            <View className="flex-row items-center gap-2.5 bg-emerald-50 border border-emerald-200/80 p-3.5 rounded-2xl">
+              <View className="w-8 h-8 rounded-xl bg-emerald-100 items-center justify-center">
+                <CheckCircle2 size={18} color="#059669" />
+              </View>
+              <View className="flex-1">
+                <Typography variant="caption" weight="bold" className="text-emerald-950 text-xs">
+                  Enrolled Student • Full Access Granted
+                </Typography>
+                <Typography variant="caption" className="text-emerald-700 text-[10px]">
+                  All video lessons, study materials, and tests are unlocked for your preparation.
+                </Typography>
+              </View>
+            </View>
+          ) : enrollmentStatus === "pending" ? (
+            <View className="flex-row items-center gap-2.5 bg-amber-50 border border-amber-200/80 p-3.5 rounded-2xl">
+              <View className="w-8 h-8 rounded-xl bg-amber-100 items-center justify-center">
+                <Clock size={18} color="#D97706" />
+              </View>
+              <View className="flex-1">
+                <Typography variant="caption" weight="bold" className="text-amber-950 text-xs">
+                  Access Request Pending Admin Approval
+                </Typography>
+                <Typography variant="caption" className="text-amber-800 text-[10px]">
+                  Your request has been submitted to the admin. You will receive an in-app notification once approved.
+                </Typography>
+              </View>
+            </View>
+          ) : enrollmentStatus === "rejected" ? (
+            <View className="flex-row items-center gap-2.5 bg-rose-50 border border-rose-200/80 p-3.5 rounded-2xl">
+              <View className="w-8 h-8 rounded-xl bg-rose-100 items-center justify-center">
+                <ShieldAlert size={18} color="#E11D48" />
+              </View>
+              <View className="flex-1">
+                <Typography variant="caption" weight="bold" className="text-rose-950 text-xs">
+                  Access Request Declined
+                </Typography>
+                <Typography variant="caption" className="text-rose-800 text-[10px]">
+                  Your request was not approved. Tap below to re-submit or contact admin support.
+                </Typography>
+              </View>
+            </View>
+          ) : (
+            <View className="flex-row items-center gap-2.5 bg-sky-50 border border-sky-200/80 p-3.5 rounded-2xl">
+              <View className="w-8 h-8 rounded-xl bg-sky-100 items-center justify-center">
+                <Lock size={18} color="#0284C7" />
+              </View>
+              <View className="flex-1">
+                <Typography variant="caption" weight="bold" className="text-sky-950 text-xs">
+                  Course Access Approval Required
+                </Typography>
+                <Typography variant="caption" className="text-sky-800 text-[10px]">
+                  This program requires admin permission. Tap "Request Course Access" below to get enrolled.
+                </Typography>
+              </View>
+            </View>
+          )}
+
           {/* About The Exam Card */}
           <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white shadow-xs">
             <View className="flex-row items-center gap-2.5 mb-2.5">
@@ -468,16 +555,47 @@ export default function ExamInfoScreen() {
 
       {/* Docked Bottom CTA Bar */}
       <View className="absolute bottom-0 left-0 right-0 bg-white/95 border-t border-border-subtle px-6 py-3 pb-7 shadow-lg">
-        <Button
-          onPress={handleStart}
-          variant="primary"
-          className="w-full py-3.5 rounded-2xl shadow-sm"
-        >
-          <View className="flex-row items-center justify-center gap-2">
-            <Typography weight="bold" color="inverse" className="text-sm">Start Preparation</Typography>
-            <ArrowRight size={16} color="white" />
-          </View>
-        </Button>
+        {hasAccess ? (
+          <Button
+            onPress={handleStart}
+            variant="primary"
+            className="w-full py-3.5 rounded-2xl shadow-sm"
+          >
+            <View className="flex-row items-center justify-center gap-2">
+              <Typography weight="bold" color="inverse" className="text-sm">Start Preparation</Typography>
+              <ArrowRight size={16} color="white" />
+            </View>
+          </Button>
+        ) : enrollmentStatus === "pending" ? (
+          <Button
+            disabled
+            variant="secondary"
+            className="w-full py-3.5 rounded-2xl bg-amber-50 border border-amber-200 opacity-80"
+          >
+            <View className="flex-row items-center justify-center gap-2">
+              <Clock size={16} color="#D97706" />
+              <Typography weight="bold" className="text-amber-900 text-sm">Access Request Pending Approval</Typography>
+            </View>
+          </Button>
+        ) : (
+          <Button
+            onPress={handleRequestAccess}
+            variant="primary"
+            className="w-full py-3.5 rounded-2xl shadow-sm bg-teal-700"
+            disabled={isRequestingAccess}
+          >
+            {isRequestingAccess ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <View className="flex-row items-center justify-center gap-2">
+                <Lock size={16} color="white" />
+                <Typography weight="bold" color="inverse" className="text-sm">
+                  {enrollmentStatus === "rejected" ? "Re-request Course Access 🔄" : "Request Course Access 🚀"}
+                </Typography>
+              </View>
+            )}
+          </Button>
+        )}
       </View>
 
       {/* Review Modal */}

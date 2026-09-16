@@ -56,12 +56,23 @@ export const useNotificationsStore = create<NotificationsState>()(
       fetchLiveNotifications: async () => {
         set({ isLoading: true });
         try {
+          const { data: authData } = await supabase.auth.getUser();
+          const userId = authData?.user?.id;
+
+          let notifQuery = supabase
+            .from("coaching_notifications")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(30);
+
+          if (userId) {
+            notifQuery = notifQuery.or(`target_user_id.is.null,target_user_id.eq.${userId}`);
+          } else {
+            notifQuery = notifQuery.is("target_user_id", null);
+          }
+
           const [notifsRes, annsRes] = await Promise.all([
-            supabase
-              .from("coaching_notifications")
-              .select("*")
-              .order("created_at", { ascending: false })
-              .limit(20),
+            notifQuery,
             supabase
               .from("coaching_announcements")
               .select("*")
@@ -75,7 +86,7 @@ export const useNotificationsStore = create<NotificationsState>()(
             notifsRes.data.forEach((n: any) => {
               liveItems.push({
                 id: `cn-${n.id}`,
-                type: n.category === "live" ? "alert" : "learning",
+                type: n.category === "live" ? "alert" : n.category === "test" ? "alert" : "learning",
                 title: n.title,
                 message: n.message,
                 timestamp: n.created_at || new Date().toISOString(),

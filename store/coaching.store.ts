@@ -52,6 +52,10 @@ interface CoachingStore {
   mockTestsByExam: Record<string, any[]>;
   notesByExam: Record<string, any[]>;
 
+  // Course Access & Enrollments
+  userEnrollments: Record<string, { status: 'none' | 'pending' | 'active' | 'rejected'; id?: string }>;
+  studentExceptions: Record<string, any>;
+
   fetchCoachingData: () => Promise<void>;
   fetchCategoriesAndExams: (forceRefresh?: boolean) => Promise<void>;
   fetchExamDashboard: (examId: string, forceRefresh?: boolean) => Promise<void>;
@@ -61,6 +65,18 @@ interface CoachingStore {
   addDoubt: (doubt: Doubt) => Promise<void>;
   addTestAttempt: (attempt: TestAttempt) => Promise<void>;
   clearTestAttempts: () => Promise<void>;
+  hasAttemptedTest: (testId: string) => boolean;
+  getLatestTestAttempt: (testId: string) => TestAttempt | undefined;
+
+  fetchUserEnrollment: (examId: string) => Promise<'none' | 'pending' | 'active' | 'rejected'>;
+  requestCourseEnrollment: (examId: string, studentName?: string, studentEmail?: string) => Promise<{ success: boolean; error?: string }>;
+  fetchStudentExceptions: () => Promise<void>;
+  getMegaTestAccessStatus: (test: any) => {
+    status: 'mock' | 'upcoming' | 'live' | 'completed' | 'missed' | 'exception_granted';
+    canAttempt: boolean;
+    badgeText: string;
+    exception?: any;
+  };
 }
 
 export const useCoachingStore = create<CoachingStore>()(
@@ -71,8 +87,20 @@ export const useCoachingStore = create<CoachingStore>()(
       lastActiveDate: null,
       doubts: [],
       testAttempts: [],
+      userEnrollments: {},
+      studentExceptions: {},
       isLoading: false,
       isSyncing: false,
+
+      hasAttemptedTest: (testId: string) => {
+        const { testAttempts } = get();
+        return testAttempts.some((a) => String(a.testId) === String(testId));
+      },
+
+      getLatestTestAttempt: (testId: string) => {
+        const { testAttempts } = get();
+        return testAttempts.find((a) => String(a.testId) === String(testId));
+      },
 
       categories: [],
       exams: [],
@@ -480,6 +508,199 @@ export const useCoachingStore = create<CoachingStore>()(
         } catch (e) {
           console.warn('Coaching test attempt remote sync notice:', e);
         }
+      },
+
+      fetchUserEnrollment: async (examId: string) => {
+        const currentUser = useAuthStore.getState().currentUser;
+        if (!currentUser?.id || !examId) return 'none';
+
+        try {
+          const { data, error } = await supabase
+            .from('coaching_enrollments')
+            .select('id, status')
+            .eq('user_id', currentUser.id)
+            .eq('exam_id', examId)
+            .maybeSingle();
+
+          if (error && error.code !== 'PGRST116') {
+            console.warn('Enrollment fetch notice:', error);
+          }
+
+          const status = (data?.status as 'none' | 'pending' | 'active' | 'rejected') || 'none';
+          set((state) => ({
+            userEnrollments: {
+              ...state.userEnrollments,
+              [examId]: { status, id: data?.id },
+            },
+          }));
+          return status;
+        } catch (err) {
+          console.warn('Error fetching enrollment:', err);
+          return 'none';
+        }
+      },
+
+      requestCourseEnrollment: async (examId: string, studentName?: string, studentEmail?: string) => {
+        const currentUser = useAuthStore.getState().currentUser;
+        if (!currentUser?.id || !examId) {
+          return { success: false, error: 'User not logged in' };
+        }
+
+        const name = studentName || currentUser.username || currentUser.email?.split('@')[0] || 'Student';
+        const email = studentEmail || currentUser.email || '';
+
+        try {
+          const { data: existing } = await supabase
+            .from('coaching_enrollments')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .eq('exam_id', examId)
+            .maybeSingle();
+
+          if (existing) {
+            set((state) => ({
+              userEnrollments: {
+                ...state.userEnrollments,
+                [examId]: { status: existing.status, id: existing.id },
+              },
+            }));
+            return { success: true };
+          }
+
+          const { data, error } = await supabase
+            .from('coaching_enrollments')
+            .insert([
+              {
+                user_id: currentUser.id,
+                exam_id: examId,
+                student_name: name,
+                student_email: email,
+                status: 'pending',
+                requested_at: new Date().toISOString(),
+              },
+            ])
+            .select()
+            .single();
+
+          if (error) throw error;
+
+          set((state) => ({
+            userEnrollments: {
+              ...state.userEnrollments,
+              [examId]: { status: 'pending', id: data?.id },
+            },
+          }));
+
+          return { success: true };
+        } catch (err: any) {
+          console.error('Failed to request course access:', err);
+          return { success: false, error: err.message || 'Failed to submit request' };
+        }
+      },
+
+      fetchStudentExceptions: async () => {
+        const currentUser = useAuthStore.getState().currentUser;
+        if (!currentUser?.id) return;
+
+        try {
+          const { data, error } = await supabase
+            .from('coaching_test_exceptions')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .eq('is_active', true);
+
+          if (!error && data) {
+            const exceptionsMap: Record<string, any> = {};
+            data.forEach((item: any) => {
+              if (new Date(item.valid_until).getTime() > Date.now()) {
+                exceptionsMap[item.mock_test_id] = item;
+              }
+            });
+            set({ studentExceptions: exceptionsMap });
+          }
+        } catch (e) {
+          console.warn('Error fetching test exceptions:', e);
+        }
+      },
+
+      getMegaTestAccessStatus: (test: any) => {
+        const isMega = test.test_type === 'mega' || (test.attempt_type === 'once' && (test.scheduled_date || test.scheduled_start_time));
+        if (!isMega) {
+          return {
+            status: 'mock',
+            canAttempt: true,
+            badgeText: 'Mock Test (Multiple Attempts)',
+          };
+        }
+
+        const { hasAttemptedTest, studentExceptions } = get();
+        const attempted = hasAttemptedTest(test.id);
+
+        if (attempted) {
+          return {
+            status: 'completed',
+            canAttempt: false,
+            badgeText: 'Attempted (Score Saved)',
+          };
+        }
+
+        // Check if student has an active exception from admin
+        const exception = studentExceptions[test.id];
+        if (exception && new Date(exception.valid_until).getTime() > Date.now()) {
+          return {
+            status: 'exception_granted',
+            canAttempt: true,
+            badgeText: '⭐ Special Permission Granted',
+            exception,
+          };
+        }
+
+        // If no scheduled date is set, treat as open
+        if (!test.scheduled_date) {
+          return {
+            status: 'live',
+            canAttempt: true,
+            badgeText: 'Mega Test (1 Attempt Only)',
+          };
+        }
+
+        // Compute schedule window
+        const now = new Date();
+        const datePart = test.scheduled_date; // YYYY-MM-DD
+        let startTime = new Date(`${datePart}T00:00:00`);
+        let endTime = new Date(`${datePart}T23:59:59`);
+
+        if (test.scheduled_start_time) {
+          const sDate = new Date(`${datePart} ${test.scheduled_start_time}`);
+          if (!isNaN(sDate.getTime())) startTime = sDate;
+        }
+
+        if (test.scheduled_end_time) {
+          const eDate = new Date(`${datePart} ${test.scheduled_end_time}`);
+          if (!isNaN(eDate.getTime())) endTime = eDate;
+        }
+
+        if (now.getTime() < startTime.getTime()) {
+          return {
+            status: 'upcoming',
+            canAttempt: false,
+            badgeText: `Starts on ${test.scheduled_date} at ${test.scheduled_start_time || 'scheduled time'}`,
+          };
+        }
+
+        if (now.getTime() > endTime.getTime()) {
+          return {
+            status: 'missed',
+            canAttempt: false,
+            badgeText: 'Test Window Closed (Missed)',
+          };
+        }
+
+        return {
+          status: 'live',
+          canAttempt: true,
+          badgeText: '🔴 LIVE NOW - Mega Test',
+        };
       },
 
       clearTestAttempts: async () => {

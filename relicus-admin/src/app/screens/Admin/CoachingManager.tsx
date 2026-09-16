@@ -4,8 +4,9 @@ import * as XLSX from "xlsx";
 import { 
   Plus, Trash2, Edit2, GraduationCap, Video, FileText, Check, AlertCircle, X, 
   Sparkles, Book, Calendar, MessageSquare, Star, ArrowRight, Layers, Megaphone,
-  FileSpreadsheet, Download, Upload, Send, HelpCircle, User
+  FileSpreadsheet, Download, Upload, Send, HelpCircle, User, Shield, Clock, Lock, RotateCcw, Image as ImageIcon
 } from "lucide-react";
+import { ImageUpload } from "../../components/ImageUpload";
 
 export function CoachingManager() {
   const [exams, setExams] = useState<any[]>([]);
@@ -26,11 +27,46 @@ export function CoachingManager() {
 
   // View state
   const [viewMode, setViewMode] = useState<"exam" | "categories" | "add-exam">("exam");
-  const [activeTab, setActiveTab] = useState<"info" | "syllabus" | "mocktests" | "live" | "announcements" | "feedbacks" | "doubts">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "syllabus" | "mocktests" | "live" | "announcements" | "feedbacks" | "doubts" | "enrollments">("info");
 
   // Error/Success alerts
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Enrollments & Student Course Access states
+  const [enrollments, setEnrollments] = useState<any[]>([]);
+  const [loadingEnrollments, setLoadingEnrollments] = useState(false);
+  const [allRegisteredUsers, setAllRegisteredUsers] = useState<any[]>([]);
+  const [showDirectEnrollModal, setShowDirectEnrollModal] = useState(false);
+  const [searchEnrollUser, setSearchEnrollUser] = useState("");
+
+  // Mega Test Exceptions states
+  const [showExceptionModal, setShowExceptionModal] = useState(false);
+  const [selectedTestForExceptions, setSelectedTestForExceptions] = useState<any | null>(null);
+  const [testExceptions, setTestExceptions] = useState<any[]>([]);
+  const [testAttemptsForSelectedTest, setTestAttemptsForSelectedTest] = useState<any[]>([]);
+  const [loadingExceptions, setLoadingExceptions] = useState(false);
+  const [selectedStudentForException, setSelectedStudentForException] = useState<any | null>(null);
+  const [exceptionHours, setExceptionHours] = useState(24);
+  const [exceptionReason, setExceptionReason] = useState("Missed scheduled exam window");
+
+  // Email Blast Modal states
+  const [showEmailBlastModal, setShowEmailBlastModal] = useState(false);
+  const [emailBlastData, setEmailBlastData] = useState<{
+    testName: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    duration: string;
+    recipients: string[];
+  }>({
+    testName: "",
+    date: "",
+    startTime: "",
+    endTime: "",
+    duration: "",
+    recipients: [],
+  });
 
   // Form states
   const [categoryForm, setCategoryForm] = useState({ id: "", title: "", description: "", icon: "🎓" });
@@ -49,12 +85,37 @@ export function CoachingManager() {
 
   const [subjectForm, setSubjectForm] = useState({ id: "", name: "", icon: "📐", color: "bg-blue-500" });
   const [chapterForm, setChapterForm] = useState({ id: "", name: "" });
-  const [videoForm, setVideoForm] = useState({ id: "", title: "", duration: "15:00", url: "" });
+  const [videoForm, setVideoForm] = useState({ id: "", title: "", duration: "15:00", url: "", thumbnailUrl: "" });
   const [noteForm, setNoteForm] = useState({ id: "", title: "", size: "1.5 MB", pdfUrl: "" });
-  const [practiceForm, setPracticeForm] = useState({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "" });
+  const [practiceForm, setPracticeForm] = useState({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "", imageUrl: "" });
 
-  const [mockForm, setMockForm] = useState({ id: "", name: "", duration: 1800 });
-  const [questionForm, setQuestionForm] = useState({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "", topic: "" });
+  const [mockForm, setMockForm] = useState({
+    id: "",
+    name: "",
+    testType: "mock" as "mock" | "mega",
+    durationHours: 1,
+    durationMinutes: 30,
+    duration: 5400,
+    attemptType: "multiple" as "multiple" | "once",
+    isProctored: false,
+    testCategory: "mock" as "mock" | "final",
+    scheduledDate: "",
+    scheduledStartTime: "10:00 AM",
+    scheduledEndTime: "01:00 PM",
+    sendInAppNotification: true,
+    sendEmailNotification: true,
+  });
+  const [questionForm, setQuestionForm] = useState({
+    question: "",
+    optionA: "",
+    optionB: "",
+    optionC: "",
+    optionD: "",
+    correctAnswer: 0,
+    explanation: "",
+    topic: "",
+    imageUrl: ""
+  });
 
   const [liveForm, setLiveForm] = useState({ topic: "", scheduledTime: "", duration: 60, url: "", status: "scheduled" });
   const [announcementForm, setAnnouncementForm] = useState({ title: "", content: "" });
@@ -98,7 +159,201 @@ export function CoachingManager() {
     if (activeTab === "doubts") {
       loadCoachingDoubts();
     }
+    if (activeTab === "enrollments" && selectedExam?.id) {
+      loadEnrollments(selectedExam.id);
+    }
   }, [activeTab, selectedExam]);
+
+  useEffect(() => {
+    if (selectedExam?.id) {
+      loadEnrollments(selectedExam.id);
+      loadRegisteredUsers();
+    }
+  }, [selectedExam?.id]);
+
+  const loadEnrollments = async (examId: string) => {
+    if (!examId) return;
+    setLoadingEnrollments(true);
+    try {
+      const { data, error } = await supabase
+        .from("coaching_enrollments")
+        .select("*")
+        .eq("exam_id", examId)
+        .order("requested_at", { ascending: false });
+      if (error && error.code !== "PGRST116") console.warn(error);
+      setEnrollments(data || []);
+    } catch (e: any) {
+      console.warn("Failed to load enrollments:", e);
+    } finally {
+      setLoadingEnrollments(false);
+    }
+  };
+
+  const loadRegisteredUsers = async () => {
+    try {
+      const { data: pData } = await supabase
+        .from("profiles")
+        .select("id, email, username, full_name, role");
+      if (pData && pData.length > 0) {
+        setAllRegisteredUsers(pData);
+      } else {
+        const { data: uData } = await supabase
+          .from("users")
+          .select("id, email, username");
+        setAllRegisteredUsers(uData || []);
+      }
+    } catch (e) {
+      console.warn("Could not load registered users:", e);
+    }
+  };
+
+  const handleApproveEnrollment = async (enrollmentId: string, studentUserId: string, studentName?: string) => {
+    try {
+      setEnrollments(prev => prev.map(e => e.id === enrollmentId ? { ...e, status: "active", approved_at: new Date().toISOString() } : e));
+      setSuccess(`Access approved for ${studentName || "student"}!`);
+
+      const { error: err } = await supabase
+        .from("coaching_enrollments")
+        .update({
+          status: "active",
+          approved_at: new Date().toISOString()
+        })
+        .eq("id", enrollmentId);
+      if (err) throw err;
+
+      // Send in-app notification to approved student
+      await supabase.from("coaching_notifications").insert({
+        title: "🎉 Course Access Approved!",
+        message: `Your access to ${selectedExam?.fullName || selectedExam?.id} has been approved by the Admin. All video lectures, study materials, and mock tests are now unlocked!`,
+        category: "announcement",
+        exam_id: selectedExam?.id,
+        target_user_id: studentUserId
+      });
+    } catch (err: any) {
+      setError("Failed to approve access: " + err.message);
+    }
+  };
+
+  const handleRejectEnrollment = async (enrollmentId: string) => {
+    try {
+      setEnrollments(prev => prev.map(e => e.id === enrollmentId ? { ...e, status: "rejected" } : e));
+      setSuccess("Access request marked as rejected.");
+      const { error: err } = await supabase
+        .from("coaching_enrollments")
+        .update({ status: "rejected" })
+        .eq("id", enrollmentId);
+      if (err) throw err;
+    } catch (err: any) {
+      setError("Failed to reject access: " + err.message);
+    }
+  };
+
+  const handleDirectEnroll = async (userId: string) => {
+    if (!userId || !selectedExam) return;
+    const user = allRegisteredUsers.find(u => u.id === userId);
+    if (!user) return;
+
+    try {
+      const payload = {
+        user_id: userId,
+        exam_id: selectedExam.id,
+        student_name: user.full_name || user.username || "Student",
+        student_email: user.email || "",
+        status: "active",
+        requested_at: new Date().toISOString(),
+        approved_at: new Date().toISOString()
+      };
+
+      setEnrollments(prev => [payload, ...prev.filter(e => e.user_id !== userId)]);
+      setShowDirectEnrollModal(false);
+      setSuccess(`Enrolled ${user.full_name || user.email} with full access!`);
+
+      await supabase.from("coaching_enrollments").upsert(payload, { onConflict: "user_id,exam_id" });
+
+      await supabase.from("coaching_notifications").insert({
+        title: `🎉 Enrolled in ${selectedExam.fullName || selectedExam.id}`,
+        message: `Admin has granted you direct access to this entrance coaching course! Start preparation today.`,
+        category: "announcement",
+        exam_id: selectedExam.id,
+        target_user_id: userId
+      });
+    } catch (err: any) {
+      setError("Direct enrollment failed: " + err.message);
+    }
+  };
+
+  const handleOpenExceptionsModal = async (test: any) => {
+    setSelectedTestForExceptions(test);
+    setShowExceptionModal(true);
+    setLoadingExceptions(true);
+    try {
+      const [{ data: excData }, { data: attData }] = await Promise.all([
+        supabase.from("coaching_test_exceptions").select("*").eq("mock_test_id", test.id),
+        supabase.from("coaching_test_attempts").select("*").eq("test_id", test.id)
+      ]);
+      setTestExceptions(excData || []);
+      setTestAttemptsForSelectedTest(attData || []);
+    } catch (e) {
+      console.warn("Error fetching exceptions & attempts:", e);
+    } finally {
+      setLoadingExceptions(false);
+    }
+  };
+
+  const handleGrantSingleStudentException = async () => {
+    if (!selectedTestForExceptions || !selectedStudentForException) return;
+    const validUntil = new Date(Date.now() + (exceptionHours || 24) * 3600 * 1000).toISOString();
+
+    try {
+      const excPayload = {
+        mock_test_id: selectedTestForExceptions.id,
+        user_id: selectedStudentForException.user_id,
+        student_name: selectedStudentForException.student_name,
+        student_email: selectedStudentForException.student_email,
+        valid_until: validUntil,
+        is_active: true,
+        reason: exceptionReason || "Admin exception for missed exam window"
+      };
+
+      setTestExceptions(prev => [excPayload, ...prev]);
+      setSelectedStudentForException(null);
+      setSuccess(`Special test permission granted to ${selectedStudentForException.student_name} for ${exceptionHours} hours!`);
+
+      await supabase.from("coaching_test_exceptions").insert(excPayload);
+
+      await supabase.from("coaching_notifications").insert({
+        title: "⭐ Mega Test Permission Granted",
+        message: `You have been granted special permission to attempt "${selectedTestForExceptions.name}". This access window is valid for ${exceptionHours} hours until ${new Date(validUntil).toLocaleDateString()} ${new Date(validUntil).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`,
+        category: "test",
+        exam_id: selectedExam?.id,
+        test_id: selectedTestForExceptions.id,
+        target_user_id: selectedStudentForException.user_id
+      });
+    } catch (err: any) {
+      setError("Failed to grant exception: " + err.message);
+    }
+  };
+
+  const handleOpenEmailBlastModal = (test: any) => {
+    const approvedEmails = enrollments
+      .filter(e => e.status === "active" && Boolean(e.student_email))
+      .map(e => e.student_email);
+
+    const totSec = test.duration || 5400;
+    const h = Math.floor(totSec / 3600);
+    const m = Math.floor((totSec % 3600) / 60);
+    const durStr = h > 0 ? (m > 0 ? `${h} hours ${m} mins` : `${h} hours`) : `${m} mins`;
+
+    setEmailBlastData({
+      testName: test.name,
+      date: test.scheduled_date || "Upcoming Date",
+      startTime: test.scheduled_start_time || "10:00 AM",
+      endTime: test.scheduled_end_time || "01:00 PM",
+      duration: durStr,
+      recipients: approvedEmails
+    });
+    setShowEmailBlastModal(true);
+  };
 
   const loadAllData = async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -770,13 +1025,14 @@ export function CoachingManager() {
     const vTitle = videoForm.title;
     const vDuration = videoForm.duration;
     const vUrl = videoForm.url || "https://www.w3schools.com/html/mov_bbb.mp4";
+    const vThumbnailUrl = videoForm.thumbnailUrl || "";
 
     if (currentVidId) {
       // Instant local update
       setSelectedChapter((prev: any) => ({
         ...prev,
         videos: (prev?.videos || []).map((v: any) =>
-          v.id === currentVidId ? { ...v, title: vTitle, duration: vDuration, url: vUrl } : v
+          v.id === currentVidId ? { ...v, title: vTitle, duration: vDuration, url: vUrl, thumbnail_url: vThumbnailUrl } : v
         )
       }));
       setSuccess("Video updated successfully.");
@@ -788,6 +1044,7 @@ export function CoachingManager() {
         title: vTitle,
         duration: vDuration,
         url: vUrl,
+        thumbnail_url: vThumbnailUrl,
         is_watched: false
       };
       // Instant local update
@@ -800,7 +1057,7 @@ export function CoachingManager() {
 
     setIsAddingVideo(false);
     setEditingVideoId(null);
-    setVideoForm({ id: "", title: "", duration: "15:00", url: "" });
+    setVideoForm({ id: "", title: "", duration: "15:00", url: "", thumbnailUrl: "" });
 
     try {
       if (currentVidId) {
@@ -810,6 +1067,7 @@ export function CoachingManager() {
             title: vTitle,
             duration: vDuration,
             url: vUrl,
+            thumbnail_url: vThumbnailUrl,
           })
           .eq("id", currentVidId);
         if (vErr) throw vErr;
@@ -823,6 +1081,7 @@ export function CoachingManager() {
             title: vTitle,
             duration: vDuration,
             url: vUrl,
+            thumbnail_url: vThumbnailUrl,
             is_watched: false
           });
         if (vErr) throw vErr;
@@ -961,13 +1220,14 @@ export function CoachingManager() {
     const pOptions = [practiceForm.optionA, practiceForm.optionB, practiceForm.optionC, practiceForm.optionD];
     const pCorrect = practiceForm.correctAnswer;
     const pExpl = practiceForm.explanation;
+    const pImageUrl = practiceForm.imageUrl || "";
 
     if (currentPracticeId) {
       // Instant local update
       setSelectedChapter((prev: any) => ({
         ...prev,
         practiceQuestions: (prev?.practiceQuestions || []).map((p: any) =>
-          p.id === currentPracticeId ? { ...p, question: pQuestion, options: pOptions, correct_answer: pCorrect, explanation: pExpl } : p
+          p.id === currentPracticeId ? { ...p, question: pQuestion, options: pOptions, correct_answer: pCorrect, explanation: pExpl, image_url: pImageUrl } : p
         )
       }));
       setSuccess("Practice question updated.");
@@ -979,7 +1239,8 @@ export function CoachingManager() {
         question: pQuestion,
         options: pOptions,
         correct_answer: pCorrect,
-        explanation: pExpl
+        explanation: pExpl,
+        image_url: pImageUrl
       };
       // Instant local update
       setSelectedChapter((prev: any) => ({
@@ -991,7 +1252,7 @@ export function CoachingManager() {
 
     setIsAddingPractice(false);
     setEditingPracticeId(null);
-    setPracticeForm({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "" });
+    setPracticeForm({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "", imageUrl: "" });
 
     try {
       if (currentPracticeId) {
@@ -1001,7 +1262,8 @@ export function CoachingManager() {
             question: pQuestion,
             options: pOptions,
             correct_answer: pCorrect,
-            explanation: pExpl
+            explanation: pExpl,
+            image_url: pImageUrl
           })
           .eq("id", currentPracticeId);
         if (prErr) throw prErr;
@@ -1013,7 +1275,8 @@ export function CoachingManager() {
             question: pQuestion,
             options: pOptions,
             correct_answer: pCorrect,
-            explanation: pExpl
+            explanation: pExpl,
+            image_url: pImageUrl
           });
         if (prErr) throw prErr;
       }
@@ -1245,7 +1508,14 @@ export function CoachingManager() {
 
     const currentMockId = editingMockId;
     const mName = mockForm.name;
-    const mDuration = Number(mockForm.duration);
+    const mDuration = (Number(mockForm.durationHours || 0) * 60 + Number(mockForm.durationMinutes || 0)) * 60 || Number(mockForm.duration) || 5400;
+    const mTestType = mockForm.testType || "mock";
+    const mAttemptType = mTestType === "mega" ? "once" : (mockForm.attemptType || "multiple");
+    const mIsProctored = mTestType === "mega" ? true : Boolean(mockForm.isProctored);
+    const mTestCategory = mTestType === "mega" ? "final" : (mockForm.testCategory || "mock");
+    const mScheduledDate = mockForm.scheduledDate || null;
+    const mScheduledStartTime = mockForm.scheduledStartTime || null;
+    const mScheduledEndTime = mockForm.scheduledEndTime || null;
 
     try {
       if (currentMockId) {
@@ -1253,7 +1523,18 @@ export function CoachingManager() {
         setSelectedExam(prev => {
           if (!prev) return prev;
           const nextMocks = (prev.mockTests || []).map((m: any) =>
-            m.id === currentMockId ? { ...m, name: mName, duration: mDuration } : m
+            m.id === currentMockId ? {
+              ...m,
+              name: mName,
+              duration: mDuration,
+              test_type: mTestType,
+              attempt_type: mAttemptType,
+              is_proctored: mIsProctored,
+              test_category: mTestCategory,
+              scheduled_date: mScheduledDate,
+              scheduled_start_time: mScheduledStartTime,
+              scheduled_end_time: mScheduledEndTime,
+            } : m
           );
           return { ...prev, mockTests: nextMocks };
         });
@@ -1262,27 +1543,81 @@ export function CoachingManager() {
           return {
             ...ex,
             mockTests: (ex.mockTests || []).map((m: any) =>
-              m.id === currentMockId ? { ...m, name: mName, duration: mDuration } : m
+              m.id === currentMockId ? {
+                ...m,
+                name: mName,
+                duration: mDuration,
+                test_type: mTestType,
+                attempt_type: mAttemptType,
+                is_proctored: mIsProctored,
+                test_category: mTestCategory,
+                scheduled_date: mScheduledDate,
+                scheduled_start_time: mScheduledStartTime,
+                scheduled_end_time: mScheduledEndTime,
+              } : m
             )
           };
         }));
         if (selectedMockTest?.id === currentMockId) {
-          setSelectedMockTest((prev: any) => prev ? ({ ...prev, name: mName, duration: mDuration }) : null);
+          setSelectedMockTest((prev: any) => prev ? ({
+            ...prev,
+            name: mName,
+            duration: mDuration,
+            test_type: mTestType,
+            attempt_type: mAttemptType,
+            is_proctored: mIsProctored,
+            test_category: mTestCategory,
+            scheduled_date: mScheduledDate,
+            scheduled_start_time: mScheduledStartTime,
+            scheduled_end_time: mScheduledEndTime,
+          }) : null);
         }
-        setSuccess("Mock test updated.");
+        setSuccess("Test updated successfully.");
 
         setIsAddingMock(false);
         setEditingMockId(null);
-        setMockForm({ id: "", name: "", duration: 1800 });
+        setMockForm({
+          id: "",
+          name: "",
+          testType: "mock",
+          durationHours: 1,
+          durationMinutes: 30,
+          duration: 5400,
+          attemptType: "multiple",
+          isProctored: false,
+          testCategory: "mock",
+          scheduledDate: "",
+          scheduledStartTime: "10:00 AM",
+          scheduledEndTime: "01:00 PM",
+          sendInAppNotification: true,
+          sendEmailNotification: true,
+        });
 
         const { error: mockErr } = await supabase
           .from("coaching_mock_tests")
           .update({
             name: mName,
             duration: mDuration,
+            test_type: mTestType,
+            attempt_type: mAttemptType,
+            is_proctored: mIsProctored,
+            test_category: mTestCategory,
+            scheduled_date: mScheduledDate,
+            scheduled_start_time: mScheduledStartTime,
+            scheduled_end_time: mScheduledEndTime,
           })
           .eq("id", currentMockId);
         if (mockErr) throw mockErr;
+
+        if (mTestType === "mega" && mockForm.sendInAppNotification) {
+          await supabase.from("coaching_notifications").insert({
+            title: `🚨 Scheduled Mega Test: ${mName}`,
+            message: `Mega Test updated: Scheduled on ${mScheduledDate || "date"} (${mScheduledStartTime || ""} to ${mScheduledEndTime || ""}). Duration: ${mockForm.durationHours}h ${mockForm.durationMinutes}m. One attempt only!`,
+            category: "test",
+            exam_id: selectedExam.id,
+            test_id: currentMockId,
+          });
+        }
       } else {
         const mockId = mockForm.id || `mock-${Math.random().toString(36).substr(2, 9)}`;
         const newMock = {
@@ -1290,22 +1625,60 @@ export function CoachingManager() {
           exam_id: selectedExam.id,
           name: mName,
           duration: mDuration,
+          test_type: mTestType,
+          attempt_type: mAttemptType,
+          is_proctored: mIsProctored,
+          test_category: mTestCategory,
+          scheduled_date: mScheduledDate,
+          scheduled_start_time: mScheduledStartTime,
+          scheduled_end_time: mScheduledEndTime,
           questions_count: 0
         };
 
         // Instant local state update
         setSelectedExam(prev => prev ? ({ ...prev, mockTests: [...(prev.mockTests || []), newMock] }) : prev);
         setExams(prev => prev.map(ex => ex.id === selectedExam.id ? ({ ...ex, mockTests: [...(ex.mockTests || []), newMock] }) : ex));
-        setSuccess("Mock test created.");
+        setSuccess("Test created successfully.");
 
         setIsAddingMock(false);
         setEditingMockId(null);
-        setMockForm({ id: "", name: "", duration: 1800 });
+        setMockForm({
+          id: "",
+          name: "",
+          testType: "mock",
+          durationHours: 1,
+          durationMinutes: 30,
+          duration: 5400,
+          attemptType: "multiple",
+          isProctored: false,
+          testCategory: "mock",
+          scheduledDate: "",
+          scheduledStartTime: "10:00 AM",
+          scheduledEndTime: "01:00 PM",
+          sendInAppNotification: true,
+          sendEmailNotification: true,
+        });
 
         const { error: mockErr } = await supabase
           .from("coaching_mock_tests")
           .insert(newMock);
         if (mockErr) throw mockErr;
+
+        if (mTestType === "mega") {
+          if (mockForm.sendInAppNotification) {
+            await supabase.from("coaching_notifications").insert({
+              title: `🚨 Scheduled Mega Test: ${mName}`,
+              message: `Mega Test announced: Scheduled on ${mScheduledDate || "date"} (${mScheduledStartTime || ""} to ${mScheduledEndTime || ""}). Duration: ${Math.floor(mDuration / 60)} mins. Strict 1 attempt only!`,
+              category: "test",
+              exam_id: selectedExam.id,
+              test_id: mockId,
+            });
+          }
+
+          if (mockForm.sendEmailNotification) {
+            handleOpenEmailBlastModal(newMock);
+          }
+        }
       }
       loadAllData(false);
     } catch (err: any) {
@@ -1354,13 +1727,14 @@ export function CoachingManager() {
     const qCorrect = questionForm.correctAnswer;
     const qExpl = questionForm.explanation;
     const qTopic = questionForm.topic;
+    const qImageUrl = questionForm.imageUrl || "";
 
     if (currentQId) {
       // Instant local state update
       setSelectedMockTest((prev: any) => ({
         ...prev,
         questions: (prev?.questions || []).map((q: any) =>
-          q.id === currentQId ? { ...q, question: qText, options: qOptions, correct_answer: qCorrect, explanation: qExpl, topic: qTopic } : q
+          q.id === currentQId ? { ...q, question: qText, options: qOptions, correct_answer: qCorrect, explanation: qExpl, topic: qTopic, image_url: qImageUrl } : q
         )
       }));
       setSuccess("Mock question updated.");
@@ -1374,7 +1748,8 @@ export function CoachingManager() {
         correct_answer: qCorrect,
         explanation: qExpl,
         subject: selectedExam.subjects?.[0]?.name || "General",
-        topic: qTopic
+        topic: qTopic,
+        image_url: qImageUrl
       };
       // Instant local state update
       setSelectedMockTest((prev: any) => ({
@@ -1387,7 +1762,7 @@ export function CoachingManager() {
 
     setIsAddingQuestion(false);
     setEditingQuestionId(null);
-    setQuestionForm({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "", topic: "" });
+    setQuestionForm({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "", topic: "", imageUrl: "" });
 
     try {
       if (currentQId) {
@@ -1398,7 +1773,8 @@ export function CoachingManager() {
             options: qOptions,
             correct_answer: qCorrect,
             explanation: qExpl,
-            topic: qTopic
+            topic: qTopic,
+            image_url: qImageUrl
           })
           .eq("id", currentQId);
         if (qErr) throw qErr;
@@ -1410,7 +1786,8 @@ export function CoachingManager() {
           correct_answer: qCorrect,
           explanation: qExpl,
           subject: selectedExam.subjects?.[0]?.name || "General",
-          topic: qTopic
+          topic: qTopic,
+          image_url: qImageUrl
         };
         const { error: qErr } = await supabase
           .from("coaching_mock_questions")
@@ -1541,6 +1918,7 @@ export function CoachingManager() {
 
           const explanation = row["Explanation"] || row["explanation"] || row["Solution"] || "";
           const topic = row["Topic"] || row["topic"] || "General";
+          const imageUrl = String(row["Image"] || row["Image URL"] || row["ImageUrl"] || row["image_url"] || "").trim();
 
           return {
             id: `imp-${index}-${Math.random().toString(36).substr(2, 6)}`,
@@ -1548,7 +1926,8 @@ export function CoachingManager() {
             options: [optionA, optionB, optionC, optionD],
             correctAnswer,
             explanation,
-            topic
+            topic,
+            imageUrl
           };
         }).filter(q => q.question && q.options[0]);
 
@@ -1581,7 +1960,8 @@ export function CoachingManager() {
           correct_answer: q.correctAnswer,
           explanation: q.explanation,
           topic: q.topic,
-          subject: selectedExam?.subjects?.[0]?.name || "General"
+          subject: selectedExam?.subjects?.[0]?.name || "General",
+          image_url: q.imageUrl || null
         }));
 
         const { error: insErr } = await supabase
@@ -1990,7 +2370,7 @@ export function CoachingManager() {
               <div className="space-y-6">
                 {/* Horizontal tabs */}
                 <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800 pb-px overflow-x-auto scrollbar-none">
-                  {(["info", "syllabus", "mocktests", "live", "announcements", "feedbacks", "doubts"] as const).map((tab) => (
+                  {(["info", "syllabus", "mocktests", "live", "announcements", "feedbacks", "doubts", "enrollments"] as const).map((tab) => (
                     <button
                       key={tab}
                       onClick={() => { setActiveTab(tab); setSelectedSubject(null); setSelectedChapter(null); }}
@@ -2001,7 +2381,8 @@ export function CoachingManager() {
                       }`}
                     >
                       {tab === "doubts" && <HelpCircle className="h-3.5 w-3.5" />}
-                      {tab === "info" ? "Profile" : tab === "syllabus" ? "Syllabus & Chapters" : tab === "mocktests" ? "Mock Tests" : tab === "live" ? "Live Classes" : tab === "announcements" ? "Announcements" : tab === "feedbacks" ? "Reviews & Stars" : "Doubt Desk"}
+                      {tab === "enrollments" && <Lock className="h-3.5 w-3.5 text-amber-600" />}
+                      {tab === "info" ? "Profile" : tab === "syllabus" ? "Syllabus & Chapters" : tab === "mocktests" ? "Mock Tests" : tab === "live" ? "Live Classes" : tab === "announcements" ? "Announcements" : tab === "feedbacks" ? "Reviews & Stars" : tab === "doubts" ? "Doubt Desk" : "Course Access & Approvals"}
                     </button>
                   ))}
                 </div>
@@ -2393,7 +2774,7 @@ export function CoachingManager() {
                               <span className="text-xs font-bold text-slate-500 flex items-center gap-1"><Video className="h-3.5 w-3.5" /> Videos</span>
                               <button
                                 onClick={() => {
-                                  setVideoForm({ id: "", title: "", duration: "15:00", url: "" });
+                                  setVideoForm({ id: "", title: "", duration: "15:00", url: "", thumbnailUrl: "" });
                                   setEditingVideoId(null);
                                   setIsAddingVideo(prev => !prev);
                                 }}
@@ -2413,7 +2794,7 @@ export function CoachingManager() {
                                       onClick={() => {
                                         setIsAddingVideo(false);
                                         setEditingVideoId(null);
-                                        setVideoForm({ id: "", title: "", duration: "15:00", url: "" });
+                                        setVideoForm({ id: "", title: "", duration: "15:00", url: "", thumbnailUrl: "" });
                                       }}
                                       className="text-slate-400 hover:text-slate-600 text-[9px]"
                                     >
@@ -2434,18 +2815,25 @@ export function CoachingManager() {
                                   className="w-full rounded-lg border p-1.5 text-[10px] bg-white dark:bg-slate-900"
                                 />
                                 <input
-                                  type="text" required placeholder="YouTube URL or Video Link"
+                                  type="text" required placeholder="YouTube URL or Video Stream Link"
                                   value={videoForm.url}
                                   onChange={e => setVideoForm({ ...videoForm, url: e.target.value })}
                                   className="w-full rounded-lg border p-1.5 text-[10px] bg-white dark:bg-slate-900"
                                 />
+                                <div className="pt-1">
+                                  <ImageUpload
+                                    value={videoForm.thumbnailUrl}
+                                    onChange={(url) => setVideoForm(prev => ({ ...prev, thumbnailUrl: url }))}
+                                    label="Video Thumbnail Image (File Upload Only)"
+                                  />
+                                </div>
                                 <div className="flex justify-end gap-1">
                                   <button
                                     type="button"
                                     onClick={() => {
                                       setIsAddingVideo(false);
                                       setEditingVideoId(null);
-                                      setVideoForm({ id: "", title: "", duration: "15:00", url: "" });
+                                      setVideoForm({ id: "", title: "", duration: "15:00", url: "", thumbnailUrl: "" });
                                     }}
                                     className="px-2 py-0.5 text-[9px] border rounded"
                                   >
@@ -2463,14 +2851,23 @@ export function CoachingManager() {
                                 <p className="text-[11px] text-slate-400 py-1 italic">No videos added yet.</p>
                               ) : (
                                 (selectedChapter.videos || []).map((v: any) => (
-                                  <div key={v.id} className="group text-[11px] flex justify-between items-center py-1 border-b last:border-0 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 px-1 rounded">
-                                    <span className="truncate pr-2">{v.title}</span>
+                                  <div key={v.id} className="group text-[11px] flex justify-between items-center py-1.5 border-b last:border-0 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 px-1 rounded">
+                                    <div className="flex items-center gap-2 truncate pr-2">
+                                      {(v.thumbnail_url || v.thumbnailUrl) ? (
+                                        <img src={v.thumbnail_url || v.thumbnailUrl} alt="Thumb" className="w-8 h-6 object-cover rounded border border-slate-200 shrink-0" />
+                                      ) : (
+                                        <div className="w-8 h-6 rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                                          <Video className="w-3 h-3 text-slate-400" />
+                                        </div>
+                                      )}
+                                      <span className="truncate font-medium">{v.title}</span>
+                                    </div>
                                     <div className="flex items-center gap-1.5 shrink-0">
                                       <span className="text-slate-400 font-mono text-[10px]">{v.duration}</span>
                                       <button
                                         type="button"
                                         onClick={() => {
-                                          setVideoForm({ id: v.id, title: v.title, duration: v.duration, url: v.url });
+                                          setVideoForm({ id: v.id, title: v.title, duration: v.duration, url: v.url, thumbnailUrl: v.thumbnail_url || v.thumbnailUrl || "" });
                                           setEditingVideoId(v.id);
                                           setIsAddingVideo(true);
                                         }}
@@ -2671,13 +3068,20 @@ export function CoachingManager() {
                                   onChange={e => setPracticeForm({ ...practiceForm, explanation: e.target.value })}
                                   className="w-full rounded-lg border p-1.5 text-[10px] bg-white dark:bg-slate-900"
                                 />
+                                <div className="pt-1">
+                                  <ImageUpload
+                                    value={practiceForm.imageUrl}
+                                    onChange={(url) => setPracticeForm(prev => ({ ...prev, imageUrl: url }))}
+                                    label="Question Image / Diagram (Optional)"
+                                  />
+                                </div>
                                 <div className="flex justify-end gap-1">
                                   <button
                                     type="button"
                                     onClick={() => {
                                       setIsAddingPractice(false);
                                       setEditingPracticeId(null);
-                                      setPracticeForm({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "" });
+                                      setPracticeForm({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "", imageUrl: "" });
                                     }}
                                     className="px-2 py-0.5 text-[9px] border rounded"
                                   >
@@ -2696,9 +3100,13 @@ export function CoachingManager() {
                               ) : (
                                 (selectedChapter.practiceQuestions || []).map((q: any, i: number) => (
                                   <div key={q.id || i} className="group text-[11px] flex justify-between items-center py-1.5 border-b last:border-0 text-slate-600 dark:text-slate-300 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 px-1 rounded">
-                                    <span className="truncate pr-2 flex-1">
-                                      <span className="font-bold text-teal-600 mr-1">Q{i+1}:</span> {q.question}
-                                    </span>
+                                    <div className="truncate pr-2 flex-1 flex items-center gap-1.5">
+                                      <span className="font-bold text-teal-600">Q{i+1}:</span>
+                                      {(q.image_url || q.imageUrl) && (
+                                        <ImageIcon className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                                      )}
+                                      <span className="truncate">{q.question}</span>
+                                    </div>
                                     <div className="flex items-center gap-1 shrink-0">
                                       <button
                                         type="button"
@@ -2710,7 +3118,8 @@ export function CoachingManager() {
                                             optionC: q.options?.[2] || "",
                                             optionD: q.options?.[3] || "",
                                             correctAnswer: q.correct_answer ?? q.correctAnswer ?? 0,
-                                            explanation: q.explanation || ""
+                                            explanation: q.explanation || "",
+                                            imageUrl: q.image_url || q.imageUrl || ""
                                           });
                                           setEditingPracticeId(q.id);
                                           setIsAddingPractice(true);
@@ -2753,7 +3162,7 @@ export function CoachingManager() {
                         </h4>
                         <button
                           onClick={() => {
-                            setMockForm({ id: "", name: "", duration: 1800 });
+                            setMockForm({ id: "", name: "", durationHours: 1, durationMinutes: 30, duration: 5400, attemptType: "multiple", isProctored: false, testCategory: "mock" });
                             setEditingMockId(null);
                             setIsAddingMock(prev => !prev);
                           }}
@@ -2765,7 +3174,7 @@ export function CoachingManager() {
                       </div>
 
                       {isAddingMock && (
-                        <form onSubmit={handleAddMockTest} className="p-3 border rounded-xl bg-slate-50/50 space-y-2 dark:bg-slate-800/40">
+                        <form onSubmit={handleAddMockTest} className="p-3 border rounded-xl bg-slate-50/50 space-y-3 dark:bg-slate-800/40">
                           <div className="flex justify-between items-center text-[11px] font-bold text-slate-500">
                             <span>{editingMockId ? "Update Test Set" : "New Test Set"}</span>
                             {editingMockId && (
@@ -2774,7 +3183,7 @@ export function CoachingManager() {
                                 onClick={() => {
                                   setIsAddingMock(false);
                                   setEditingMockId(null);
-                                  setMockForm({ id: "", name: "", duration: 1800 });
+                                  setMockForm({ id: "", name: "", durationHours: 1, durationMinutes: 30, duration: 5400, attemptType: "multiple", isProctored: false, testCategory: "mock" });
                                 }}
                                 className="text-slate-400 hover:text-slate-600 text-[10px]"
                               >
@@ -2782,91 +3191,312 @@ export function CoachingManager() {
                               </button>
                             )}
                           </div>
-                          <input
-                            type="text" required placeholder="Test Name"
-                            value={mockForm.name}
-                            onChange={e => setMockForm({ ...mockForm, name: e.target.value })}
-                            className="w-full rounded-lg border p-2 text-[11px] bg-white dark:bg-slate-900"
-                          />
-                          <input
-                            type="number" required placeholder="Duration in seconds (e.g. 1800)"
-                            value={mockForm.duration}
-                            onChange={e => setMockForm({ ...mockForm, duration: Number(e.target.value) })}
-                            className="w-full rounded-lg border p-2 text-[11px] bg-white dark:bg-slate-900"
-                          />
-                          <div className="flex justify-end gap-1">
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Test Title</label>
+                            <input
+                              type="text" required placeholder="e.g. CUET PG Full Mock Exam 1"
+                              value={mockForm.name}
+                              onChange={e => setMockForm({ ...mockForm, name: e.target.value })}
+                              className="w-full rounded-lg border p-2 text-[11px] bg-white dark:bg-slate-900"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">
+                              Time Limit (Duration)
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 flex items-center border rounded-lg bg-white dark:bg-slate-900 px-2">
+                                <input
+                                  type="number" min="0" max="12"
+                                  value={mockForm.durationHours}
+                                  onChange={e => setMockForm({ ...mockForm, durationHours: Math.max(0, parseInt(e.target.value) || 0) })}
+                                  className="w-12 p-1.5 text-xs text-center font-bold bg-transparent outline-none"
+                                />
+                                <span className="text-[10px] text-slate-400 font-semibold">hrs</span>
+                              </div>
+                              <div className="flex-1 flex items-center border rounded-lg bg-white dark:bg-slate-900 px-2">
+                                <input
+                                  type="number" min="0" max="59"
+                                  value={mockForm.durationMinutes}
+                                  onChange={e => setMockForm({ ...mockForm, durationMinutes: Math.max(0, Math.min(59, parseInt(e.target.value) || 0)) })}
+                                  className="w-12 p-1.5 text-xs text-center font-bold bg-transparent outline-none"
+                                />
+                                <span className="text-[10px] text-slate-400 font-semibold">mins</span>
+                              </div>
+                            </div>
+                            <span className="text-[10px] text-teal-600 font-medium mt-0.5 block">
+                              Total: {mockForm.durationHours} hr {mockForm.durationMinutes} min ({mockForm.durationHours * 60 + mockForm.durationMinutes} mins)
+                            </span>
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Test Classification</label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setMockForm({ ...mockForm, testType: "mock", attemptType: "multiple", isProctored: false, testCategory: "mock" })}
+                                className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 ${
+                                  mockForm.testType === "mock"
+                                    ? "border-teal-500 bg-teal-50/50 dark:bg-teal-950/20 text-teal-800 dark:text-teal-300 font-bold"
+                                    : "border-slate-200 dark:border-slate-800 hover:bg-slate-50"
+                                }`}
+                              >
+                                <span className="text-xs flex items-center gap-1">🔄 Mock Test</span>
+                                <span className="text-[10px] text-slate-400 font-normal">Multiple attempts allowed</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => setMockForm({ ...mockForm, testType: "mega", attemptType: "once", isProctored: true, testCategory: "final" })}
+                                className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 ${
+                                  mockForm.testType === "mega"
+                                    ? "border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 font-bold"
+                                    : "border-slate-200 dark:border-slate-800 hover:bg-slate-50"
+                                }`}
+                              >
+                                <span className="text-xs flex items-center gap-1">🏆 Mega Test</span>
+                                <span className="text-[10px] text-slate-400 font-normal">1 attempt only • Scheduled</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {mockForm.testType === "mega" && (
+                            <div className="p-3 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 rounded-xl space-y-2.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                                  <Calendar className="w-3.5 h-3.5 text-amber-600" /> Mega Test Schedule & Windows
+                                </span>
+                                <span className="text-[10px] bg-amber-200/70 text-amber-950 px-2 py-0.5 rounded-full font-bold">1 Attempt Only</span>
+                              </div>
+
+                              <div className="grid grid-cols-3 gap-2">
+                                <div>
+                                  <label className="block text-[9px] uppercase font-bold text-slate-500 mb-0.5">Exam Date</label>
+                                  <input
+                                    type="date"
+                                    required
+                                    value={mockForm.scheduledDate}
+                                    onChange={e => setMockForm({ ...mockForm, scheduledDate: e.target.value })}
+                                    className="w-full rounded-lg border p-1.5 text-[11px] bg-white dark:bg-slate-900 font-medium"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[9px] uppercase font-bold text-slate-500 mb-0.5">Start Time</label>
+                                  <input
+                                    type="text"
+                                    placeholder="e.g. 10:00 AM"
+                                    value={mockForm.scheduledStartTime}
+                                    onChange={e => setMockForm({ ...mockForm, scheduledStartTime: e.target.value })}
+                                    className="w-full rounded-lg border p-1.5 text-[11px] bg-white dark:bg-slate-900 font-medium"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[9px] uppercase font-bold text-slate-500 mb-0.5">End Time</label>
+                                  <input
+                                    type="text"
+                                    placeholder="e.g. 01:00 PM"
+                                    value={mockForm.scheduledEndTime}
+                                    onChange={e => setMockForm({ ...mockForm, scheduledEndTime: e.target.value })}
+                                    className="w-full rounded-lg border p-1.5 text-[11px] bg-white dark:bg-slate-900 font-medium"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="pt-1 space-y-1.5 border-t border-amber-200/60 dark:border-amber-800/40">
+                                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={mockForm.sendInAppNotification}
+                                    onChange={e => setMockForm({ ...mockForm, sendInAppNotification: e.target.checked })}
+                                    className="rounded text-amber-600 focus:ring-amber-500 w-3.5 h-3.5"
+                                  />
+                                  <span>🔔 Send In-App Notification to enrolled course students</span>
+                                </label>
+
+                                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={mockForm.sendEmailNotification}
+                                    onChange={e => setMockForm({ ...mockForm, sendEmailNotification: e.target.checked })}
+                                    className="rounded text-amber-600 focus:ring-amber-500 w-3.5 h-3.5"
+                                  />
+                                  <span>✉️ Send Gmail / Email announcement to students</span>
+                                </label>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="pt-1">
+                            <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                              <input
+                                type="checkbox"
+                                checked={mockForm.isProctored}
+                                onChange={e => setMockForm({ ...mockForm, isProctored: e.target.checked })}
+                                className="rounded text-teal-600 focus:ring-teal-500 w-4 h-4"
+                              />
+                              <div className="text-left">
+                                <span className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1">
+                                  <Shield className="w-3.5 h-3.5 text-indigo-600" /> Proctored Test Mode
+                                </span>
+                                <p className="text-[10px] text-slate-400">Strict mode: monitors app switches & disables screenshots.</p>
+                              </div>
+                            </label>
+                          </div>
+
+                          <div className="flex justify-end gap-1 pt-1">
                             <button
                               type="button"
                               onClick={() => {
                                 setIsAddingMock(false);
                                 setEditingMockId(null);
-                                setMockForm({ id: "", name: "", duration: 1800 });
+                                setMockForm({
+                                  id: "",
+                                  name: "",
+                                  testType: "mock",
+                                  durationHours: 1,
+                                  durationMinutes: 30,
+                                  duration: 5400,
+                                  attemptType: "multiple",
+                                  isProctored: false,
+                                  testCategory: "mock",
+                                  scheduledDate: "",
+                                  scheduledStartTime: "10:00 AM",
+                                  scheduledEndTime: "01:00 PM",
+                                  sendInAppNotification: true,
+                                  sendEmailNotification: true,
+                                });
                               }}
                               className="px-2 py-1 text-[10px] border rounded"
                             >
                               Cancel
                             </button>
-                            <button type="submit" className="px-2.5 py-1 text-[10px] bg-teal-600 text-white rounded font-bold">
-                              {editingMockId ? "Update" : "Save"}
+                            <button type="submit" className="px-3 py-1 text-[10px] bg-teal-600 text-white rounded font-bold">
+                              {editingMockId ? "Update Test" : "Save Test"}
                             </button>
                           </div>
                         </form>
                       )}
 
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {(selectedExam.mockTests || []).length === 0 ? (
-                          <p className="text-xs text-slate-400 py-4 text-center">No mock tests yet. Click + to create one.</p>
+                          <p className="text-xs text-slate-400 py-4 text-center">No tests yet. Click + to create one.</p>
                         ) : (
-                          (selectedExam.mockTests || []).map((t: any) => (
-                            <div
-                              key={t.id}
-                              className={`group relative w-full px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors ${
-                                selectedMockTest?.id === t.id ? "bg-slate-100 dark:bg-slate-800 text-indigo-500" : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                              }`}
-                            >
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedMockTest(t);
-                                  refreshSelectedMockTest(t.id);
-                                }}
-                                className="flex-1 text-left truncate"
+                          (selectedExam.mockTests || []).map((t: any) => {
+                            const totSec = t.duration || 5400;
+                            const h = Math.floor(totSec / 3600);
+                            const m = Math.floor((totSec % 3600) / 60);
+                            const isOnce = (t.attempt_type || t.attemptType) === "once";
+                            const isProc = Boolean(t.is_proctored || t.isProctored);
+                            const isMega = t.test_type === "mega" || (isOnce && (t.scheduled_date || t.scheduled_start_time));
+
+                            return (
+                              <div
+                                key={t.id}
+                                className={`group relative w-full p-2.5 rounded-xl text-xs font-bold flex flex-col gap-1.5 transition-colors border ${
+                                  selectedMockTest?.id === t.id ? "bg-slate-100 dark:bg-slate-800 border-indigo-400 text-indigo-600 dark:text-indigo-400" : "hover:bg-slate-50 dark:hover:bg-slate-800/40 border-slate-200 dark:border-slate-800"
+                                }`}
                               >
-                                <span className="truncate">{t.name}</span>
-                              </button>
-                              <div className="flex items-center gap-1 shrink-0 ml-2">
-                                <span className="text-[10px] text-slate-400 font-normal group-hover:hidden">
-                                  {(t.questions_count ?? t.questions?.length ?? 0)} Qs
-                                </span>
-                                <div className="hidden group-hover:flex items-center gap-0.5">
+                                <div className="flex items-center justify-between w-full">
                                   <button
                                     type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setMockForm({ id: t.id, name: t.name, duration: t.duration });
-                                      setEditingMockId(t.id);
-                                      setIsAddingMock(true);
+                                    onClick={() => {
+                                      setSelectedMockTest(t);
+                                      refreshSelectedMockTest(t.id);
                                     }}
-                                    className="p-1 text-slate-400 hover:text-indigo-600 rounded"
-                                    title="Edit Test Set"
+                                    className="flex-1 text-left truncate font-bold text-slate-800 dark:text-slate-100"
                                   >
-                                    <Edit2 className="h-3 w-3" />
+                                    <span className="truncate">{t.name}</span>
                                   </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteMockTest(t.id, t.name);
-                                    }}
-                                    className="p-1 text-slate-400 hover:text-rose-600 rounded"
-                                    title="Delete Test Set"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </button>
+                                  <div className="flex items-center gap-1 shrink-0 ml-2">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setMockForm({
+                                          id: t.id,
+                                          name: t.name,
+                                          testType: isMega ? "mega" : "mock",
+                                          durationHours: h,
+                                          durationMinutes: m,
+                                          duration: totSec,
+                                          attemptType: isOnce ? "once" : "multiple",
+                                          isProctored: isProc,
+                                          testCategory: t.test_category || (isOnce ? "final" : "mock"),
+                                          scheduledDate: t.scheduled_date || "",
+                                          scheduledStartTime: t.scheduled_start_time || "10:00 AM",
+                                          scheduledEndTime: t.scheduled_end_time || "01:00 PM",
+                                          sendInAppNotification: true,
+                                          sendEmailNotification: true,
+                                        });
+                                        setEditingMockId(t.id);
+                                        setIsAddingMock(true);
+                                      }}
+                                      className="p-1 text-slate-400 hover:text-indigo-600 rounded"
+                                      title="Edit Test Set"
+                                    >
+                                      <Edit2 className="h-3 w-3" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteMockTest(t.id, t.name);
+                                      }}
+                                      className="p-1 text-slate-400 hover:text-rose-600 rounded"
+                                      title="Delete Test Set"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </button>
+                                  </div>
                                 </div>
+
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-normal">
+                                    {(t.questions_count ?? t.questions?.length ?? 0)} Qs
+                                  </span>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 font-normal flex items-center gap-0.5">
+                                    <Clock className="w-2.5 h-2.5" /> {h > 0 ? `${h}h ` : ""}{m}m
+                                  </span>
+                                  {isProc && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 font-medium flex items-center gap-0.5">
+                                      <Shield className="w-2.5 h-2.5" /> Proctored
+                                    </span>
+                                  )}
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium flex items-center gap-0.5 ${
+                                    isMega || isOnce ? "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300" : "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-300"
+                                  }`}>
+                                    {isMega || isOnce ? <Lock className="w-2.5 h-2.5" /> : <RotateCcw className="w-2.5 h-2.5" />}
+                                    {isMega ? "🏆 Mega Test" : isOnce ? "1 Attempt" : "Multi-attempt"}
+                                  </span>
+                                  {t.scheduled_date && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100/70 text-amber-900 font-bold flex items-center gap-0.5">
+                                      <Calendar className="w-2.5 h-2.5" /> {t.scheduled_date} {t.scheduled_start_time ? `• ${t.scheduled_start_time}` : ""}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {(isMega || isOnce) && (
+                                  <div className="flex items-center gap-1.5 pt-1.5 mt-1 border-t border-slate-200/60 dark:border-slate-800">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenExceptionsModal(t)}
+                                      className="flex-1 py-1 px-2 text-[10px] font-bold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 flex items-center justify-center gap-1"
+                                    >
+                                      🎟️ Permissions & Missed
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenEmailBlastModal(t)}
+                                      className="py-1 px-2.5 text-[10px] font-bold rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 flex items-center gap-1"
+                                    >
+                                      ✉️ Gmail Blast
+                                    </button>
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          ))
+                            );
+                          })
                         )}
                       </div>
                     </div>
@@ -2958,13 +3588,20 @@ export function CoachingManager() {
                                 onChange={e => setQuestionForm({ ...questionForm, explanation: e.target.value })}
                                 className="w-full rounded-xl border p-2 text-xs bg-white dark:bg-slate-900"
                               />
+                              <div className="pt-1">
+                                <ImageUpload
+                                  value={questionForm.imageUrl}
+                                  onChange={(url) => setQuestionForm(prev => ({ ...prev, imageUrl: url }))}
+                                  label="Question Image / Diagram (File Upload Only)"
+                                />
+                              </div>
                               <div className="flex justify-end gap-2">
                                 <button
                                   type="button"
                                   onClick={() => {
                                     setIsAddingQuestion(false);
                                     setEditingQuestionId(null);
-                                    setQuestionForm({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "", topic: "" });
+                                    setQuestionForm({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "", topic: "", imageUrl: "" });
                                   }}
                                   className="px-3 py-1 text-xs border rounded-lg"
                                 >
@@ -2997,7 +3634,8 @@ export function CoachingManager() {
                                             optionD: q.options?.[3] || "",
                                             correctAnswer: q.correct_answer ?? q.correctAnswer ?? 0,
                                             explanation: q.explanation || "",
-                                            topic: q.topic || ""
+                                            topic: q.topic || "",
+                                            imageUrl: q.image_url || q.imageUrl || ""
                                           });
                                           setEditingQuestionId(q.id);
                                           setIsAddingQuestion(true);
@@ -3018,6 +3656,11 @@ export function CoachingManager() {
                                     </div>
                                   </div>
                                   <p className="text-xs font-bold text-slate-800 dark:text-slate-100">{q.question}</p>
+                                  {(q.image_url || q.imageUrl) && (
+                                    <div className="my-2 p-1 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 inline-block">
+                                      <img src={q.image_url || q.imageUrl} alt="Question Figure" className="max-h-36 rounded object-contain" />
+                                    </div>
+                                  )}
                                   <div className="grid gap-1 md:grid-cols-2 text-[10px] text-slate-500">
                                     {q.options?.map((opt: string, optIdx: number) => (
                                       <span key={optIdx} className={optIdx === q.correctAnswer || optIdx === q.correct_answer ? "text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded" : "px-1.5 py-0.5"}>
@@ -3403,6 +4046,167 @@ export function CoachingManager() {
                     )}
                   </div>
                 )}
+
+                {/* TAB 8: Course Access Approvals & Student Enrollments */}
+                {activeTab === "enrollments" && (
+                  <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 space-y-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+                      <div>
+                        <h4 className="text-base font-extrabold flex items-center gap-2">
+                          <Lock className="h-5 w-5 text-amber-600" />
+                          Student Course Access & Approvals
+                        </h4>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Manage course enrollment permissions for <span className="font-bold text-teal-600">{selectedExam.fullName || selectedExam.id}</span>. Students cannot access video lessons, materials, or tests until approved.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => loadEnrollments(selectedExam.id)}
+                          className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5"
+                        >
+                          <RefreshCw className={`h-3.5 w-3.5 ${loadingEnrollments ? "animate-spin" : ""}`} /> Refresh
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowDirectEnrollModal(true)}
+                          className="px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                        >
+                          <Plus className="h-4 w-4" /> Directly Enroll Student
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Stats overview */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80">
+                        <span className="text-[10px] uppercase font-bold text-amber-900">Pending Approvals</span>
+                        <p className="text-2xl font-black text-amber-950 mt-1">
+                          {enrollments.filter(e => e.status === "pending").length}
+                        </p>
+                        <span className="text-[10px] text-amber-800">Awaiting mentor/admin approval</span>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80">
+                        <span className="text-[10px] uppercase font-bold text-emerald-900">Enrolled Students</span>
+                        <p className="text-2xl font-black text-emerald-950 mt-1">
+                          {enrollments.filter(e => e.status === "active").length}
+                        </p>
+                        <span className="text-[10px] text-emerald-800">Full course access granted</span>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                        <span className="text-[10px] uppercase font-bold text-slate-500">Rejected Requests</span>
+                        <p className="text-2xl font-black text-slate-800 mt-1">
+                          {enrollments.filter(e => e.status === "rejected").length}
+                        </p>
+                        <span className="text-[10px] text-slate-400">Declined access</span>
+                      </div>
+                    </div>
+
+                    {/* Pending Requests Section */}
+                    <div className="space-y-3">
+                      <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                        <Clock className="h-4 w-4 text-amber-500" /> Pending Access Requests ({enrollments.filter(e => e.status === "pending").length})
+                      </h5>
+
+                      {loadingEnrollments ? (
+                        <p className="text-xs text-slate-400 py-4">Checking enrollment requests...</p>
+                      ) : enrollments.filter(e => e.status === "pending").length === 0 ? (
+                        <div className="p-4 rounded-2xl border border-dashed border-slate-200 text-center">
+                          <p className="text-xs text-slate-400">No pending access requests. All student applications have been reviewed.</p>
+                        </div>
+                      ) : (
+                        <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+                          {enrollments
+                            .filter(e => e.status === "pending")
+                            .map(req => (
+                              <div key={req.id} className="p-3.5 bg-amber-50/20 hover:bg-amber-50/40 flex items-center justify-between gap-4">
+                                <div className="space-y-0.5">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-xs text-slate-800 dark:text-slate-100">
+                                      {req.student_name || "Student"}
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800">
+                                      Pending Approval
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-slate-500">{req.student_email || "No email provided"}</p>
+                                  <p className="text-[10px] text-slate-400">
+                                    Requested on: {new Date(req.requested_at || req.created_at).toLocaleString()}
+                                  </p>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleApproveEnrollment(req.id, req.user_id, req.student_name)}
+                                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs"
+                                  >
+                                    <Check className="h-3.5 w-3.5" /> Approve Access
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRejectEnrollment(req.id)}
+                                    className="px-3 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-semibold"
+                                  >
+                                    Decline
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Active Enrolled Students */}
+                    <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+                      <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                        <Shield className="h-4 w-4 text-emerald-600" /> Active Enrolled Students ({enrollments.filter(e => e.status === "active").length})
+                      </h5>
+
+                      {enrollments.filter(e => e.status === "active").length === 0 ? (
+                        <div className="p-4 rounded-2xl border border-dashed border-slate-200 text-center">
+                          <p className="text-xs text-slate-400">No active students enrolled yet.</p>
+                        </div>
+                      ) : (
+                        <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 max-h-80 overflow-y-auto">
+                          {enrollments
+                            .filter(e => e.status === "active")
+                            .map(st => (
+                              <div key={st.id} className="p-3 bg-white dark:bg-slate-900 flex items-center justify-between gap-4">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-xs text-slate-800 dark:text-slate-100">
+                                      {st.student_name || "Enrolled Student"}
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800">
+                                      Active
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-slate-500">{st.student_email || "No email"}</p>
+                                  {st.approved_at && (
+                                    <p className="text-[10px] text-slate-400">
+                                      Approved on: {new Date(st.approved_at).toLocaleDateString()}
+                                    </p>
+                                  )}
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleRejectEnrollment(st.id)}
+                                  className="px-2.5 py-1 text-[11px] text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg font-medium"
+                                  title="Revoke student course access"
+                                >
+                                  Revoke
+                                </button>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-white p-12 text-center h-64 dark:border-slate-800 dark:bg-slate-900">
@@ -3517,6 +4321,316 @@ export function CoachingManager() {
               >
                 {isImporting ? "Saving to Database..." : `Confirm & Import ${parsedQuestions.length} Questions`}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 1. Direct Student Enrollment Modal */}
+      {showDirectEnrollModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fade-in backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            <div className="flex justify-between items-center border-b pb-3 shrink-0">
+              <div>
+                <h3 className="text-base font-bold flex items-center gap-2">
+                  <Plus className="h-5 w-5 text-teal-600" />
+                  Directly Enroll Student
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Grant immediate active course access to a registered user for <span className="font-bold text-teal-600">{selectedExam?.fullName || selectedExam?.id}</span>.
+                </p>
+              </div>
+              <button onClick={() => setShowDirectEnrollModal(false)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="shrink-0">
+              <input
+                type="text"
+                placeholder="Search registered users by name or email..."
+                value={searchEnrollUser}
+                onChange={e => setSearchEnrollUser(e.target.value)}
+                className="w-full rounded-xl border p-2.5 text-xs bg-slate-50 dark:bg-slate-800"
+              />
+            </div>
+
+            <div className="flex-1 overflow-y-auto border rounded-xl divide-y text-xs min-h-[200px]">
+              {allRegisteredUsers
+                .filter(u => {
+                  if (!searchEnrollUser.trim()) return true;
+                  const q = searchEnrollUser.toLowerCase();
+                  return (
+                    (u.email && u.email.toLowerCase().includes(q)) ||
+                    (u.full_name && u.full_name.toLowerCase().includes(q)) ||
+                    (u.username && u.username.toLowerCase().includes(q))
+                  );
+                })
+                .slice(0, 30)
+                .map(user => {
+                  const already = enrollments.some(e => e.user_id === user.id && e.status === "active");
+                  return (
+                    <div key={user.id} className="p-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <div>
+                        <p className="font-bold text-slate-800 dark:text-slate-100">{user.full_name || user.username || "Student"}</p>
+                        <p className="text-slate-400 text-[11px]">{user.email}</p>
+                      </div>
+                      {already ? (
+                        <span className="px-2.5 py-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 rounded-lg">Enrolled</span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleDirectEnroll(user.id)}
+                          className="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold"
+                        >
+                          Enroll Now
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowDirectEnrollModal(false)}
+                className="px-4 py-1.5 border rounded-xl text-xs font-bold hover:bg-slate-100"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Single Student Mega Test Permission / Missed Tests Modal */}
+      {showExceptionModal && selectedTestForExceptions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fade-in backdrop-blur-xs">
+          <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center border-b pb-3 shrink-0">
+              <div>
+                <h3 className="text-base font-bold flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-amber-600" />
+                  Missed Test Permissions & Exceptions
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Test: <span className="font-bold text-amber-600">{selectedTestForExceptions.name}</span> • Explicit single-student retake/attempt grant.
+                </p>
+              </div>
+              <button onClick={() => setShowExceptionModal(false)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Grant Form if a student is selected */}
+            {selectedStudentForException && (
+              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 space-y-3 shrink-0">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-amber-950 dark:text-amber-200">
+                    Grant Permission for: {selectedStudentForException.student_name} ({selectedStudentForException.student_email})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStudentForException(null)}
+                    className="text-xs text-amber-800 underline"
+                  >
+                    Cancel Selection
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Access Window Duration</label>
+                    <select
+                      value={exceptionHours}
+                      onChange={e => setExceptionHours(Number(e.target.value))}
+                      className="w-full rounded-xl border p-2 text-xs bg-white dark:bg-slate-800 font-medium"
+                    >
+                      <option value={12}>12 Hours from now</option>
+                      <option value={24}>24 Hours (1 Day)</option>
+                      <option value={48}>48 Hours (2 Days)</option>
+                      <option value={72}>72 Hours (3 Days)</option>
+                      <option value={168}>7 Days</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Reason / Note</label>
+                    <input
+                      type="text"
+                      value={exceptionReason}
+                      onChange={e => setExceptionReason(e.target.value)}
+                      placeholder="e.g. Medical emergency, network outage"
+                      className="w-full rounded-xl border p-2 text-xs bg-white dark:bg-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    onClick={handleGrantSingleStudentException}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Check className="h-4 w-4" /> Confirm & Grant Permission (Dispatches In-App Alert)
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Enrolled Students & Test Status */}
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
+                Course Enrolled Students ({enrollments.filter(e => e.status === "active").length})
+              </span>
+
+              {enrollments.filter(e => e.status === "active").length === 0 ? (
+                <p className="text-xs text-slate-400 py-6 text-center">No enrolled students in this course yet.</p>
+              ) : (
+                <div className="border rounded-2xl divide-y text-xs">
+                  {enrollments
+                    .filter(e => e.status === "active")
+                    .map(st => {
+                      const att = testAttemptsForSelectedTest.find(a => a.user_id === st.user_id);
+                      const exc = testExceptions.find(x => x.user_id === st.user_id && new Date(x.valid_until).getTime() > Date.now());
+
+                      return (
+                        <div key={st.id} className="p-3 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-850/40">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-800 dark:text-slate-100">{st.student_name || "Student"}</span>
+                              {att ? (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800">
+                                  Attempted • Score: {att.score}/{att.max_score || 100}
+                                </span>
+                              ) : exc ? (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-purple-100 text-purple-800">
+                                  ⭐ Exception Active (Valid until {new Date(exc.valid_until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-100 text-rose-800">
+                                  Missed / Not Attempted
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-slate-400 text-[11px]">{st.student_email}</p>
+                          </div>
+
+                          <div className="shrink-0">
+                            {exc ? (
+                              <span className="text-[11px] text-purple-600 font-bold">Permission Granted</span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedStudentForException(st)}
+                                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs"
+                              >
+                                🎟️ Grant Retake / Permission
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowExceptionModal(false)}
+                className="px-4 py-1.5 border rounded-xl text-xs font-bold hover:bg-slate-100"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Gmail / Email Blast Modal */}
+      {showEmailBlastModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fade-in backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            <div className="flex justify-between items-center border-b pb-3 shrink-0">
+              <div>
+                <h3 className="text-base font-bold flex items-center gap-2">
+                  <Send className="h-5 w-5 text-indigo-600" />
+                  Gmail & Email Announcement
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Notify all enrolled students about this scheduled Mega Test.
+                </p>
+              </div>
+              <button onClick={() => setShowEmailBlastModal(false)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800/40 rounded-xl space-y-1">
+                <span className="font-bold text-indigo-950 dark:text-indigo-200">
+                  Recipients ({emailBlastData.recipients.length} Enrolled Students):
+                </span>
+                <p className="text-[11px] text-slate-500 max-h-16 overflow-y-auto break-all">
+                  {emailBlastData.recipients.length > 0
+                    ? emailBlastData.recipients.join(", ")
+                    : "No student emails found in active enrollments."}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 dark:text-slate-300">Subject</label>
+                <div className="p-2.5 border rounded-xl bg-slate-50 dark:bg-slate-800 font-mono text-[11px]">
+                  [Relicus] Scheduled Mega Test: {emailBlastData.testName}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 dark:text-slate-300">Message Body</label>
+                <div className="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800 whitespace-pre-wrap text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+{`Dear Student,
+
+Your scheduled Mega Test "${emailBlastData.testName}" for ${selectedExam?.fullName || selectedExam?.id} is coming up!
+
+📅 Date: ${emailBlastData.date}
+⏰ Time: ${emailBlastData.startTime} - ${emailBlastData.endTime}
+⏱️ Duration: ${emailBlastData.duration}
+🛡️ Mode: Proctored Exam (Strict anti-cheat monitoring)
+
+IMPORTANT:
+This is a Mega Test and can ONLY be attempted ONCE. Please ensure a stable internet connection and attend during the scheduled window.
+
+Good luck with your preparation!
+Relicus Entrance Coaching Team`}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center pt-3 border-t shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowEmailBlastModal(false)}
+                className="px-4 py-1.5 border rounded-xl text-xs font-bold hover:bg-slate-100"
+              >
+                Close
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const subject = `[Relicus] Scheduled Mega Test: ${emailBlastData.testName}`;
+                    const body = `Dear Student,\n\nYour scheduled Mega Test "${emailBlastData.testName}" for ${selectedExam?.fullName || selectedExam?.id} is coming up!\n\n📅 Date: ${emailBlastData.date}\n⏰ Time: ${emailBlastData.startTime} - ${emailBlastData.endTime}\n⏱️ Duration: ${emailBlastData.duration}\n🛡️ Mode: Proctored Exam (Strict anti-cheat monitoring)\n\nIMPORTANT:\nThis is a Mega Test and can ONLY be attempted ONCE. Please ensure a stable internet connection and attend during the scheduled window.\n\nGood luck with your preparation!\nRelicus Entrance Coaching Team`;
+                    const mailtoUrl = `mailto:?bcc=${emailBlastData.recipients.join(",")}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                    window.open(mailtoUrl, "_blank");
+                  }}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                >
+                  <Send className="h-3.5 w-3.5" /> Open in Gmail (BCC All) 🚀
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Image,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -32,10 +33,16 @@ import {
   Sparkles,
   Flame,
   Target,
+  Shield,
+  Lock,
+  RotateCcw,
+  Clock,
+  Trophy,
 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useCoachingStore } from "../../store/coaching.store";
+import { useAuthStore } from "../../store/auth.store";
 import { supabase } from "../../lib/supabase";
 import { Typography } from "../../components/Typography";
 import { BentoCard, BentoCardPressable } from "../../components/BentoCard";
@@ -68,7 +75,20 @@ export default function CoachingDashboard() {
     fetchCoachingData,
     notesByExam,
     clearTestAttempts,
+    hasAttemptedTest,
+    getLatestTestAttempt,
+    userEnrollments,
+    fetchUserEnrollment,
+    requestCourseEnrollment,
+    getMegaTestAccessStatus,
+    fetchStudentExceptions,
   } = useCoachingStore();
+
+  const currentUser = useAuthStore((s) => s.currentUser);
+  const isAdmin = currentUser?.role === "admin";
+  const enrollmentStatus = userEnrollments[examType]?.status || "none";
+  const hasAccess = isAdmin || enrollmentStatus === "active";
+  const [isRequestingAccess, setIsRequestingAccess] = useState(false);
 
   const exam = exams.find((e) => e.id?.toLowerCase() === examType.toLowerCase()) || null;
   const examTitle = toTitleCase(exam?.full_name || exam?.id || examType);
@@ -204,6 +224,8 @@ export default function CoachingDashboard() {
 
   useEffect(() => {
     if (examType) {
+      fetchUserEnrollment(examType);
+      fetchStudentExceptions();
       supabase
         .from("coaching_announcements")
         .select("*")
@@ -213,7 +235,7 @@ export default function CoachingDashboard() {
           if (data) setAnnouncements(data);
         });
     }
-  }, [examType]);
+  }, [examType, fetchUserEnrollment, fetchStudentExceptions]);
 
   const handleToggleVideoWatched = async (video: any) => {
     const newWatched = !video.is_watched;
@@ -252,9 +274,9 @@ export default function CoachingDashboard() {
     }
   };
 
-  const handleStartTest = (test: any) => {
+  const handleStartTest = (test: any, viewOnly = false) => {
     const questionCount = test.questions_count ?? test.questions?.length ?? 0;
-    if (questionCount === 0) {
+    if (questionCount === 0 && !viewOnly) {
       Alert.alert(
         "No Questions Added",
         `"${test.name}" does not have any questions yet. Please add questions to this test from the Admin Panel first.`
@@ -266,8 +288,11 @@ export default function CoachingDashboard() {
       params: {
         id: test.id,
         title: test.name,
-        duration: String(test.duration || 1800),
+        duration: String(test.duration || 5400),
         examType: examType,
+        attemptType: test.attempt_type || "multiple",
+        isProctored: test.is_proctored ? "1" : "0",
+        viewOnly: viewOnly ? "1" : "0",
       },
     });
   };
@@ -294,6 +319,60 @@ export default function CoachingDashboard() {
       <View className="flex-1 bg-surface-primary justify-center items-center">
         <ActivityIndicator size="large" color="#1C4966" />
         <Typography color="secondary" className="mt-4 text-sm">Loading Preparation Hub...</Typography>
+      </View>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <View className="flex-1 bg-surface-primary">
+        <SafeAreaView className="flex-1 px-6 justify-center items-center">
+          <View className="w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/20 items-center justify-center mb-6">
+            <Lock size={36} color="#D97706" />
+          </View>
+          <Typography variant="title" weight="bold" color="primary" className="text-xl text-center mb-2">
+            Course Access Restricted
+          </Typography>
+          <Typography color="secondary" className="text-center text-sm mb-6 leading-relaxed px-4">
+            {enrollmentStatus === "pending"
+              ? "Your access request to this entrance coaching program is pending Admin approval. You will receive an in-app notification once approved!"
+              : "This course is restricted to enrolled students. Please request access from the admin to unlock all video lessons, study materials, and tests."}
+          </Typography>
+
+          <View className="w-full gap-3">
+            {enrollmentStatus === "pending" ? (
+              <Button disabled variant="secondary" className="w-full py-3.5 rounded-2xl bg-amber-50 border border-amber-200">
+                <Typography weight="bold" className="text-amber-900 text-sm">⏳ Request Pending Approval</Typography>
+              </Button>
+            ) : (
+              <Button
+                onPress={async () => {
+                  setIsRequestingAccess(true);
+                  await requestCourseEnrollment(examType, currentUser?.username, currentUser?.email);
+                  setIsRequestingAccess(false);
+                  Alert.alert("Request Submitted", "Admin has been notified of your access request.");
+                }}
+                variant="primary"
+                className="w-full py-3.5 rounded-2xl"
+                disabled={isRequestingAccess}
+              >
+                {isRequestingAccess ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Typography weight="bold" color="inverse" className="text-sm">Request Course Access 🚀</Typography>
+                )}
+              </Button>
+            )}
+
+            <Button
+              onPress={() => router.back()}
+              variant="outline"
+              className="w-full py-3 rounded-2xl border border-border-subtle"
+            >
+              <Typography weight="bold" color="secondary" className="text-xs">Back to Courses</Typography>
+            </Button>
+          </View>
+        </SafeAreaView>
       </View>
     );
   }
@@ -643,35 +722,72 @@ export default function CoachingDashboard() {
                             <Typography weight="bold" color="primary" className="text-xs">Video Lessons</Typography>
                           </View>
                           {chapterVideos.length > 0 ? (
-                            <View className="gap-2">
-                              {chapterVideos.map((v: any) => (
-                                <TouchableOpacity
-                                  key={v.id}
-                                  onPress={() => handleOpenVideo(v, chapter)}
-                                  className="flex-row items-center justify-between p-2.5 rounded-xl bg-surface-secondary/50 border border-border-subtle active:bg-surface-secondary"
-                                >
-                                  <View className="flex-1 mr-2">
-                                    <Typography weight="bold" color="primary" numberOfLines={1} className="text-xs">
-                                      {v.title}
-                                    </Typography>
-                                    <Typography variant="caption" color="secondary" className="text-[10px]">
-                                      {v.duration || "Video Lesson"}
-                                    </Typography>
-                                  </View>
-                                  <View className="flex-row items-center gap-1.5">
-                                    {v.is_watched && (
-                                      <View className="flex-row items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                                        <CheckCircle size={10} color="#059669" />
-                                        <Typography variant="caption" weight="bold" className="text-emerald-700 text-[10px]">Watched</Typography>
+                            <View className="gap-2.5">
+                              {chapterVideos.map((v: any) => {
+                                const thumb = v.thumbnail_url || v.thumbnailUrl;
+                                return (
+                                  <TouchableOpacity
+                                    key={v.id}
+                                    onPress={() => handleOpenVideo(v, chapter)}
+                                    className="p-2.5 rounded-2xl bg-surface-secondary/40 border border-border-subtle active:bg-surface-secondary gap-2 shadow-2xs"
+                                    activeOpacity={0.8}
+                                  >
+                                    {thumb ? (
+                                      <View className="relative w-full h-36 rounded-xl overflow-hidden bg-slate-900 border border-border-subtle">
+                                        <Image
+                                          source={{ uri: thumb }}
+                                          className="w-full h-full"
+                                          resizeMode="cover"
+                                        />
+                                        <View className="absolute inset-0 bg-black/25 items-center justify-center">
+                                          <View className="w-10 h-10 rounded-full bg-white/90 items-center justify-center shadow-md">
+                                            <Play size={18} color="#1C4966" fill="#1C4966" className="ml-0.5" />
+                                          </View>
+                                        </View>
+                                        {Boolean(v.duration) && (
+                                          <View className="absolute bottom-2 right-2 bg-black/75 px-2 py-0.5 rounded-md">
+                                            <Typography variant="caption" className="text-white text-[10px] font-bold">
+                                              {v.duration}
+                                            </Typography>
+                                          </View>
+                                        )}
+                                      </View>
+                                    ) : (
+                                      <View className="w-full h-20 rounded-xl bg-primary/10 border border-primary/20 items-center justify-center flex-row gap-2">
+                                        <View className="w-8 h-8 rounded-full bg-primary items-center justify-center shadow-xs">
+                                          <Play size={14} color="white" fill="white" className="ml-0.5" />
+                                        </View>
+                                        <Typography variant="caption" weight="bold" color="primary" className="text-xs">
+                                          Watch Lecture {v.duration ? `• ${v.duration}` : ""}
+                                        </Typography>
                                       </View>
                                     )}
-                                    <View className="flex-row items-center gap-1 bg-primary px-2.5 py-1 rounded-lg">
-                                      <Play size={10} color="white" fill="white" />
-                                      <Typography variant="caption" weight="bold" color="inverse" className="text-[10px]">Play</Typography>
+
+                                    <View className="flex-row items-center justify-between px-1">
+                                      <View className="flex-1 mr-2">
+                                        <Typography weight="bold" color="primary" numberOfLines={2} className="text-xs leading-snug">
+                                          {v.title}
+                                        </Typography>
+                                        <Typography variant="caption" color="secondary" className="text-[10px] mt-0.5">
+                                          {v.duration || "Video Lesson"}
+                                        </Typography>
+                                      </View>
+                                      <View className="flex-row items-center gap-1.5 shrink-0">
+                                        {v.is_watched && (
+                                          <View className="flex-row items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                            <CheckCircle size={10} color="#059669" />
+                                            <Typography variant="caption" weight="bold" className="text-emerald-700 text-[10px]">Watched</Typography>
+                                          </View>
+                                        )}
+                                        <View className="flex-row items-center gap-1 bg-primary px-2.5 py-1 rounded-lg">
+                                          <Play size={10} color="white" fill="white" />
+                                          <Typography variant="caption" weight="bold" color="inverse" className="text-[10px]">Play</Typography>
+                                        </View>
+                                      </View>
                                     </View>
-                                  </View>
-                                </TouchableOpacity>
-                              ))}
+                                  </TouchableOpacity>
+                                );
+                              })}
                             </View>
                           ) : (
                             <Typography variant="caption" color="secondary" className="italic px-1 text-xs">
@@ -833,37 +949,194 @@ export default function CoachingDashboard() {
           </MotiView>
         )}
 
-        {/* MOCK TESTS TAB */}
+        {/* MOCK & REGULAR TESTS TAB */}
         {activeTab === "tests" && (
-          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-3">
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-3.5">
             {mockTests.length > 0 ? (
-              mockTests.map((test: any) => (
-                <BentoCard key={test.id} variant="secondary" padding="md" className="border border-border-subtle bg-white flex-row items-center shadow-xs">
-                  <View className="flex-1 pr-3">
-                    <Typography weight="bold" color="primary" className="text-sm mb-1">{test.name}</Typography>
-                    <Typography variant="caption" color="secondary" className="text-xs">
-                      {test.questions_count ?? 0} Questions • {Math.round((test.duration || 1800) / 60)} Mins
-                    </Typography>
-                  </View>
-                  <Button 
-                    size="sm" 
-                    variant="primary"
-                    onPress={() => handleStartTest(test)}
+              mockTests.map((test: any) => {
+                const isOnce = (test.attempt_type || test.attemptType) === "once";
+                const isProc = Boolean(test.is_proctored || test.isProctored);
+                const isMega = test.test_type === "mega" || (isOnce && (test.scheduled_date || test.scheduled_start_time));
+                const accessStatus = getMegaTestAccessStatus(test);
+                const totSec = test.duration || 5400;
+                const h = Math.floor(totSec / 3600);
+                const m = Math.floor((totSec % 3600) / 60);
+                const timeStr = h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+                const pastAttempt = testAttempts.find((a) => String(a.testId) === String(test.id));
+
+                return (
+                  <BentoCard
+                    key={test.id}
+                    variant="secondary"
+                    padding="md"
+                    className={`border bg-white shadow-xs gap-3 ${
+                      accessStatus.status === "exception_granted"
+                        ? "border-amber-400 bg-amber-50/20"
+                        : "border-border-subtle"
+                    }`}
                   >
-                    Start Test
-                  </Button>
-                </BentoCard>
-              ))
+                    <View className="flex-row items-start justify-between">
+                      <View className="flex-1 mr-2">
+                        <View className="flex-row items-center gap-1.5 flex-wrap mb-1">
+                          {isMega ? (
+                            <View className="flex-row items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/30">
+                              <Trophy size={11} color="#B45309" />
+                              <Typography variant="caption" weight="bold" className="text-amber-950 text-[10px]">
+                                Mega Test (1 Attempt Only)
+                              </Typography>
+                            </View>
+                          ) : (
+                            <View className="flex-row items-center gap-1 bg-teal-500/10 px-2 py-0.5 rounded-md border border-teal-500/30">
+                              <RotateCcw size={10} color="#0F766E" />
+                              <Typography variant="caption" weight="bold" className="text-teal-950 text-[10px]">
+                                Mock Test (Multiple Attempts)
+                              </Typography>
+                            </View>
+                          )}
+
+                          {isProc && (
+                            <View className="flex-row items-center gap-1 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
+                              <Shield size={10} color="#4F46E5" />
+                              <Typography variant="caption" weight="bold" className="text-indigo-700 text-[10px]">
+                                Proctored
+                              </Typography>
+                            </View>
+                          )}
+                        </View>
+
+                        <Typography weight="bold" color="primary" className="text-sm leading-snug">
+                          {test.name}
+                        </Typography>
+
+                        <View className="flex-row items-center gap-1.5 flex-wrap mt-1.5">
+                          <View className="flex-row items-center gap-1 bg-surface-secondary/70 px-2 py-0.5 rounded-md border border-border-subtle">
+                            <Clock size={11} color="#64748B" />
+                            <Typography variant="caption" className="text-slate-700 text-[10px] font-bold">
+                              {timeStr}
+                            </Typography>
+                          </View>
+
+                          <View className="bg-surface-secondary/70 px-2 py-0.5 rounded-md border border-border-subtle">
+                            <Typography variant="caption" className="text-slate-700 text-[10px] font-bold">
+                              {test.questions_count ?? test.questions?.length ?? 0} Qs
+                            </Typography>
+                          </View>
+
+                          {test.scheduled_date && (
+                            <View className="flex-row items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+                              <Calendar size={10} color="#2563EB" />
+                              <Typography variant="caption" weight="bold" className="text-blue-800 text-[10px]">
+                                {test.scheduled_date} {test.scheduled_start_time ? `• ${test.scheduled_start_time}` : ""}{test.scheduled_end_time ? ` - ${test.scheduled_end_time}` : ""}
+                              </Typography>
+                            </View>
+                          )}
+                        </View>
+
+                        {accessStatus.status === "exception_granted" && (
+                          <View className="flex-row items-center gap-1.5 bg-amber-100/80 border border-amber-300 p-2 rounded-xl mt-2">
+                            <Sparkles size={13} color="#B45309" />
+                            <Typography variant="caption" weight="bold" className="text-amber-950 text-[10px] flex-1">
+                              Special Permission Granted: Valid until {new Date(accessStatus.exception.valid_until).toLocaleDateString()} {new Date(accessStatus.exception.valid_until).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}!
+                            </Typography>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+
+                    {/* Past Performance or Action Button */}
+                    <View className="flex-row items-center justify-between pt-2 border-t border-border-subtle/80">
+                      {pastAttempt ? (
+                        <View className="flex-1 mr-2">
+                          <Typography variant="caption" color="secondary" className="text-[10px]">
+                            {isOnce || isMega ? "Recorded Score:" : "Latest Performance:"}
+                          </Typography>
+                          <Typography weight="bold" className="text-xs text-primary">
+                            {pastAttempt.score} / {pastAttempt.maxScore} ({Math.round(((pastAttempt.score || 0) / (pastAttempt.maxScore || 1)) * 100)}%)
+                          </Typography>
+                        </View>
+                      ) : (
+                        <View className="flex-1 mr-2">
+                          <Typography variant="caption" color="secondary" className="text-[10px]">
+                            Status:
+                          </Typography>
+                          <Typography weight="bold" className="text-xs text-slate-500">
+                            {accessStatus.status === "upcoming"
+                              ? `Upcoming (${test.scheduled_start_time || "Scheduled"})`
+                              : accessStatus.status === "missed"
+                              ? "Window Closed (Missed)"
+                              : accessStatus.status === "exception_granted"
+                              ? "Special Access Granted ⭐"
+                              : accessStatus.status === "live"
+                              ? "🔴 LIVE NOW"
+                              : "Not Yet Attempted"}
+                          </Typography>
+                        </View>
+                      )}
+
+                      {(isOnce || isMega) && pastAttempt ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onPress={() => handleStartTest(test, true)}
+                          className="px-3.5 py-1.5 rounded-xl border border-border-subtle"
+                        >
+                          View Results 📊
+                        </Button>
+                      ) : accessStatus.status === "upcoming" ? (
+                        <Button
+                          size="sm"
+                          disabled
+                          variant="secondary"
+                          className="px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 opacity-60"
+                        >
+                          <Typography variant="caption" weight="bold" className="text-slate-600 text-[10px]">
+                            Upcoming ⏳
+                          </Typography>
+                        </Button>
+                      ) : accessStatus.status === "missed" ? (
+                        <Button
+                          size="sm"
+                          disabled
+                          variant="secondary"
+                          className="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 opacity-70"
+                        >
+                          <Typography variant="caption" weight="bold" className="text-rose-700 text-[10px]">
+                            Missed Test ⛔
+                          </Typography>
+                        </Button>
+                      ) : accessStatus.status === "exception_granted" ? (
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          onPress={() => handleStartTest(test, false)}
+                          className="px-4 py-1.5 rounded-xl bg-amber-600"
+                        >
+                          Start Test (Special) 🚀
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          onPress={() => handleStartTest(test, false)}
+                          className={`px-4 py-1.5 rounded-xl ${isMega ? "bg-emerald-600" : ""}`}
+                        >
+                          {isMega ? "Start Mega Test 🚀" : pastAttempt ? "Retake Test 🔄" : "Start Test"}
+                        </Button>
+                      )}
+                    </View>
+                  </BentoCard>
+                );
+              })
             ) : (
               <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white items-center py-10 shadow-xs">
                 <View className="w-12 h-12 rounded-2xl bg-amber-500/10 items-center justify-center mb-3">
                   <Award size={22} color="#D97706" />
                 </View>
                 <Typography weight="bold" color="primary" className="text-sm mb-1 text-center">
-                  No Mock Tests Found
+                  No Tests Found
                 </Typography>
                 <Typography variant="caption" color="secondary" className="text-center text-xs">
-                  Mock assessments will appear here when configured.
+                  Mock assessments and regular tests will appear here when configured.
                 </Typography>
               </BentoCard>
             )}

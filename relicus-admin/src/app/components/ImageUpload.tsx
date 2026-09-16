@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Upload, X, Loader2 } from 'lucide-react';
+import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
+import { supabase } from '../services/supabaseClient';
 
 interface ImageUploadProps {
   value: string;
@@ -17,30 +18,48 @@ export function ImageUpload({ value, onChange, label, className = '' }: ImageUpl
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setError("Please select an image file.");
+      setError("Please select a valid image file.");
       return;
     }
 
     setIsUploading(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'relicus_unsigned');
-    formData.append('cloud_name', import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'relicus');
-
     try {
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'relicus'}/image/upload`, {
-        method: 'POST',
-        body: formData,
-      });
+      // 1. Attempt upload to Supabase Storage if available
+      let uploadedUrl: string | null = null;
+      if (supabase && supabase.storage) {
+        const fileExt = file.name.split('.').pop() || 'png';
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+        const filePath = `uploads/${fileName}`;
 
-      const data = await response.json();
-      if (data.secure_url) {
-        onChange(data.secure_url);
-      } else {
-        throw new Error(data.error?.message || "Failed to upload image");
+        try {
+          const { error: uploadErr } = await supabase.storage
+            .from('coaching-assets')
+            .upload(filePath, file, { upsert: true, contentType: file.type });
+
+          if (!uploadErr) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('coaching-assets')
+              .getPublicUrl(filePath);
+            if (publicUrl) uploadedUrl = publicUrl;
+          }
+        } catch (_) {
+          // Fall through to FileReader fallback
+        }
       }
+
+      // 2. If Supabase storage didn't return a URL, fallback to high-quality compressed Data URI
+      if (!uploadedUrl) {
+        uploadedUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = (err) => reject(err);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      onChange(uploadedUrl);
     } catch (err: any) {
       setError(err.message || 'An error occurred during upload');
     } finally {
