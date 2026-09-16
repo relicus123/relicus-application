@@ -4,9 +4,11 @@ import * as XLSX from "xlsx";
 import { 
   Plus, Trash2, Edit2, GraduationCap, Video, FileText, Check, AlertCircle, X, 
   Sparkles, Book, Calendar, MessageSquare, Star, ArrowRight, Layers, Megaphone,
-  FileSpreadsheet, Download, Upload, Send, HelpCircle, User, Shield, Clock, Lock, RotateCcw, Image as ImageIcon
+  FileSpreadsheet, Download, Upload, Send, HelpCircle, User, Shield, Clock, Lock, RotateCcw, Image as ImageIcon,
+  RefreshCw, Loader2, Mail, CheckCircle2
 } from "lucide-react";
 import { ImageUpload } from "../../components/ImageUpload";
+import { sendAutomatedMegaTestEmail } from "../../services/emailService";
 
 export function CoachingManager() {
   const [exams, setExams] = useState<any[]>([]);
@@ -67,6 +69,9 @@ export function CoachingManager() {
     duration: "",
     recipients: [],
   });
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailSendStatus, setEmailSendStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+  const [emailFeedbackMessage, setEmailFeedbackMessage] = useState<string>("");
 
   // Form states
   const [categoryForm, setCategoryForm] = useState({ id: "", title: "", description: "", icon: "🎓" });
@@ -352,7 +357,47 @@ export function CoachingManager() {
       duration: durStr,
       recipients: approvedEmails
     });
+    setEmailSendStatus("idle");
+    setEmailFeedbackMessage("");
     setShowEmailBlastModal(true);
+  };
+
+  const handleSendAutomatedEmail = async (overrideData?: typeof emailBlastData) => {
+    const dataToSend = overrideData || emailBlastData;
+    if (!dataToSend.recipients || dataToSend.recipients.length === 0) {
+      setError("No enrolled students with valid email addresses found.");
+      return;
+    }
+    setIsSendingEmail(true);
+    setEmailSendStatus("sending");
+    setEmailFeedbackMessage(`Dispatching automated email to ${dataToSend.recipients.length} student(s) via Relicus Mailer...`);
+
+    try {
+      const res = await sendAutomatedMegaTestEmail({
+        recipients: dataToSend.recipients,
+        testName: dataToSend.testName,
+        examName: selectedExam?.fullName || selectedExam?.id || "Entrance Coaching",
+        date: dataToSend.date,
+        startTime: dataToSend.startTime,
+        endTime: dataToSend.endTime,
+        duration: dataToSend.duration,
+        isProctored: true
+      });
+
+      if (res.success) {
+        setEmailSendStatus("success");
+        setEmailFeedbackMessage(res.message || `Automated email successfully delivered to ${dataToSend.recipients.length} student(s)!`);
+        setSuccess(`Automated email successfully delivered to ${dataToSend.recipients.length} student(s)!`);
+      } else {
+        setEmailSendStatus("error");
+        setEmailFeedbackMessage(res.error || "Failed to dispatch email.");
+      }
+    } catch (err: any) {
+      setEmailSendStatus("error");
+      setEmailFeedbackMessage(err.message || "Email dispatch failed");
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   const loadAllData = async (showLoading = true) => {
@@ -1676,7 +1721,30 @@ export function CoachingManager() {
           }
 
           if (mockForm.sendEmailNotification) {
-            handleOpenEmailBlastModal(newMock);
+            const approvedEmails = enrollments
+              .filter(e => e.status === "active" && Boolean(e.student_email))
+              .map(e => e.student_email);
+
+            const totSec = mDuration || 5400;
+            const h = Math.floor(totSec / 3600);
+            const m = Math.floor((totSec % 3600) / 60);
+            const durStr = h > 0 ? (m > 0 ? `${h} hours ${m} mins` : `${h} hours`) : `${m} mins`;
+
+            const blastPayload = {
+              testName: mName,
+              date: mScheduledDate || "Upcoming Date",
+              startTime: mScheduledStartTime || "10:00 AM",
+              endTime: mScheduledEndTime || "01:00 PM",
+              duration: durStr,
+              recipients: approvedEmails
+            };
+
+            setEmailBlastData(blastPayload);
+            setShowEmailBlastModal(true);
+
+            if (approvedEmails.length > 0) {
+              handleSendAutomatedEmail(blastPayload);
+            }
           }
         }
       }
@@ -4568,11 +4636,49 @@ export function CoachingManager() {
               </button>
             </div>
 
+            {/* Live Automated Email Sending Status Banner */}
+            {emailSendStatus === "sending" && (
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl flex items-center gap-2 text-xs text-blue-800 dark:text-blue-300 animate-pulse">
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600 shrink-0" />
+                <span>{emailFeedbackMessage || "Sending automated email via Relicus Mailer (info@relicus.in)..."}</span>
+              </div>
+            )}
+            {emailSendStatus === "success" && (
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-bold">Email Delivered Successfully!</p>
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-400">{emailFeedbackMessage}</p>
+                </div>
+              </div>
+            )}
+            {emailSendStatus === "error" && (
+              <div className="p-3 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-xl flex items-center gap-2 text-xs text-rose-800 dark:text-rose-300">
+                <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-bold">Delivery Issue</p>
+                  <p className="text-[11px] text-rose-700 dark:text-rose-400">{emailFeedbackMessage}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSendAutomatedEmail()}
+                  className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[10px] font-bold"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
             <div className="space-y-3 text-xs">
               <div className="p-3 bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800/40 rounded-xl space-y-1">
-                <span className="font-bold text-indigo-950 dark:text-indigo-200">
-                  Recipients ({emailBlastData.recipients.length} Enrolled Students):
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-indigo-950 dark:text-indigo-200">
+                    Recipients ({emailBlastData.recipients.length} Enrolled Students):
+                  </span>
+                  <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-100 px-2 py-0.5 rounded-md">
+                    Hostinger SMTP: info@relicus.in
+                  </span>
+                </div>
                 <p className="text-[11px] text-slate-500 max-h-16 overflow-y-auto break-all">
                   {emailBlastData.recipients.length > 0
                     ? emailBlastData.recipients.join(", ")
@@ -4623,12 +4729,32 @@ Relicus Entrance Coaching Team`}
                   onClick={() => {
                     const subject = `[Relicus] Scheduled Mega Test: ${emailBlastData.testName}`;
                     const body = `Dear Student,\n\nYour scheduled Mega Test "${emailBlastData.testName}" for ${selectedExam?.fullName || selectedExam?.id} is coming up!\n\n📅 Date: ${emailBlastData.date}\n⏰ Time: ${emailBlastData.startTime} - ${emailBlastData.endTime}\n⏱️ Duration: ${emailBlastData.duration}\n🛡️ Mode: Proctored Exam (Strict anti-cheat monitoring)\n\nIMPORTANT:\nThis is a Mega Test and can ONLY be attempted ONCE. Please ensure a stable internet connection and attend during the scheduled window.\n\nGood luck with your preparation!\nRelicus Entrance Coaching Team`;
-                    const mailtoUrl = `mailto:?bcc=${emailBlastData.recipients.join(",")}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                    window.open(mailtoUrl, "_blank");
+                    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&bcc=${encodeURIComponent(emailBlastData.recipients.join(","))}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                    window.open(gmailUrl, "_blank");
                   }}
-                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 rounded-xl text-xs font-medium flex items-center gap-1.5"
+                  title="Open in Gmail Web in new tab"
                 >
-                  <Send className="h-3.5 w-3.5" /> Open in Gmail (BCC All) 🚀
+                  <Send className="h-3.5 w-3.5" /> Gmail Web
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSendAutomatedEmail()}
+                  disabled={isSendingEmail || emailBlastData.recipients.length === 0}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+                >
+                  {isSendingEmail ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Sending Email...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="h-3.5 w-3.5" />
+                      Send Automated Email 🚀
+                    </>
+                  )}
                 </button>
               </div>
             </div>

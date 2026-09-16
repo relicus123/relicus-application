@@ -127,6 +127,22 @@ export default function CoachingDashboard() {
     : (localDataset?.mockTests || []);
   const allExamNotes = notesByExam[examType] || [];
 
+  const practiceMockTests = useMemo(() => {
+    return mockTests.filter((test: any) => {
+      const isOnce = (test.attempt_type || test.attemptType) === "once";
+      const isMega = test.test_type === "mega" || (isOnce && (test.scheduled_date || test.scheduled_start_time));
+      return !isMega;
+    });
+  }, [mockTests]);
+
+  const megaTestsList = useMemo(() => {
+    return mockTests.filter((test: any) => {
+      const isOnce = (test.attempt_type || test.attemptType) === "once";
+      const isMega = test.test_type === "mega" || (isOnce && (test.scheduled_date || test.scheduled_start_time));
+      return isMega;
+    });
+  }, [mockTests]);
+
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
   const [loading, setLoading] = useState(!exam && subjects.length === 0);
 
@@ -165,7 +181,7 @@ export default function CoachingDashboard() {
     return allExamNotes.filter((n: any) => n.chapter?.subject_id === selectedSubjectId || !selectedSubjectId);
   }, [allExamNotes, selectedSubjectId]);
 
-  const [activeTab, setActiveTab] = useState<"overview" | "chapters" | "live" | "tests" | "doubt" | "analytics">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "chapters" | "live" | "tests" | "mega" | "doubt" | "analytics">("overview");
   const [doubtText, setDoubtText] = useState("");
   const [expandedChapterId, setExpandedChapterId] = useState<string | null>(null);
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -382,6 +398,7 @@ export default function CoachingDashboard() {
     { id: "chapters", label: "Chapters", icon: BookOpen },
     { id: "live", label: "Live", icon: Video },
     { id: "tests", label: "Mock Tests", icon: Award },
+    { id: "mega", label: "Mega Exams", icon: Trophy },
     { id: "doubt", label: "Doubts Desk", icon: MessageSquare },
     { id: "analytics", label: "Analytics", icon: BarChart },
   ];
@@ -616,7 +633,7 @@ export default function CoachingDashboard() {
                 </View>
                 <Typography weight="bold" color="primary" className="text-xs mb-0.5">Mock Tests</Typography>
                 <Typography variant="caption" color="secondary" className="text-[10px]">
-                  {mockTests.length} practice sets
+                  {practiceMockTests.length} practice tests
                 </Typography>
               </TouchableOpacity>
 
@@ -891,7 +908,7 @@ export default function CoachingDashboard() {
                 <Typography variant="caption" color="secondary" className="text-center text-xs mb-4 max-w-[260px] leading-relaxed">
                   Study chapters for {activeSubjectName} are currently being configured by the coaching faculty.
                 </Typography>
-                {mockTests.length > 0 && (
+                {practiceMockTests.length > 0 && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -949,106 +966,116 @@ export default function CoachingDashboard() {
           </MotiView>
         )}
 
-        {/* MOCK & REGULAR TESTS TAB */}
+        {/* SEGMENTED SWITCH HELPER COMPONENT FOR TESTS */}
+        {(activeTab === "tests" || activeTab === "mega") && (
+          <View className="flex-row p-1 bg-surface-secondary/70 rounded-2xl mb-4 border border-border-subtle">
+            <TouchableOpacity
+              onPress={() => setActiveTab("tests")}
+              className={twMerge(clsx(
+                "flex-1 py-2 rounded-xl flex-row items-center justify-center gap-1.5 transition-colors",
+                activeTab === "tests" ? "bg-white shadow-xs" : "bg-transparent"
+              ))}
+              activeOpacity={0.8}
+            >
+              <Award size={14} color={activeTab === "tests" ? "#0F766E" : "#64748B"} />
+              <Typography
+                variant="caption"
+                weight="bold"
+                className={activeTab === "tests" ? "text-teal-900 text-xs" : "text-slate-500 text-xs"}
+              >
+                Mock Tests ({practiceMockTests.length})
+              </Typography>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setActiveTab("mega")}
+              className={twMerge(clsx(
+                "flex-1 py-2 rounded-xl flex-row items-center justify-center gap-1.5 transition-colors",
+                activeTab === "mega" ? "bg-white shadow-xs" : "bg-transparent"
+              ))}
+              activeOpacity={0.8}
+            >
+              <Trophy size={14} color={activeTab === "mega" ? "#B45309" : "#64748B"} />
+              <Typography
+                variant="caption"
+                weight="bold"
+                className={activeTab === "mega" ? "text-amber-900 text-xs" : "text-slate-500 text-xs"}
+              >
+                Mega Exams ({megaTestsList.length})
+              </Typography>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* MOCK TESTS (PRACTICE) TAB */}
         {activeTab === "tests" && (
-          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-3.5">
-            {mockTests.length > 0 ? (
-              mockTests.map((test: any) => {
-                const isOnce = (test.attempt_type || test.attemptType) === "once";
-                const isProc = Boolean(test.is_proctored || test.isProctored);
-                const isMega = test.test_type === "mega" || (isOnce && (test.scheduled_date || test.scheduled_start_time));
-                const accessStatus = getMegaTestAccessStatus(test);
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-3">
+            {practiceMockTests.length > 0 ? (
+              practiceMockTests.map((test: any) => {
                 const totSec = test.duration || 5400;
                 const h = Math.floor(totSec / 3600);
                 const m = Math.floor((totSec % 3600) / 60);
                 const timeStr = h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
                 const pastAttempt = testAttempts.find((a) => String(a.testId) === String(test.id));
+                const qCount = test.questions_count ?? test.questions?.length ?? 0;
 
                 return (
-                  <BentoCard
+                  <View
                     key={test.id}
-                    variant="secondary"
-                    padding="md"
-                    className={`border bg-white shadow-xs gap-3 ${
-                      accessStatus.status === "exception_granted"
-                        ? "border-amber-400 bg-amber-50/20"
-                        : "border-border-subtle"
-                    }`}
+                    className="p-4 bg-white rounded-2xl border border-border-subtle shadow-2xs"
                   >
-                    <View className="flex-row items-start justify-between">
-                      <View className="flex-1 mr-2">
-                        <View className="flex-row items-center gap-1.5 flex-wrap mb-1">
-                          {isMega ? (
-                            <View className="flex-row items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/30">
-                              <Trophy size={11} color="#B45309" />
-                              <Typography variant="caption" weight="bold" className="text-amber-950 text-[10px]">
-                                Mega Test (1 Attempt Only)
-                              </Typography>
-                            </View>
-                          ) : (
-                            <View className="flex-row items-center gap-1 bg-teal-500/10 px-2 py-0.5 rounded-md border border-teal-500/30">
-                              <RotateCcw size={10} color="#0F766E" />
-                              <Typography variant="caption" weight="bold" className="text-teal-950 text-[10px]">
-                                Mock Test (Multiple Attempts)
-                              </Typography>
-                            </View>
-                          )}
-
-                          {isProc && (
-                            <View className="flex-row items-center gap-1 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
-                              <Shield size={10} color="#4F46E5" />
-                              <Typography variant="caption" weight="bold" className="text-indigo-700 text-[10px]">
-                                Proctored
-                              </Typography>
-                            </View>
-                          )}
-                        </View>
-
-                        <Typography weight="bold" color="primary" className="text-sm leading-snug">
-                          {test.name}
+                    {/* Header Tags */}
+                    <View className="flex-row items-center justify-between mb-2">
+                      <View className="flex-row items-center gap-1.5 bg-teal-50 px-2.5 py-0.5 rounded-md border border-teal-200/60">
+                        <RotateCcw size={10} color="#0F766E" />
+                        <Typography variant="caption" weight="bold" className="text-teal-900 text-[10px] uppercase tracking-wider">
+                          Practice Mock • Multi-Attempt
                         </Typography>
+                      </View>
 
-                        <View className="flex-row items-center gap-1.5 flex-wrap mt-1.5">
-                          <View className="flex-row items-center gap-1 bg-surface-secondary/70 px-2 py-0.5 rounded-md border border-border-subtle">
-                            <Clock size={11} color="#64748B" />
-                            <Typography variant="caption" className="text-slate-700 text-[10px] font-bold">
-                              {timeStr}
-                            </Typography>
-                          </View>
-
-                          <View className="bg-surface-secondary/70 px-2 py-0.5 rounded-md border border-border-subtle">
-                            <Typography variant="caption" className="text-slate-700 text-[10px] font-bold">
-                              {test.questions_count ?? test.questions?.length ?? 0} Qs
-                            </Typography>
-                          </View>
-
-                          {test.scheduled_date && (
-                            <View className="flex-row items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
-                              <Calendar size={10} color="#2563EB" />
-                              <Typography variant="caption" weight="bold" className="text-blue-800 text-[10px]">
-                                {test.scheduled_date} {test.scheduled_start_time ? `• ${test.scheduled_start_time}` : ""}{test.scheduled_end_time ? ` - ${test.scheduled_end_time}` : ""}
-                              </Typography>
-                            </View>
-                          )}
+                      {pastAttempt && (
+                        <View className="flex-row items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                          <CheckCircle size={10} color="#059669" />
+                          <Typography variant="caption" weight="bold" className="text-emerald-700 text-[10px]">
+                            Attempted
+                          </Typography>
                         </View>
+                      )}
+                    </View>
 
-                        {accessStatus.status === "exception_granted" && (
-                          <View className="flex-row items-center gap-1.5 bg-amber-100/80 border border-amber-300 p-2 rounded-xl mt-2">
-                            <Sparkles size={13} color="#B45309" />
-                            <Typography variant="caption" weight="bold" className="text-amber-950 text-[10px] flex-1">
-                              Special Permission Granted: Valid until {new Date(accessStatus.exception.valid_until).toLocaleDateString()} {new Date(accessStatus.exception.valid_until).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}!
-                            </Typography>
-                          </View>
-                        )}
+                    {/* Title */}
+                    <Typography weight="bold" color="primary" className="text-base leading-snug mb-1.5">
+                      {test.name}
+                    </Typography>
+
+                    {/* Meta Details Row */}
+                    <View className="flex-row items-center gap-2 mb-3 flex-wrap">
+                      <View className="flex-row items-center gap-1 bg-surface-secondary/70 px-2 py-0.5 rounded-md border border-border-subtle">
+                        <Clock size={11} color="#64748B" />
+                        <Typography variant="caption" className="text-slate-700 text-[10px] font-bold">
+                          {timeStr}
+                        </Typography>
+                      </View>
+
+                      <View className="bg-surface-secondary/70 px-2 py-0.5 rounded-md border border-border-subtle">
+                        <Typography variant="caption" className="text-slate-700 text-[10px] font-bold">
+                          {qCount} Questions
+                        </Typography>
+                      </View>
+
+                      <View className="bg-surface-secondary/50 px-2 py-0.5 rounded-md">
+                        <Typography variant="caption" color="secondary" className="text-[10px]">
+                          Self-Paced
+                        </Typography>
                       </View>
                     </View>
 
-                    {/* Past Performance or Action Button */}
-                    <View className="flex-row items-center justify-between pt-2 border-t border-border-subtle/80">
+                    {/* Footer Action Bar */}
+                    <View className="flex-row items-center justify-between pt-2.5 border-t border-border-subtle/80">
                       {pastAttempt ? (
                         <View className="flex-1 mr-2">
                           <Typography variant="caption" color="secondary" className="text-[10px]">
-                            {isOnce || isMega ? "Recorded Score:" : "Latest Performance:"}
+                            Latest Performance:
                           </Typography>
                           <Typography weight="bold" className="text-xs text-primary">
                             {pastAttempt.score} / {pastAttempt.maxScore} ({Math.round(((pastAttempt.score || 0) / (pastAttempt.maxScore || 1)) * 100)}%)
@@ -1060,20 +1087,197 @@ export default function CoachingDashboard() {
                             Status:
                           </Typography>
                           <Typography weight="bold" className="text-xs text-slate-500">
-                            {accessStatus.status === "upcoming"
-                              ? `Upcoming (${test.scheduled_start_time || "Scheduled"})`
-                              : accessStatus.status === "missed"
-                              ? "Window Closed (Missed)"
-                              : accessStatus.status === "exception_granted"
-                              ? "Special Access Granted ⭐"
-                              : accessStatus.status === "live"
-                              ? "🔴 LIVE NOW"
-                              : "Not Yet Attempted"}
+                            Available anytime
                           </Typography>
                         </View>
                       )}
 
-                      {(isOnce || isMega) && pastAttempt ? (
+                      <Button
+                        size="sm"
+                        variant={pastAttempt ? "outline" : "primary"}
+                        onPress={() => handleStartTest(test, false)}
+                        className="px-4 py-1.5 rounded-xl"
+                      >
+                        {pastAttempt ? "Retake Test 🔄" : "Start Test"}
+                      </Button>
+                    </View>
+                  </View>
+                );
+              })
+            ) : (
+              <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white items-center py-10 shadow-xs">
+                <View className="w-12 h-12 rounded-2xl bg-teal-500/10 items-center justify-center mb-3">
+                  <Award size={22} color="#0F766E" />
+                </View>
+                <Typography weight="bold" color="primary" className="text-sm mb-1 text-center">
+                  No Practice Mock Tests Yet
+                </Typography>
+                <Typography variant="caption" color="secondary" className="text-center text-xs mb-3">
+                  Practice tests for {activeSubjectName} will appear here when configured.
+                </Typography>
+                {megaTestsList.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onPress={() => setActiveTab("mega")}
+                  >
+                    View Mega Exams ({megaTestsList.length})
+                  </Button>
+                )}
+              </BentoCard>
+            )}
+          </MotiView>
+        )}
+
+        {/* MEGA EXAMS (OFFICIAL & PROCTORED) TAB */}
+        {activeTab === "mega" && (
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-3">
+            {megaTestsList.length > 0 ? (
+              megaTestsList.map((test: any) => {
+                const isProc = Boolean(test.is_proctored || test.isProctored);
+                const accessStatus = getMegaTestAccessStatus(test);
+                const totSec = test.duration || 5400;
+                const h = Math.floor(totSec / 3600);
+                const m = Math.floor((totSec % 3600) / 60);
+                const timeStr = h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+                const pastAttempt = testAttempts.find((a) => String(a.testId) === String(test.id));
+                const qCount = test.questions_count ?? test.questions?.length ?? 0;
+                const isSpecial = accessStatus.status === "exception_granted";
+
+                return (
+                  <View
+                    key={test.id}
+                    className={clsx(
+                      "p-4 bg-white rounded-2xl border shadow-2xs",
+                      isSpecial ? "border-amber-400 bg-amber-50/15" : "border-border-subtle"
+                    )}
+                  >
+                    {/* Header Badges & Live Status */}
+                    <View className="flex-row items-center justify-between mb-2">
+                      <View className="flex-row items-center gap-1.5 flex-wrap">
+                        <View className="flex-row items-center gap-1 bg-amber-500/10 px-2.5 py-0.5 rounded-md border border-amber-500/30">
+                          <Trophy size={11} color="#B45309" />
+                          <Typography variant="caption" weight="bold" className="text-amber-950 text-[10px] uppercase tracking-wider">
+                            Mega Exam • 1 Attempt
+                          </Typography>
+                        </View>
+
+                        {isProc && (
+                          <View className="flex-row items-center gap-1 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
+                            <Shield size={10} color="#4F46E5" />
+                            <Typography variant="caption" weight="bold" className="text-indigo-700 text-[10px]">
+                              Proctored
+                            </Typography>
+                          </View>
+                        )}
+                      </View>
+
+                      {/* Unified Status Badge */}
+                      {pastAttempt ? (
+                        <View className="bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                          <Typography variant="caption" weight="bold" className="text-emerald-700 text-[10px]">
+                            Completed
+                          </Typography>
+                        </View>
+                      ) : isSpecial ? (
+                        <View className="bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300">
+                          <Typography variant="caption" weight="bold" className="text-amber-950 text-[10px]">
+                            ⭐ Special Access
+                          </Typography>
+                        </View>
+                      ) : accessStatus.status === "live" ? (
+                        <View className="bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 flex-row items-center gap-1">
+                          <View className="w-1.5 h-1.5 rounded-full bg-rose-600" />
+                          <Typography variant="caption" weight="bold" className="text-rose-700 text-[10px]">
+                            LIVE NOW
+                          </Typography>
+                        </View>
+                      ) : accessStatus.status === "upcoming" ? (
+                        <View className="bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                          <Typography variant="caption" weight="bold" className="text-slate-600 text-[10px]">
+                            Upcoming
+                          </Typography>
+                        </View>
+                      ) : (
+                        <View className="bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                          <Typography variant="caption" weight="bold" className="text-rose-700 text-[10px]">
+                            Window Closed
+                          </Typography>
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Exam Title */}
+                    <Typography weight="bold" color="primary" className="text-base leading-snug mb-1.5">
+                      {test.name}
+                    </Typography>
+
+                    {/* Metadata Row */}
+                    <View className="flex-row items-center gap-2 mb-2 flex-wrap">
+                      <View className="flex-row items-center gap-1 bg-surface-secondary/70 px-2 py-0.5 rounded-md border border-border-subtle">
+                        <Clock size={11} color="#64748B" />
+                        <Typography variant="caption" className="text-slate-700 text-[10px] font-bold">
+                          {timeStr}
+                        </Typography>
+                      </View>
+
+                      <View className="bg-surface-secondary/70 px-2 py-0.5 rounded-md border border-border-subtle">
+                        <Typography variant="caption" className="text-slate-700 text-[10px] font-bold">
+                          {qCount} Questions
+                        </Typography>
+                      </View>
+
+                      {test.scheduled_date && (
+                        <View className="flex-row items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+                          <Calendar size={10} color="#2563EB" />
+                          <Typography variant="caption" weight="bold" className="text-blue-800 text-[10px]">
+                            {test.scheduled_date} {test.scheduled_start_time ? `• ${test.scheduled_start_time}` : ""}{test.scheduled_end_time ? ` - ${test.scheduled_end_time}` : ""}
+                          </Typography>
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Clean Special Access Banner (if granted) */}
+                    {isSpecial && (
+                      <View className="flex-row items-center gap-1.5 bg-amber-100/90 border border-amber-300 p-2 rounded-xl mb-2">
+                        <Sparkles size={12} color="#B45309" />
+                        <Typography variant="caption" weight="bold" className="text-amber-950 text-[10px] flex-1">
+                          Valid until {new Date(accessStatus.exception.valid_until).toLocaleDateString()} {new Date(accessStatus.exception.valid_until).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </Typography>
+                      </View>
+                    )}
+
+                    {/* Footer Action Bar */}
+                    <View className="flex-row items-center justify-between pt-2.5 border-t border-border-subtle/80">
+                      {pastAttempt ? (
+                        <View className="flex-1 mr-2">
+                          <Typography variant="caption" color="secondary" className="text-[10px]">
+                            Final Score:
+                          </Typography>
+                          <Typography weight="bold" className="text-xs text-primary">
+                            {pastAttempt.score} / {pastAttempt.maxScore} ({Math.round(((pastAttempt.score || 0) / (pastAttempt.maxScore || 1)) * 100)}%)
+                          </Typography>
+                        </View>
+                      ) : (
+                        <View className="flex-1 mr-2">
+                          <Typography variant="caption" color="secondary" className="text-[10px]">
+                            {isSpecial ? "Exception status:" : "Access status:"}
+                          </Typography>
+                          <Typography weight="bold" className="text-xs text-slate-500">
+                            {accessStatus.status === "upcoming"
+                              ? `Opens ${test.scheduled_start_time || "Scheduled"}`
+                              : accessStatus.status === "missed"
+                              ? "Window Closed"
+                              : isSpecial
+                              ? "Authorized ⭐"
+                              : accessStatus.status === "live"
+                              ? "Exam In Session"
+                              : "1 Attempt Only"}
+                          </Typography>
+                        </View>
+                      )}
+
+                      {pastAttempt ? (
                         <Button
                           size="sm"
                           variant="secondary"
@@ -1101,43 +1305,43 @@ export default function CoachingDashboard() {
                           className="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 opacity-70"
                         >
                           <Typography variant="caption" weight="bold" className="text-rose-700 text-[10px]">
-                            Missed Test ⛔
+                            Window Closed ⛔
                           </Typography>
-                        </Button>
-                      ) : accessStatus.status === "exception_granted" ? (
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          onPress={() => handleStartTest(test, false)}
-                          className="px-4 py-1.5 rounded-xl bg-amber-600"
-                        >
-                          Start Test (Special) 🚀
                         </Button>
                       ) : (
                         <Button
                           size="sm"
                           variant="primary"
                           onPress={() => handleStartTest(test, false)}
-                          className={`px-4 py-1.5 rounded-xl ${isMega ? "bg-emerald-600" : ""}`}
+                          className={`px-4 py-1.5 rounded-xl ${isSpecial ? "bg-amber-600" : "bg-emerald-600"}`}
                         >
-                          {isMega ? "Start Mega Test 🚀" : pastAttempt ? "Retake Test 🔄" : "Start Test"}
+                          {isSpecial ? "Start Exam (Special) 🚀" : "Start Mega Exam 🚀"}
                         </Button>
                       )}
                     </View>
-                  </BentoCard>
+                  </View>
                 );
               })
             ) : (
               <BentoCard variant="secondary" padding="lg" className="border border-border-subtle bg-white items-center py-10 shadow-xs">
                 <View className="w-12 h-12 rounded-2xl bg-amber-500/10 items-center justify-center mb-3">
-                  <Award size={22} color="#D97706" />
+                  <Trophy size={22} color="#D97706" />
                 </View>
                 <Typography weight="bold" color="primary" className="text-sm mb-1 text-center">
-                  No Tests Found
+                  No Mega Exams Scheduled
                 </Typography>
-                <Typography variant="caption" color="secondary" className="text-center text-xs">
-                  Mock assessments and regular tests will appear here when configured.
+                <Typography variant="caption" color="secondary" className="text-center text-xs mb-3">
+                  Proctored grand examinations and institutional mega tests will appear here.
                 </Typography>
+                {practiceMockTests.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onPress={() => setActiveTab("tests")}
+                  >
+                    Take a Practice Mock ({practiceMockTests.length})
+                  </Button>
+                )}
               </BentoCard>
             )}
           </MotiView>

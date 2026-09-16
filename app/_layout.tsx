@@ -78,11 +78,24 @@ export default function RootLayout() {
   useEffect(() => {
     if (!currentUser?.id) return;
 
+    let isMounted = true;
     let channel: any = null;
 
-    getOrCreateDeviceId().then((currentDeviceId) => {
+    getOrCreateDeviceId().then(async (currentDeviceId) => {
+      if (!isMounted) return;
+
+      const channelName = `device_eviction_${currentUser.id}_${currentDeviceId}`;
+
+      // Remove any pre-existing channel with this name (e.g. from Fast Refresh or re-renders)
+      const existingChannel = supabase.getChannels().find((c) => c.topic === `realtime:${channelName}`);
+      if (existingChannel) {
+        await supabase.removeChannel(existingChannel);
+      }
+
+      if (!isMounted) return;
+
       channel = supabase
-        .channel(`device_eviction_${currentUser.id}_${currentDeviceId}`)
+        .channel(channelName)
         .on(
           "postgres_changes",
           {
@@ -118,6 +131,7 @@ export default function RootLayout() {
     });
 
     return () => {
+      isMounted = false;
       if (channel) {
         supabase.removeChannel(channel);
       }
