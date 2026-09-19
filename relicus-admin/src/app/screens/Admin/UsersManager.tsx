@@ -81,6 +81,28 @@ interface MindfulnessActivity {
   completed_at: string;
 }
 
+interface ExamCategory {
+  id: string;
+  title: string;
+  description: string;
+  icon?: string;
+  display_order?: number;
+  is_active?: boolean;
+}
+
+interface CoachingExam {
+  id: string;
+  full_name?: string;
+  category_id?: string;
+}
+
+interface CategoryAccessItem {
+  id?: string;
+  category_id: string;
+  status: string;
+  granted_at?: string;
+}
+
 interface UserDeepData {
   profile: ProfileUser;
   testAttempts: TestAttempt[];
@@ -88,6 +110,7 @@ interface UserDeepData {
   moodEntries: MoodEntry[];
   activities: MindfulnessActivity[];
   tuitionInfo: any | null;
+  categoryAccess: CategoryAccessItem[];
   rawJson: any;
 }
 
@@ -113,6 +136,15 @@ export function UsersManager() {
   const [isResetPassModalOpen, setIsResetPassModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToActOn, setUserToActOn] = useState<ProfileUser | null>(null);
+
+  // Entrance Coaching Category Access Management
+  const [allCategories, setAllCategories] = useState<ExamCategory[]>([]);
+  const [allExams, setAllExams] = useState<CoachingExam[]>([]);
+  const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
+  const [selectedUserForAccess, setSelectedUserForAccess] = useState<ProfileUser | null>(null);
+  const [userCategoryAccessMap, setUserCategoryAccessMap] = useState<Record<string, boolean>>({});
+  const [loadingAccessModal, setLoadingAccessModal] = useState(false);
+  const [savingAccess, setSavingAccess] = useState(false);
 
   // Forms
   const [createForm, setCreateForm] = useState({
@@ -204,12 +236,13 @@ export function UsersManager() {
     setLoadingInspect(true);
 
     try {
-      const [testRes, certRes, moodRes, actRes, tuitionRes] = await Promise.allSettled([
+      const [testRes, certRes, moodRes, actRes, tuitionRes, catAccessRes] = await Promise.allSettled([
         supabase.from("coaching_test_attempts").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("skills_certificate_requests").select("*").eq("user_id", user.id).order("requested_at", { ascending: false }),
         supabase.from("mood_entries").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("mindfulness_user_activities").select("*").eq("user_id", user.id).order("completed_at", { ascending: false }),
         supabase.from("tuition_students").select("*").eq("user_id", user.id).maybeSingle(),
+        supabase.from("coaching_category_access").select("id, category_id, status, granted_at").eq("user_id", user.id),
       ]);
 
       const testAttempts: TestAttempt[] = testRes.status === "fulfilled" && testRes.value.data ? testRes.value.data : [];
@@ -217,6 +250,10 @@ export function UsersManager() {
       const moodEntries: MoodEntry[] = moodRes.status === "fulfilled" && moodRes.value.data ? moodRes.value.data : [];
       const activities: MindfulnessActivity[] = actRes.status === "fulfilled" && actRes.value.data ? actRes.value.data : [];
       const tuitionInfo = tuitionRes.status === "fulfilled" && tuitionRes.value.data ? tuitionRes.value.data : null;
+      const categoryAccess: CategoryAccessItem[] = catAccessRes.status === "fulfilled" && catAccessRes.value.data ? catAccessRes.value.data : [];
+
+      // Ensure categories & exams are loaded for display in inspector
+      loadCategoriesAndExams();
 
       setInspectData({
         profile: user,
@@ -225,8 +262,10 @@ export function UsersManager() {
         moodEntries,
         activities,
         tuitionInfo,
+        categoryAccess,
         rawJson: {
           profile: user,
+          coaching_category_access: categoryAccess,
           coaching_attempts_count: testAttempts.length,
           skills_cert_requests: certRequests,
           mood_logs: moodEntries,
@@ -238,6 +277,98 @@ export function UsersManager() {
       console.error("Error inspecting user:", err);
     } finally {
       setLoadingInspect(false);
+    }
+  };
+
+  // Category Access Handlers
+  const loadCategoriesAndExams = async () => {
+    try {
+      const [catRes, examRes] = await Promise.all([
+        supabase.from("coaching_exam_categories").select("*").order("display_order", { ascending: true }),
+        supabase.from("coaching_exams").select("id, full_name, category_id"),
+      ]);
+      if (catRes.data) setAllCategories(catRes.data);
+      if (examRes.data) setAllExams(examRes.data);
+    } catch (err) {
+      console.error("Error loading categories/exams:", err);
+    }
+  };
+
+  const openCategoryAccessModal = async (user: ProfileUser) => {
+    setSelectedUserForAccess(user);
+    setIsAccessModalOpen(true);
+    setLoadingAccessModal(true);
+    setError(null);
+    try {
+      await loadCategoriesAndExams();
+      const { data, error: catError } = await supabase
+        .from("coaching_category_access")
+        .select("category_id, status")
+        .eq("user_id", user.id);
+
+      if (catError) throw catError;
+
+      const map: Record<string, boolean> = {};
+      if (data) {
+        data.forEach((row: any) => {
+          if (row.status === "active") {
+            map[row.category_id] = true;
+          }
+        });
+      }
+      setUserCategoryAccessMap(map);
+    } catch (err: any) {
+      console.error("Error loading user category access:", err);
+      setError("Failed to load user category permissions: " + err.message);
+    } finally {
+      setLoadingAccessModal(false);
+    }
+  };
+
+  const handleToggleCategory = (categoryId: string) => {
+    setUserCategoryAccessMap((prev) => ({
+      ...prev,
+      [categoryId]: !prev[categoryId],
+    }));
+  };
+
+  const handleToggleAllCategories = (grantAll: boolean) => {
+    const newMap: Record<string, boolean> = {};
+    allCategories.forEach((cat) => {
+      newMap[cat.id] = grantAll;
+    });
+    setUserCategoryAccessMap(newMap);
+  };
+
+  const handleSaveCategoryAccess = async () => {
+    if (!selectedUserForAccess) return;
+    setSavingAccess(true);
+    setError(null);
+    try {
+      const updates = allCategories.map((cat) => ({
+        user_id: selectedUserForAccess.id,
+        category_id: cat.id,
+        status: userCategoryAccessMap[cat.id] ? "active" : "revoked",
+        granted_at: new Date().toISOString(),
+      }));
+
+      const { error: upsertError } = await supabase
+        .from("coaching_category_access")
+        .upsert(updates, { onConflict: "user_id,category_id" });
+
+      if (upsertError) throw upsertError;
+
+      setSuccess(`Entrance Coaching category permissions saved for ${selectedUserForAccess.full_name || selectedUserForAccess.username || selectedUserForAccess.email}!`);
+      setIsAccessModalOpen(false);
+
+      if (selectedUser?.id === selectedUserForAccess.id) {
+        openGodModeInspector(selectedUser);
+      }
+    } catch (err: any) {
+      console.error("Error saving category access:", err);
+      setError(err.message || "Failed to save category access permissions.");
+    } finally {
+      setSavingAccess(false);
     }
   };
 
@@ -893,6 +1024,16 @@ export function UsersManager() {
                       {/* Actions */}
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1">
+                          {/* Entrance Coaching Category Access */}
+                          <button
+                            onClick={() => openCategoryAccessModal(user)}
+                            className="flex items-center gap-1.5 rounded-xl bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-500 hover:text-white transition dark:bg-amber-400/10 dark:text-amber-400 dark:hover:bg-amber-400 dark:hover:text-[#030213] cursor-pointer"
+                            title="Manage Entrance Coaching Category Access"
+                          >
+                            <GraduationCap className="h-3.5 w-3.5" />
+                            <span>Course Access</span>
+                          </button>
+
                           {/* Inspect God Mode */}
                           <button
                             onClick={() => openGodModeInspector(user)}
@@ -1211,7 +1352,93 @@ export function UsersManager() {
 
                   {/* COACHING TAB */}
                   {inspectTab === "coaching" && (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
+                      {/* Authorized Categories Section */}
+                      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3 dark:border-slate-800">
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400">
+                              <GraduationCap className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                                Authorized Entrance Coaching Categories
+                              </h3>
+                              <p className="text-xs text-slate-400">
+                                Specific categories granted to this student for full course access
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => selectedUser && openCategoryAccessModal(selectedUser)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#1C4966] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#245D82] transition shadow-sm cursor-pointer"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                            <span>Edit Permissions</span>
+                          </button>
+                        </div>
+
+                        {/* List of granted categories */}
+                        {!inspectData?.categoryAccess || inspectData.categoryAccess.filter((a) => a.status === "active").length === 0 ? (
+                          <div className="rounded-xl border border-dashed border-amber-200 bg-amber-50/50 p-4 text-center dark:border-amber-900/50 dark:bg-amber-950/20">
+                            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                              No categories currently authorized for this user.
+                            </p>
+                            <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
+                              User can only view the 1 Free Preview Demo Lecture across courses. Click "Edit Permissions" to grant access.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {inspectData.categoryAccess
+                              .filter((a) => a.status === "active")
+                              .map((access) => {
+                                const cat = allCategories.find((c) => c.id === access.category_id);
+                                const catExams = allExams.filter((e) => e.category_id === access.category_id);
+                                return (
+                                  <div
+                                    key={access.category_id}
+                                    className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/40 p-3.5 dark:border-emerald-900/50 dark:bg-emerald-950/20"
+                                  >
+                                    <span className="text-2xl">{cat?.icon || "🎓"}</span>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-1.5">
+                                        <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                                          {cat?.title || access.category_id}
+                                        </h4>
+                                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300">
+                                          Active 🔓
+                                        </span>
+                                      </div>
+                                      <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
+                                        {cat?.description || "Category unlocked"}
+                                      </p>
+                                      {catExams.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mt-2">
+                                          {catExams.map((e) => (
+                                            <span
+                                              key={e.id}
+                                              className="rounded-md bg-white/80 border border-emerald-200/60 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
+                                            >
+                                              {e.id}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                      {access.granted_at && (
+                                        <span className="block text-[10px] text-slate-400 mt-1.5">
+                                          Granted on: {new Date(access.granted_at).toLocaleDateString()}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Mock Test History Header */}
                       <div className="flex items-center justify-between">
                         <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
                           Entrance Mock Test History
@@ -1754,6 +1981,204 @@ export function UsersManager() {
               >
                 Yes, Purge User
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* ENTRANCE COACHING CATEGORY ACCESS MODAL */}
+      {/* ========================================================================= */}
+      {isAccessModalOpen && selectedUserForAccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 p-6 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400">
+                  <GraduationCap className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    Entrance Coaching Course Access
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Target: <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedUserForAccess.full_name || selectedUserForAccess.username || "Student"}</span> ({selectedUserForAccess.email})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAccessModalOpen(false)}
+                className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+              {/* Guidance Info Box */}
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-xs dark:border-amber-900/50 dark:bg-amber-950/30">
+                <div className="flex items-start gap-2.5">
+                  <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1 text-amber-900 dark:text-amber-200">
+                    <p className="font-bold">Selective Category Entitlement</p>
+                    <p className="text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
+                      Select which Entrance Coaching categories this student is authorized to access.
+                      Categories that remain <strong>Restricted</strong> will only allow the user to watch the <strong>1 Free Preview Demo Lecture</strong> for courses within that category.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Categories ({allCategories.length})
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleAllCategories(true)}
+                    className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 cursor-pointer"
+                  >
+                    Grant All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleAllCategories(false)}
+                    className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 cursor-pointer"
+                  >
+                    Revoke All
+                  </button>
+                </div>
+              </div>
+
+              {/* Category Cards List */}
+              {loadingAccessModal ? (
+                <div className="py-12 text-center text-slate-400">
+                  <RefreshCw className="mx-auto h-6 w-6 animate-spin mb-2" />
+                  <p className="text-xs">Loading categories and user entitlements...</p>
+                </div>
+              ) : allCategories.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-slate-400 dark:border-slate-800">
+                  <p className="text-xs font-semibold">No coaching categories found in database.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {allCategories.map((cat) => {
+                    const isGranted = Boolean(userCategoryAccessMap[cat.id]);
+                    const categoryExams = allExams.filter((e) => e.category_id === cat.id);
+
+                    return (
+                      <div
+                        key={cat.id}
+                        onClick={() => handleToggleCategory(cat.id)}
+                        className={`group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border p-4 transition cursor-pointer select-none ${
+                          isGranted
+                            ? "border-emerald-300 bg-emerald-50/50 dark:border-emerald-700 dark:bg-emerald-950/20"
+                            : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-slate-700"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3.5 min-w-0">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white border border-slate-200/80 shadow-2xs text-2xl dark:border-slate-700 dark:bg-slate-800">
+                            {cat.icon || "📚"}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                                {cat.title}
+                              </h4>
+                              {isGranted ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
+                                  <Check className="h-3 w-3" /> Full Access Granted
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">
+                                  🎬 1 Free Demo Only
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                              {cat.description || "Entrance coaching program category"}
+                            </p>
+
+                            {/* Exams inside this category */}
+                            {categoryExams.length > 0 && (
+                              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                                <span className="text-[10px] uppercase font-bold text-slate-400">Courses:</span>
+                                {categoryExams.map((e) => (
+                                  <span
+                                    key={e.id}
+                                    className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                                  >
+                                    {e.full_name || e.id}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Interactive Toggle Switch */}
+                        <div className="flex items-center sm:self-center shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleCategory(cat.id);
+                            }}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer focus:outline-none ${
+                              isGranted ? "bg-emerald-600" : "bg-slate-300 dark:bg-slate-700"
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                isGranted ? "translate-x-6" : "translate-x-1"
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between border-t border-slate-100 p-5 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                {Object.values(userCategoryAccessMap).filter(Boolean).length} of {allCategories.length} categories enabled
+              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsAccessModalOpen(false)}
+                  disabled={savingAccess}
+                  className="rounded-xl px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 cursor-pointer transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveCategoryAccess}
+                  disabled={savingAccess}
+                  className="flex items-center gap-2 rounded-xl bg-[#1C4966] px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#245D82] transition cursor-pointer disabled:opacity-50"
+                >
+                  {savingAccess ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      <span>Saving Permissions...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4" />
+                      <span>Save Access Permissions</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

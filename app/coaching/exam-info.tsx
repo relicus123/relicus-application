@@ -48,7 +48,14 @@ export default function ExamInfoScreen() {
   const params = useLocalSearchParams();
   const examType = params.examType as string;
 
-  const { exams, userEnrollments, fetchUserEnrollment, requestCourseEnrollment } = useCoachingStore();
+  const {
+    exams,
+    userEnrollments,
+    fetchUserEnrollment,
+    requestCourseEnrollment,
+    userAllowedCategoryIds,
+    fetchUserCategoryAccess,
+  } = useCoachingStore();
   const currentUser = useAuthStore((s) => s.currentUser);
   const cachedExam = exams.find((e) => e.id === examType);
 
@@ -59,7 +66,9 @@ export default function ExamInfoScreen() {
 
   const enrollmentStatus = userEnrollments[examType]?.status || "none";
   const isAdmin = currentUser?.role === "admin";
-  const hasAccess = isAdmin || enrollmentStatus === "active";
+  const examCategoryId = exam?.category_id || exam?.categoryId;
+  const hasCategoryAccess = Boolean(examCategoryId && userAllowedCategoryIds.includes(examCategoryId));
+  const hasAccess = isAdmin || hasCategoryAccess || enrollmentStatus === "active";
 
   // Review Modal State
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -86,6 +95,7 @@ export default function ExamInfoScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchUserEnrollment(examType);
+      fetchUserCategoryAccess();
       if (!cachedExam) {
         fetchExam();
       } else {
@@ -100,12 +110,12 @@ export default function ExamInfoScreen() {
           } catch {}
         })();
       }
-    }, [examType, cachedExam, fetchExam, fetchUserEnrollment])
+    }, [examType, cachedExam, fetchExam, fetchUserEnrollment, fetchUserCategoryAccess])
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([fetchExam(), fetchUserEnrollment(examType)]);
+    await Promise.all([fetchExam(), fetchUserEnrollment(examType), fetchUserCategoryAccess()]);
     setRefreshing(false);
   };
 

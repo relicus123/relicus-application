@@ -83,15 +83,19 @@ export default function CoachingDashboard() {
     requestCourseEnrollment,
     getMegaTestAccessStatus,
     fetchStudentExceptions,
+    userAllowedCategoryIds,
+    fetchUserCategoryAccess,
   } = useCoachingStore();
 
   const currentUser = useAuthStore((s) => s.currentUser);
   const isAdmin = currentUser?.role === "admin";
   const enrollmentStatus = userEnrollments[examType]?.status || "none";
-  const hasAccess = isAdmin || enrollmentStatus === "active";
+  const exam = exams.find((e) => e.id?.toLowerCase() === examType.toLowerCase()) || null;
+  const examCategoryId = exam?.category_id || exam?.categoryId;
+  const hasCategoryAccess = Boolean(examCategoryId && userAllowedCategoryIds.includes(examCategoryId));
+  const hasAccess = isAdmin || hasCategoryAccess || enrollmentStatus === "active";
   const [isRequestingAccess, setIsRequestingAccess] = useState(false);
 
-  const exam = exams.find((e) => e.id?.toLowerCase() === examType.toLowerCase()) || null;
   const examTitle = toTitleCase(exam?.full_name || exam?.id || examType);
   const examBadge = exam?.id || examType;
 
@@ -278,6 +282,7 @@ export default function CoachingDashboard() {
   useEffect(() => {
     if (examType) {
       fetchUserEnrollment(examType);
+      fetchUserCategoryAccess();
       fetchStudentExceptions();
       supabase
         .from("coaching_announcements")
@@ -288,7 +293,7 @@ export default function CoachingDashboard() {
           if (data) setAnnouncements(data);
         });
     }
-  }, [examType, fetchUserEnrollment, fetchStudentExceptions]);
+  }, [examType, fetchUserEnrollment, fetchUserCategoryAccess, fetchStudentExceptions]);
 
   const handleToggleVideoWatched = async (video: any) => {
     const newWatched = !video.is_watched;

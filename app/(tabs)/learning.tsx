@@ -22,13 +22,24 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useCoachingStore } from "../../store/coaching.store";
+import { useAuthStore } from "../../store/auth.store";
 import { Typography } from "../../components/Typography";
 import { BentoCard } from "../../components/BentoCard";
 import { toTitleCase } from "../../constants/coaching/examFormatter";
 
 export default function LearningScreen() {
   const router = useRouter();
-  const { categories, exams, fetchCategoriesAndExams, setSelectedExam, isLoading } = useCoachingStore();
+  const {
+    categories,
+    exams,
+    fetchCategoriesAndExams,
+    setSelectedExam,
+    isLoading,
+    userAllowedCategoryIds,
+    fetchUserCategoryAccess,
+  } = useCoachingStore();
+  const currentUser = useAuthStore((s) => s.currentUser);
+  const isAdmin = currentUser?.role === "admin";
 
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
@@ -37,12 +48,13 @@ export default function LearningScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchCategoriesAndExams();
-    }, [fetchCategoriesAndExams])
+      fetchUserCategoryAccess();
+    }, [fetchCategoriesAndExams, fetchUserCategoryAccess])
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchCategoriesAndExams(true);
+    await Promise.all([fetchCategoriesAndExams(true), fetchUserCategoryAccess()]);
     setRefreshing(false);
   };
 
@@ -140,6 +152,7 @@ export default function LearningScreen() {
             {categories.map((category, index) => {
               const isCollapsed = collapsedCategories[category.id] ?? false;
               const categoryExams = filteredExams.filter((e) => e.category_id === category.id);
+              const isCategoryUnlocked = isAdmin || userAllowedCategoryIds.includes(category.id);
 
               if (categoryExams.length === 0 && searchQuery) return null;
 
@@ -168,7 +181,20 @@ export default function LearningScreen() {
                           {category.description}
                         </Typography>
                       </View>
-                      <View className="flex-row items-center gap-2">
+                      <View className="flex-row items-center gap-1.5">
+                        {isCategoryUnlocked ? (
+                          <View className="bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex-row items-center">
+                            <Typography variant="caption" weight="bold" className="text-[10px] text-emerald-700">
+                              Unlocked 🔓
+                            </Typography>
+                          </View>
+                        ) : (
+                          <View className="bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex-row items-center">
+                            <Typography variant="caption" weight="bold" className="text-[10px] text-amber-700">
+                              Demo 🎬
+                            </Typography>
+                          </View>
+                        )}
                         <View className="bg-primary/10 px-2 py-0.5 rounded-full">
                           <Typography variant="caption" weight="bold" color="primary" className="text-[10px]">
                             {categoryExams.length} {categoryExams.length === 1 ? "Exam" : "Exams"}

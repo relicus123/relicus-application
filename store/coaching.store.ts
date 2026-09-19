@@ -54,6 +54,7 @@ interface CoachingStore {
 
   // Course Access & Enrollments
   userEnrollments: Record<string, { status: 'none' | 'pending' | 'active' | 'rejected'; id?: string }>;
+  userAllowedCategoryIds: string[];
   studentExceptions: Record<string, any>;
 
   fetchCoachingData: () => Promise<void>;
@@ -68,6 +69,7 @@ interface CoachingStore {
   hasAttemptedTest: (testId: string) => boolean;
   getLatestTestAttempt: (testId: string) => TestAttempt | undefined;
 
+  fetchUserCategoryAccess: () => Promise<string[]>;
   fetchUserEnrollment: (examId: string) => Promise<'none' | 'pending' | 'active' | 'rejected'>;
   requestCourseEnrollment: (examId: string, studentName?: string, studentEmail?: string) => Promise<{ success: boolean; error?: string }>;
   fetchStudentExceptions: () => Promise<void>;
@@ -88,6 +90,7 @@ export const useCoachingStore = create<CoachingStore>()(
       doubts: [],
       testAttempts: [],
       userEnrollments: {},
+      userAllowedCategoryIds: [],
       studentExceptions: {},
       isLoading: false,
       isSyncing: false,
@@ -306,6 +309,9 @@ export const useCoachingStore = create<CoachingStore>()(
               })),
             });
           }
+          if (currentUser?.id) {
+            get().fetchUserCategoryAccess();
+          }
         } catch (e) {
           console.error(e);
         }
@@ -507,6 +513,32 @@ export const useCoachingStore = create<CoachingStore>()(
           }
         } catch (e) {
           console.warn('Coaching test attempt remote sync notice:', e);
+        }
+      },
+
+      fetchUserCategoryAccess: async () => {
+        const currentUser = useAuthStore.getState().currentUser;
+        if (!currentUser?.id) {
+          set({ userAllowedCategoryIds: [] });
+          return [];
+        }
+
+        try {
+          const { data, error } = await supabase
+            .from('coaching_category_access')
+            .select('category_id, status')
+            .eq('user_id', currentUser.id)
+            .eq('status', 'active');
+
+          if (!error && data) {
+            const catIds = data.map((d: any) => String(d.category_id));
+            set({ userAllowedCategoryIds: catIds });
+            return catIds;
+          }
+          return [];
+        } catch (e) {
+          console.warn('Error fetching user category access:', e);
+          return [];
         }
       },
 
