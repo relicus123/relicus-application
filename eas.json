@@ -26,6 +26,12 @@
         "EXPO_PUBLIC_API_BASE_URL": "https://api.relicus.app/v1"
       }
     },
+    "preview-simulator": {
+      "extends": "preview",
+      "ios": {
+        "simulator": true
+      }
+    },
     "production": {
       "channel": "production",
       "env": {

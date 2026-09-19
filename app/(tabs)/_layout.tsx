@@ -55,6 +55,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="skills"
         options={{
+          href: null,
           title: "Skill Academy",
           tabBarIcon: ({ color, focused }) => (
             <Sparkles color={color} size={22} strokeWidth={focused ? 2.5 : 2} />
@@ -73,6 +74,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="knownext"
         options={{
+          href: null,
           title: "Know Next",
           tabBarIcon: ({ color, focused }) => (
             <Compass color={color} size={22} strokeWidth={focused ? 2.5 : 2} />

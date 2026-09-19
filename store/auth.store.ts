@@ -10,6 +10,7 @@ import {
   registerCurrentDevice,
   isCurrentDeviceActive,
   removeCurrentDevice,
+  getOrCreateDeviceId,
 } from "../lib/deviceService";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -438,18 +439,24 @@ export const useAuthStore = create<AuthState>()(
 
             // Verify device is still authorized (max 2 devices constraint)
             const deviceActive = await isCurrentDeviceActive();
+            const deviceId = await getOrCreateDeviceId();
+            const wasRegistered = await AsyncStorage.getItem(`device_registered_${authUser.id}`);
+
             if (!deviceActive) {
-              // Check if user has any devices registered or if this is a fresh migration
               const { count } = await supabase
                 .from("user_devices")
                 .select("id", { count: "exact", head: true })
                 .eq("user_id", authUser.id);
 
-              if (count === 0) {
-                // First-time setup: auto-register this current device
-                await registerCurrentDevice();
-              } else {
+              const deviceCount = count || 0;
+
+              // A device is ONLY evicted if:
+              // 1. It was previously registered on this device (wasRegistered === deviceId)
+              // 2. AND it is no longer in user_devices (deviceActive is false)
+              // 3. AND there are already 2 other devices active (deviceCount >= 2)
+              if (wasRegistered === deviceId && deviceCount >= 2) {
                 console.warn("[Auth] Device has been evicted due to 2-device limit.");
+                await AsyncStorage.removeItem(`device_registered_${authUser.id}`);
                 await get().logout();
                 Alert.alert(
                   "Logged Out on This Device",
@@ -457,8 +464,12 @@ export const useAuthStore = create<AuthState>()(
                 );
                 return;
               }
+
+              // Otherwise, register this device cleanly (RPC handles auto-kick if >= 2)
+              await registerCurrentDevice();
             } else {
               // Refresh active timestamp on app start
+              await AsyncStorage.setItem(`device_registered_${authUser.id}`, deviceId);
               registerCurrentDevice().catch(() => {});
             }
 

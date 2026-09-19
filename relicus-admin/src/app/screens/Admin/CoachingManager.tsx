@@ -90,7 +90,7 @@ export function CoachingManager() {
 
   const [subjectForm, setSubjectForm] = useState({ id: "", name: "", icon: "📐", color: "bg-blue-500" });
   const [chapterForm, setChapterForm] = useState({ id: "", name: "" });
-  const [videoForm, setVideoForm] = useState({ id: "", title: "", duration: "15:00", url: "", thumbnailUrl: "" });
+  const [videoForm, setVideoForm] = useState({ id: "", title: "", duration: "15:00", url: "", thumbnailUrl: "", isFreePreview: false });
   const [noteForm, setNoteForm] = useState({ id: "", title: "", size: "1.5 MB", pdfUrl: "" });
   const [practiceForm, setPracticeForm] = useState({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "", imageUrl: "" });
 
@@ -1071,13 +1071,16 @@ export function CoachingManager() {
     const vDuration = videoForm.duration;
     const vUrl = videoForm.url || "https://www.w3schools.com/html/mov_bbb.mp4";
     const vThumbnailUrl = videoForm.thumbnailUrl || "";
+    const vIsFreePreview = Boolean(videoForm.isFreePreview);
 
     if (currentVidId) {
       // Instant local update
       setSelectedChapter((prev: any) => ({
         ...prev,
         videos: (prev?.videos || []).map((v: any) =>
-          v.id === currentVidId ? { ...v, title: vTitle, duration: vDuration, url: vUrl, thumbnail_url: vThumbnailUrl } : v
+          v.id === currentVidId
+            ? { ...v, title: vTitle, duration: vDuration, url: vUrl, thumbnail_url: vThumbnailUrl, is_free_preview: vIsFreePreview }
+            : (vIsFreePreview ? { ...v, is_free_preview: false } : v)
         )
       }));
       setSuccess("Video updated successfully.");
@@ -1090,21 +1093,33 @@ export function CoachingManager() {
         duration: vDuration,
         url: vUrl,
         thumbnail_url: vThumbnailUrl,
+        is_free_preview: vIsFreePreview,
         is_watched: false
       };
       // Instant local update
       setSelectedChapter((prev: any) => ({
         ...prev,
-        videos: [...(prev?.videos || []), newVideo]
+        videos: [
+          ...(prev?.videos || []).map((v: any) => (vIsFreePreview ? { ...v, is_free_preview: false } : v)),
+          newVideo
+        ]
       }));
       setSuccess("Video added to chapter.");
     }
 
     setIsAddingVideo(false);
     setEditingVideoId(null);
-    setVideoForm({ id: "", title: "", duration: "15:00", url: "", thumbnailUrl: "" });
+    setVideoForm({ id: "", title: "", duration: "15:00", url: "", thumbnailUrl: "", isFreePreview: false });
 
     try {
+      if (vIsFreePreview) {
+        // Reset any other free preview video in this chapter so strictly 1 video is free demo
+        await supabase
+          .from("coaching_videos")
+          .update({ is_free_preview: false })
+          .eq("chapter_id", selectedChapter.id);
+      }
+
       if (currentVidId) {
         const { error: vErr } = await supabase
           .from("coaching_videos")
@@ -1113,6 +1128,7 @@ export function CoachingManager() {
             duration: vDuration,
             url: vUrl,
             thumbnail_url: vThumbnailUrl,
+            is_free_preview: vIsFreePreview,
           })
           .eq("id", currentVidId);
         if (vErr) throw vErr;
@@ -1127,6 +1143,7 @@ export function CoachingManager() {
             duration: vDuration,
             url: vUrl,
             thumbnail_url: vThumbnailUrl,
+            is_free_preview: vIsFreePreview,
             is_watched: false
           });
         if (vErr) throw vErr;
@@ -2842,7 +2859,7 @@ export function CoachingManager() {
                               <span className="text-xs font-bold text-slate-500 flex items-center gap-1"><Video className="h-3.5 w-3.5" /> Videos</span>
                               <button
                                 onClick={() => {
-                                  setVideoForm({ id: "", title: "", duration: "15:00", url: "", thumbnailUrl: "" });
+                                  setVideoForm({ id: "", title: "", duration: "15:00", url: "", thumbnailUrl: "", isFreePreview: false });
                                   setEditingVideoId(null);
                                   setIsAddingVideo(prev => !prev);
                                 }}
@@ -2862,7 +2879,7 @@ export function CoachingManager() {
                                       onClick={() => {
                                         setIsAddingVideo(false);
                                         setEditingVideoId(null);
-                                        setVideoForm({ id: "", title: "", duration: "15:00", url: "", thumbnailUrl: "" });
+                                        setVideoForm({ id: "", title: "", duration: "15:00", url: "", thumbnailUrl: "", isFreePreview: false });
                                       }}
                                       className="text-slate-400 hover:text-slate-600 text-[9px]"
                                     >
@@ -2895,13 +2912,24 @@ export function CoachingManager() {
                                     label="Video Thumbnail Image (File Upload Only)"
                                   />
                                 </div>
+                                <label className="flex items-center gap-2 pt-1 cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={Boolean(videoForm.isFreePreview)}
+                                    onChange={e => setVideoForm({ ...videoForm, isFreePreview: e.target.checked })}
+                                    className="rounded text-teal-600 focus:ring-teal-500 h-3.5 w-3.5"
+                                  />
+                                  <span className="text-[10px] font-bold text-teal-700 dark:text-teal-400">
+                                    🎁 Set as Free Preview Lecture (Free demo for unenrolled students)
+                                  </span>
+                                </label>
                                 <div className="flex justify-end gap-1">
                                   <button
                                     type="button"
                                     onClick={() => {
                                       setIsAddingVideo(false);
                                       setEditingVideoId(null);
-                                      setVideoForm({ id: "", title: "", duration: "15:00", url: "", thumbnailUrl: "" });
+                                      setVideoForm({ id: "", title: "", duration: "15:00", url: "", thumbnailUrl: "", isFreePreview: false });
                                     }}
                                     className="px-2 py-0.5 text-[9px] border rounded"
                                   >
@@ -2929,13 +2957,25 @@ export function CoachingManager() {
                                         </div>
                                       )}
                                       <span className="truncate font-medium">{v.title}</span>
+                                      {Boolean(v.is_free_preview) && (
+                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 shrink-0">
+                                          Free Demo 🎁
+                                        </span>
+                                      )}
                                     </div>
                                     <div className="flex items-center gap-1.5 shrink-0">
                                       <span className="text-slate-400 font-mono text-[10px]">{v.duration}</span>
                                       <button
                                         type="button"
                                         onClick={() => {
-                                          setVideoForm({ id: v.id, title: v.title, duration: v.duration, url: v.url, thumbnailUrl: v.thumbnail_url || v.thumbnailUrl || "" });
+                                          setVideoForm({
+                                            id: v.id,
+                                            title: v.title,
+                                            duration: v.duration,
+                                            url: v.url,
+                                            thumbnailUrl: v.thumbnail_url || v.thumbnailUrl || "",
+                                            isFreePreview: Boolean(v.is_free_preview)
+                                          });
                                           setEditingVideoId(v.id);
                                           setIsAddingVideo(true);
                                         }}

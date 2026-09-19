@@ -5,6 +5,8 @@ export interface RecordedVideo {
   url: string;
   progress: number; // percentage 0 - 100
   isWatched: boolean;
+  thumbnail_url?: string;
+  is_free_preview?: boolean;
 }
 
 export interface Note {

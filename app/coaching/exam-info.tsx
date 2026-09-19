@@ -110,10 +110,6 @@ export default function ExamInfoScreen() {
   };
 
   const handleStart = () => {
-    if (!hasAccess) {
-      handleRequestAccess();
-      return;
-    }
     router.push({
       pathname: "/coaching/dashboard" as any,
       params: { examType },
@@ -566,35 +562,44 @@ export default function ExamInfoScreen() {
               <ArrowRight size={16} color="white" />
             </View>
           </Button>
-        ) : enrollmentStatus === "pending" ? (
-          <Button
-            disabled
-            variant="secondary"
-            className="w-full py-3.5 rounded-2xl bg-amber-50 border border-amber-200 opacity-80"
-          >
-            <View className="flex-row items-center justify-center gap-2">
-              <Clock size={16} color="#D97706" />
-              <Typography weight="bold" className="text-amber-900 text-sm">Access Request Pending Approval</Typography>
-            </View>
-          </Button>
         ) : (
-          <Button
-            onPress={handleRequestAccess}
-            variant="primary"
-            className="w-full py-3.5 rounded-2xl shadow-sm bg-teal-700"
-            disabled={isRequestingAccess}
-          >
-            {isRequestingAccess ? (
-              <ActivityIndicator color="white" />
-            ) : (
+          <View className="gap-2">
+            <Button
+              onPress={handleStart}
+              variant="primary"
+              className="w-full py-3.5 rounded-2xl shadow-sm bg-primary"
+            >
               <View className="flex-row items-center justify-center gap-2">
-                <Lock size={16} color="white" />
-                <Typography weight="bold" color="inverse" className="text-sm">
-                  {enrollmentStatus === "rejected" ? "Re-request Course Access 🔄" : "Request Course Access 🚀"}
-                </Typography>
+                <Video size={16} color="white" />
+                <Typography weight="bold" color="inverse" className="text-sm">Explore & Watch Free Demo 🎬</Typography>
               </View>
+            </Button>
+
+            {enrollmentStatus === "pending" ? (
+              <View className="py-2 px-3 rounded-xl bg-amber-50 border border-amber-200 flex-row items-center justify-center gap-1.5">
+                <Clock size={14} color="#D97706" />
+                <Typography weight="bold" className="text-amber-900 text-xs">Full Course Access: Pending Approval</Typography>
+              </View>
+            ) : (
+              <TouchableOpacity
+                onPress={handleRequestAccess}
+                disabled={isRequestingAccess}
+                className="py-1.5 items-center justify-center flex-row gap-1.5"
+                activeOpacity={0.7}
+              >
+                {isRequestingAccess ? (
+                  <ActivityIndicator size="small" color="#1C4966" />
+                ) : (
+                  <>
+                    <Lock size={13} color="#1C4966" />
+                    <Typography weight="bold" color="primary" className="text-xs underline">
+                      {enrollmentStatus === "rejected" ? "Re-request Full Course Access 🔄" : "Request Full Course Access 🚀"}
+                    </Typography>
+                  </>
+                )}
+              </TouchableOpacity>
             )}
-          </Button>
+          </View>
         )}
       </View>
 

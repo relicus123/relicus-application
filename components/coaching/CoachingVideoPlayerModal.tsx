@@ -40,6 +40,7 @@ interface CoachingVideoPlayerModalProps {
     duration?: string;
     url: string;
     is_watched?: boolean;
+    is_free_preview?: boolean;
   } | null;
   chapter: {
     id: string;
@@ -47,6 +48,8 @@ interface CoachingVideoPlayerModalProps {
     progress?: number;
     videos?: any[];
   } | null;
+  isFreePreviewMode?: boolean;
+  onRequestAccess?: () => void;
   onClose: () => void;
   onVideoWatched?: (videoId: string, newWatched: boolean, chapterProgress: number) => void;
 }
@@ -60,6 +63,8 @@ export const CoachingVideoPlayerModal: React.FC<CoachingVideoPlayerModalProps> =
   visible,
   video,
   chapter,
+  isFreePreviewMode = false,
+  onRequestAccess,
   onClose,
   onVideoWatched,
 }) => {
@@ -531,6 +536,32 @@ export const CoachingVideoPlayerModal: React.FC<CoachingVideoPlayerModalProps> =
                 </>
               )}
             </TouchableOpacity>
+
+            {/* Free Preview Banner & CTA */}
+            {isFreePreviewMode && (
+              <View className="bg-amber-500/10 p-3.5 rounded-2xl border border-amber-400/30 gap-2">
+                <View className="flex-row items-center gap-2">
+                  <Sparkles size={16} color="#D97706" />
+                  <Typography weight="bold" color="primary" className="text-xs">
+                    Free Demo Lecture 🎓
+                  </Typography>
+                </View>
+                <Typography variant="caption" color="secondary" className="text-[11px] leading-relaxed">
+                  Enjoying this lesson? Request full course access from the admin to unlock all remaining lectures, revision notes, and mock tests!
+                </Typography>
+                {onRequestAccess && (
+                  <TouchableOpacity
+                    onPress={onRequestAccess}
+                    className="bg-primary py-2.5 rounded-xl items-center justify-center mt-1 active:opacity-90"
+                    activeOpacity={0.8}
+                  >
+                    <Typography weight="bold" color="inverse" className="text-xs">
+                      Request Full Course Access 🚀
+                    </Typography>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
 
             {/* Security Notice matching Relicus Theme */}
             <View className="bg-surface-secondary/80 p-3.5 rounded-xl border border-border-subtle flex-row items-start gap-2.5">

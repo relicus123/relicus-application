@@ -112,6 +112,13 @@ export async function registerCurrentDevice(): Promise<{
   error?: string;
 }> {
   try {
+    // 1. Verify user session exists before calling RPC to avoid unauthenticated errors
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData?.session?.user?.id;
+    if (!userId) {
+      return { success: false, error: "User not authenticated" };
+    }
+
     const { deviceId, deviceName, platform } = await getDeviceMetadata();
 
     const { data, error } = await supabase.rpc("register_device_session", {
@@ -122,18 +129,21 @@ export async function registerCurrentDevice(): Promise<{
     });
 
     if (error) {
-      console.warn("[DeviceService] register_device_session RPC error:", error.message);
+      if (!error.message.includes("User not authenticated")) {
+        console.warn("[DeviceService] register_device_session RPC error:", error.message);
+      }
       return { success: false, error: error.message };
     }
 
     console.log("[DeviceService] Device registered successfully:", data);
+    await AsyncStorage.setItem(`device_registered_${userId}`, deviceId);
+
     return {
       success: true,
       action: data?.action,
       kickedCount: data?.kicked_count || 0,
     };
   } catch (err: any) {
-    console.error("[DeviceService] Unexpected error registering device:", err);
     return { success: false, error: err?.message || "Unknown device registration error" };
   }
 }
@@ -181,12 +191,15 @@ export async function removeCurrentDevice(): Promise<void> {
     const { data: sessionData } = await supabase.auth.getSession();
     const userId = sessionData.session?.user?.id;
 
-    if (userId && deviceId) {
-      await supabase
-        .from("user_devices")
-        .delete()
-        .eq("user_id", userId)
-        .eq("device_id", deviceId);
+    if (userId) {
+      await AsyncStorage.removeItem(`device_registered_${userId}`);
+      if (deviceId) {
+        await supabase
+          .from("user_devices")
+          .delete()
+          .eq("user_id", userId)
+          .eq("device_id", deviceId);
+      }
     }
   } catch (err) {
     console.warn("[DeviceService] Failed to remove device on logout:", err);

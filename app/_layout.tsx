@@ -9,7 +9,8 @@ import { useAuthStore } from "../store/auth.store";
 import * as Linking from "expo-linking";
 import { supabase } from "../lib/supabase";
 import { handleIncomingAuthUrl } from "../lib/authHelper";
-import { getOrCreateDeviceId, isCurrentDeviceActive } from "../lib/deviceService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getOrCreateDeviceId, isCurrentDeviceActive, registerCurrentDevice } from "../lib/deviceService";
 import { GlobalDialogHost } from "../components/CustomDialog";
 import "../lib/customAlert";
 import "../global.css";
@@ -118,14 +119,31 @@ export default function RootLayout() {
     });
 
     const appStateSub = AppState.addEventListener("change", async (nextAppState) => {
-      if (nextAppState === "active" && useAuthStore.getState().currentUser) {
+      if (nextAppState === "active") {
+        const user = useAuthStore.getState().currentUser;
+        if (!user?.id) return;
+
         const active = await isCurrentDeviceActive();
         if (!active) {
-          Alert.alert(
-            "Logged Out on This Device",
-            "Your account is active on 2 other devices. You have been signed out."
-          );
-          await useAuthStore.getState().logout();
+          const deviceId = await getOrCreateDeviceId();
+          const wasRegistered = await AsyncStorage.getItem(`device_registered_${user.id}`);
+          const { count } = await supabase
+            .from("user_devices")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id);
+
+          const deviceCount = count || 0;
+
+          if (wasRegistered === deviceId && deviceCount >= 2) {
+            Alert.alert(
+              "Logged Out on This Device",
+              "Your account is active on 2 other devices. You have been signed out."
+            );
+            await AsyncStorage.removeItem(`device_registered_${user.id}`);
+            await useAuthStore.getState().logout();
+          } else {
+            await registerCurrentDevice();
+          }
         }
       }
     });

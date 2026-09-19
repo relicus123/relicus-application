@@ -9,6 +9,7 @@ import {
   Alert,
   Linking,
   Image,
+  Modal,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -195,6 +196,33 @@ export default function CoachingDashboard() {
   const [activePdfChapterName, setActivePdfChapterName] = useState<string>("");
   const [pdfModalVisible, setPdfModalVisible] = useState(false);
 
+  // Free Preview & Locked Item States
+  const [lockedModalVisible, setLockedModalVisible] = useState(false);
+  const [lockedItemTitle, setLockedItemTitle] = useState("");
+  const [lockedItemType, setLockedItemType] = useState<"video" | "note" | "test" | "question">("video");
+
+  const handleLockedItemPress = (type: "video" | "note" | "test" | "question", title: string) => {
+    setLockedItemType(type);
+    setLockedItemTitle(title);
+    setLockedModalVisible(true);
+  };
+
+  // Free Preview Lecture logic: Identify the single free preview video
+  const freePreviewVideoId = useMemo(() => {
+    // 1. Search for a video with is_free_preview explicitly marked true
+    for (const ch of chapters) {
+      const found = (ch.videos || []).find((v: any) => Boolean(v.is_free_preview));
+      if (found) return String(found.id);
+    }
+    // 2. Fallback: First video of the first chapter
+    for (const ch of chapters) {
+      if (ch.videos && ch.videos.length > 0) {
+        return String(ch.videos[0].id);
+      }
+    }
+    return null;
+  }, [chapters]);
+
   // Strict anti-screenshot and screen recording protection across Preparation Hub
   ScreenCapture.usePreventScreenCapture("coaching_preparation_hub");
 
@@ -215,6 +243,11 @@ export default function CoachingDashboard() {
   }, []);
 
   const handleOpenVideo = (video: any, chapter: any) => {
+    const isFree = String(video.id) === freePreviewVideoId || Boolean(video.is_free_preview);
+    if (!hasAccess && !isFree) {
+      handleLockedItemPress("video", video.title);
+      return;
+    }
     if (!video.url) {
       Alert.alert("Video Lesson", "No video URL specified for this lesson.");
       return;
@@ -225,6 +258,10 @@ export default function CoachingDashboard() {
   };
 
   const handleOpenPdf = (note: any, chapterName?: string) => {
+    if (!hasAccess) {
+      handleLockedItemPress("note", note.title);
+      return;
+    }
     if (!note.pdf_url) {
       Alert.alert("Document", "No PDF document attached to this revision note.");
       return;
@@ -272,6 +309,10 @@ export default function CoachingDashboard() {
   };
 
   const handleAddDoubt = async () => {
+    if (!hasAccess) {
+      handleLockedItemPress("question", "Doubt Desk");
+      return;
+    }
     if (!doubtText.trim()) return;
     try {
       await addDoubt({
@@ -291,6 +332,10 @@ export default function CoachingDashboard() {
   };
 
   const handleStartTest = (test: any, viewOnly = false) => {
+    if (!hasAccess && !viewOnly) {
+      handleLockedItemPress("test", test.name);
+      return;
+    }
     const questionCount = test.questions_count ?? test.questions?.length ?? 0;
     if (questionCount === 0 && !viewOnly) {
       Alert.alert(
@@ -335,60 +380,6 @@ export default function CoachingDashboard() {
       <View className="flex-1 bg-surface-primary justify-center items-center">
         <ActivityIndicator size="large" color="#1C4966" />
         <Typography color="secondary" className="mt-4 text-sm">Loading Preparation Hub...</Typography>
-      </View>
-    );
-  }
-
-  if (!hasAccess) {
-    return (
-      <View className="flex-1 bg-surface-primary">
-        <SafeAreaView className="flex-1 px-6 justify-center items-center">
-          <View className="w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/20 items-center justify-center mb-6">
-            <Lock size={36} color="#D97706" />
-          </View>
-          <Typography variant="title" weight="bold" color="primary" className="text-xl text-center mb-2">
-            Course Access Restricted
-          </Typography>
-          <Typography color="secondary" className="text-center text-sm mb-6 leading-relaxed px-4">
-            {enrollmentStatus === "pending"
-              ? "Your access request to this entrance coaching program is pending Admin approval. You will receive an in-app notification once approved!"
-              : "This course is restricted to enrolled students. Please request access from the admin to unlock all video lessons, study materials, and tests."}
-          </Typography>
-
-          <View className="w-full gap-3">
-            {enrollmentStatus === "pending" ? (
-              <Button disabled variant="secondary" className="w-full py-3.5 rounded-2xl bg-amber-50 border border-amber-200">
-                <Typography weight="bold" className="text-amber-900 text-sm">⏳ Request Pending Approval</Typography>
-              </Button>
-            ) : (
-              <Button
-                onPress={async () => {
-                  setIsRequestingAccess(true);
-                  await requestCourseEnrollment(examType, currentUser?.username, currentUser?.email);
-                  setIsRequestingAccess(false);
-                  Alert.alert("Request Submitted", "Admin has been notified of your access request.");
-                }}
-                variant="primary"
-                className="w-full py-3.5 rounded-2xl"
-                disabled={isRequestingAccess}
-              >
-                {isRequestingAccess ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Typography weight="bold" color="inverse" className="text-sm">Request Course Access 🚀</Typography>
-                )}
-              </Button>
-            )}
-
-            <Button
-              onPress={() => router.back()}
-              variant="outline"
-              className="w-full py-3 rounded-2xl border border-border-subtle"
-            >
-              <Typography weight="bold" color="secondary" className="text-xs">Back to Courses</Typography>
-            </Button>
-          </View>
-        </SafeAreaView>
       </View>
     );
   }
@@ -486,6 +477,54 @@ export default function CoachingDashboard() {
           )}
         </SafeAreaView>
       </LinearGradient>
+
+      {/* Free Demo Mode Banner for Unenrolled Students */}
+      {!hasAccess && (
+        <View className="mx-5 mt-3 mb-1 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-400/30 shadow-2xs">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-2.5 flex-1 mr-2">
+              <View className="w-8 h-8 rounded-xl bg-amber-500/20 items-center justify-center">
+                <Sparkles size={16} color="#D97706" />
+              </View>
+              <View className="flex-1">
+                <Typography weight="bold" color="primary" className="text-xs">
+                  Free Preview Mode 🎓
+                </Typography>
+                <Typography variant="caption" color="secondary" className="text-[11px] leading-tight mt-0.5">
+                  You can watch 1 free demo lecture. Request full course access to unlock all lessons, notes & tests.
+                </Typography>
+              </View>
+            </View>
+
+            {enrollmentStatus === "pending" ? (
+              <View className="bg-amber-100/90 px-2.5 py-1.5 rounded-xl border border-amber-300 shrink-0">
+                <Typography weight="bold" className="text-amber-900 text-[10px]">Pending ⏳</Typography>
+              </View>
+            ) : (
+              <TouchableOpacity
+                onPress={async () => {
+                  setIsRequestingAccess(true);
+                  const res = await requestCourseEnrollment(examType, currentUser?.username, currentUser?.email);
+                  setIsRequestingAccess(false);
+                  if (res.success) {
+                    Alert.alert("Request Submitted! 🎉", "Admin has been notified of your access request.");
+                  } else {
+                    Alert.alert("Notice", res.error || "Could not submit request. Please try again.");
+                  }
+                }}
+                disabled={isRequestingAccess}
+                className="bg-primary px-3 py-1.5 rounded-xl active:opacity-90 shrink-0"
+              >
+                {isRequestingAccess ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Typography weight="bold" color="inverse" className="text-[11px]">Request Access 🚀</Typography>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
 
       {/* Tabs Selector */}
       <View className="bg-surface-primary border-b border-border-subtle/80 py-2.5">
@@ -742,11 +781,19 @@ export default function CoachingDashboard() {
                             <View className="gap-2.5">
                               {chapterVideos.map((v: any) => {
                                 const thumb = v.thumbnail_url || v.thumbnailUrl;
+                                const isFreeLecture = String(v.id) === freePreviewVideoId || Boolean(v.is_free_preview);
+                                const isVideoUnlocked = hasAccess || isFreeLecture;
+
                                 return (
                                   <TouchableOpacity
                                     key={v.id}
                                     onPress={() => handleOpenVideo(v, chapter)}
-                                    className="p-2.5 rounded-2xl bg-surface-secondary/40 border border-border-subtle active:bg-surface-secondary gap-2 shadow-2xs"
+                                    className={twMerge(clsx(
+                                      "p-2.5 rounded-2xl border gap-2 shadow-2xs",
+                                      isVideoUnlocked
+                                        ? "bg-surface-secondary/40 border-border-subtle active:bg-surface-secondary"
+                                        : "bg-slate-50/80 border-slate-200/80 active:bg-slate-100"
+                                    ))}
                                     activeOpacity={0.8}
                                   >
                                     {thumb ? (
@@ -757,8 +804,15 @@ export default function CoachingDashboard() {
                                           resizeMode="cover"
                                         />
                                         <View className="absolute inset-0 bg-black/25 items-center justify-center">
-                                          <View className="w-10 h-10 rounded-full bg-white/90 items-center justify-center shadow-md">
-                                            <Play size={18} color="#1C4966" fill="#1C4966" className="ml-0.5" />
+                                          <View className={twMerge(clsx(
+                                            "w-10 h-10 rounded-full items-center justify-center shadow-md",
+                                            isVideoUnlocked ? "bg-white/90" : "bg-slate-900/80"
+                                          ))}>
+                                            {isVideoUnlocked ? (
+                                              <Play size={18} color="#1C4966" fill="#1C4966" className="ml-0.5" />
+                                            ) : (
+                                              <Lock size={18} color="#D97706" />
+                                            )}
                                           </View>
                                         </View>
                                         {Boolean(v.duration) && (
@@ -770,12 +824,24 @@ export default function CoachingDashboard() {
                                         )}
                                       </View>
                                     ) : (
-                                      <View className="w-full h-20 rounded-xl bg-primary/10 border border-primary/20 items-center justify-center flex-row gap-2">
-                                        <View className="w-8 h-8 rounded-full bg-primary items-center justify-center shadow-xs">
-                                          <Play size={14} color="white" fill="white" className="ml-0.5" />
+                                      <View className={twMerge(clsx(
+                                        "w-full h-20 rounded-xl border items-center justify-center flex-row gap-2",
+                                        isVideoUnlocked ? "bg-primary/10 border-primary/20" : "bg-slate-100 border-slate-200"
+                                      ))}>
+                                        <View className={twMerge(clsx(
+                                          "w-8 h-8 rounded-full items-center justify-center shadow-xs",
+                                          isVideoUnlocked ? "bg-primary" : "bg-slate-300"
+                                        ))}>
+                                          {isVideoUnlocked ? (
+                                            <Play size={14} color="white" fill="white" className="ml-0.5" />
+                                          ) : (
+                                            <Lock size={14} color="#475569" />
+                                          )}
                                         </View>
-                                        <Typography variant="caption" weight="bold" color="primary" className="text-xs">
-                                          Watch Lecture {v.duration ? `• ${v.duration}` : ""}
+                                        <Typography variant="caption" weight="bold" color={isVideoUnlocked ? "primary" : "secondary"} className="text-xs">
+                                          {isVideoUnlocked
+                                            ? `Watch Lecture ${v.duration ? `• ${v.duration}` : ""}`
+                                            : `Locked Lecture ${v.duration ? `• ${v.duration}` : ""}`}
                                         </Typography>
                                       </View>
                                     )}
@@ -790,16 +856,29 @@ export default function CoachingDashboard() {
                                         </Typography>
                                       </View>
                                       <View className="flex-row items-center gap-1.5 shrink-0">
+                                        {!hasAccess && isFreeLecture && (
+                                          <View className="flex-row items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                            <Sparkles size={10} color="#059669" />
+                                            <Typography variant="caption" weight="bold" className="text-emerald-700 text-[10px]">Free Demo</Typography>
+                                          </View>
+                                        )}
                                         {v.is_watched && (
                                           <View className="flex-row items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                                             <CheckCircle size={10} color="#059669" />
                                             <Typography variant="caption" weight="bold" className="text-emerald-700 text-[10px]">Watched</Typography>
                                           </View>
                                         )}
-                                        <View className="flex-row items-center gap-1 bg-primary px-2.5 py-1 rounded-lg">
-                                          <Play size={10} color="white" fill="white" />
-                                          <Typography variant="caption" weight="bold" color="inverse" className="text-[10px]">Play</Typography>
-                                        </View>
+                                        {isVideoUnlocked ? (
+                                          <View className="flex-row items-center gap-1 bg-primary px-2.5 py-1 rounded-lg">
+                                            <Play size={10} color="white" fill="white" />
+                                            <Typography variant="caption" weight="bold" color="inverse" className="text-[10px]">Play</Typography>
+                                          </View>
+                                        ) : (
+                                          <View className="flex-row items-center gap-1 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
+                                            <Lock size={10} color="#D97706" />
+                                            <Typography variant="caption" weight="bold" className="text-amber-800 text-[10px]">Unlock</Typography>
+                                          </View>
+                                        )}
                                       </View>
                                     </View>
                                   </TouchableOpacity>
@@ -862,6 +941,10 @@ export default function CoachingDashboard() {
 
                           <TouchableOpacity
                             onPress={() => {
+                              if (!hasAccess) {
+                                handleLockedItemPress("question", `${cleanChName} Practice Questions`);
+                                return;
+                              }
                               router.push({
                                 pathname: "/coaching/practice" as any,
                                 params: {
@@ -939,6 +1022,10 @@ export default function CoachingDashboard() {
                     size="sm" 
                     variant={cls.status === "ongoing" ? "primary" : "outline"}
                     onPress={() => {
+                      if (!hasAccess) {
+                        handleLockedItemPress("live" as any, cls.topic);
+                        return;
+                      }
                       if (cls.url) {
                         Linking.openURL(cls.url).catch(() => Alert.alert("Error", "Could not open broadcast URL."));
                       } else {
@@ -1479,6 +1566,11 @@ export default function CoachingDashboard() {
         visible={videoModalVisible}
         video={activeVideo}
         chapter={activeVideoChapter}
+        isFreePreviewMode={!hasAccess}
+        onRequestAccess={() => {
+          setVideoModalVisible(false);
+          handleLockedItemPress("video", activeVideo?.title || "Video Lecture");
+        }}
         onClose={() => {
           setVideoModalVisible(false);
           setActiveVideo(null);
@@ -1501,6 +1593,74 @@ export default function CoachingDashboard() {
           setActivePdfNote(null);
         }}
       />
+
+      {/* Course Access Request Modal for Preview Mode */}
+      <Modal
+        visible={lockedModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLockedModalVisible(false)}
+      >
+        <View className="flex-1 bg-black/60 justify-center items-center px-6">
+          <View className="bg-white rounded-3xl p-6 w-full max-w-sm items-center shadow-xl border border-border-subtle">
+            <View className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 items-center justify-center mb-4">
+              <Lock size={30} color="#D97706" />
+            </View>
+
+            <Typography variant="title" weight="bold" color="primary" className="text-lg text-center mb-1.5">
+              Unlock Full Course
+            </Typography>
+
+            <Typography color="secondary" className="text-center text-xs mb-5 leading-relaxed px-2">
+              {enrollmentStatus === "pending"
+                ? "Your access request to this entrance coaching program is pending Admin approval. You will receive an in-app notification once approved!"
+                : `"${lockedItemTitle || "This lesson"}" is part of the full course curriculum. Request access from the admin to unlock all remaining video lectures, revision notes, and mock tests!`}
+            </Typography>
+
+            <View className="w-full gap-2.5">
+              {enrollmentStatus === "pending" ? (
+                <View className="w-full py-3 rounded-2xl bg-amber-50 border border-amber-200 items-center justify-center flex-row gap-2">
+                  <Clock size={16} color="#D97706" />
+                  <Typography weight="bold" className="text-amber-900 text-xs">Access Request Pending Approval</Typography>
+                </View>
+              ) : (
+                <Button
+                  onPress={async () => {
+                    setIsRequestingAccess(true);
+                    const res = await requestCourseEnrollment(examType, currentUser?.username, currentUser?.email);
+                    setIsRequestingAccess(false);
+                    if (res.success) {
+                      Alert.alert("Request Submitted! 🎉", "Admin has been notified of your access request.");
+                    } else {
+                      Alert.alert("Notice", res.error || "Could not submit request. Please try again.");
+                    }
+                  }}
+                  variant="primary"
+                  className="w-full py-3.5 rounded-2xl bg-teal-700"
+                  disabled={isRequestingAccess}
+                >
+                  {isRequestingAccess ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <View className="flex-row items-center justify-center gap-2">
+                      <Lock size={15} color="white" />
+                      <Typography weight="bold" color="inverse" className="text-xs">Request Full Course Access 🚀</Typography>
+                    </View>
+                  )}
+                </Button>
+              )}
+
+              <Button
+                onPress={() => setLockedModalVisible(false)}
+                variant="outline"
+                className="w-full py-2.5 rounded-2xl border border-border-subtle"
+              >
+                <Typography weight="bold" color="secondary" className="text-xs">Continue Free Preview</Typography>
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

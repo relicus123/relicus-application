@@ -10,6 +10,7 @@ import {
   Image,
   Modal,
   StyleSheet,
+  Platform,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -492,37 +493,41 @@ export default function Landing() {
             </TouchableOpacity>
           </View>
 
-          {/* Google Sign In Button */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={handleGoogleSignIn}
-            disabled={isGoogleLoading}
-            className="flex-row items-center justify-center bg-white border border-border-subtle py-3.5 px-4 rounded-2xl"
-          >
-            {isGoogleLoading ? (
-              <ActivityIndicator size="small" color="#1C4966" />
-            ) : (
-              <View className="flex-row items-center justify-center gap-3">
-                <GoogleIcon size={20} />
-                <Typography weight="semibold" color="primary" className="text-sm">
-                  Continue with Google
-                </Typography>
-              </View>
-            )}
-          </TouchableOpacity>
+          {/* Google Sign In Button - Android & Web only (complies with Apple App Store Guideline 4.8) */}
+          {Platform.OS !== "ios" && (
+            <>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleGoogleSignIn}
+                disabled={isGoogleLoading}
+                className="flex-row items-center justify-center bg-white border border-border-subtle py-3.5 px-4 rounded-2xl"
+              >
+                {isGoogleLoading ? (
+                  <ActivityIndicator size="small" color="#1C4966" />
+                ) : (
+                  <View className="flex-row items-center justify-center gap-3">
+                    <GoogleIcon size={20} />
+                    <Typography weight="semibold" color="primary" className="text-sm">
+                      Continue with Google
+                    </Typography>
+                  </View>
+                )}
+              </TouchableOpacity>
 
-          {/* Divider */}
-          <View className="flex-row items-center">
-            <View className="flex-1 h-[1px] bg-primary/10" />
-            <Typography
-              variant="caption"
-              color="secondary"
-              className="mx-3 text-[11px] uppercase tracking-wider font-semibold opacity-70"
-            >
-              or continue with email
-            </Typography>
-            <View className="flex-1 h-[1px] bg-primary/10" />
-          </View>
+              {/* Divider */}
+              <View className="flex-row items-center">
+                <View className="flex-1 h-[1px] bg-primary/10" />
+                <Typography
+                  variant="caption"
+                  color="secondary"
+                  className="mx-3 text-[11px] uppercase tracking-wider font-semibold opacity-70"
+                >
+                  or continue with email
+                </Typography>
+                <View className="flex-1 h-[1px] bg-primary/10" />
+              </View>
+            </>
+          )}
 
           {/* Dynamic Inputs */}
           <View className="gap-3.5">
