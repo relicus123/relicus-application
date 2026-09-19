@@ -50,7 +50,9 @@
     },
     "android": {
       "package": "com.relicus.app",
-      "versionCode": 1,
+      "versionCode": 2,
+      "targetSdkVersion": 36,
+      "compileSdkVersion": 36,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
