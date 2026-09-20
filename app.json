@@ -49,8 +49,8 @@
       }
     },
     "android": {
-      "package": "com.relicus.app",
-      "versionCode": 3,
+      "package": "com.relicus.com",
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
