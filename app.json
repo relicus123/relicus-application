@@ -50,7 +50,7 @@
     },
     "android": {
       "package": "com.relicus.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "targetSdkVersion": 36,
       "compileSdkVersion": 36,
       "adaptiveIcon": {
