@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   ScrollView,
+  RefreshControl,
   TouchableOpacity,
   Pressable,
   TextInput,
@@ -173,12 +174,26 @@ export default function CoachingDashboard() {
 
   useEffect(() => {
     if (selectedSubjectId) {
-      fetchChapters(selectedSubjectId);
+      fetchChapters(selectedSubjectId, true);
     }
   }, [selectedSubjectId, fetchChapters]);
 
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([
+      fetchExamDashboard(examType, true),
+      selectedSubjectId ? fetchChapters(selectedSubjectId, true) : Promise.resolve(),
+      fetchUserCategoryAccess(),
+      fetchUserEnrollment(examType),
+    ]);
+    setRefreshing(false);
+  };
+
+  const hasLoadedDbChapters = Boolean(selectedSubjectId && chaptersBySubject[selectedSubjectId] !== undefined);
   const dbChapters = (selectedSubjectId && chaptersBySubject[selectedSubjectId]) || [];
-  const chapters = dbChapters.length > 0
+  const chapters = hasLoadedDbChapters
     ? dbChapters
     : (localDataset?.chapters?.filter((c: any) => c.subjectId === selectedSubjectId || c.subject === selectedSubjectId) || []);
 
@@ -565,7 +580,13 @@ export default function CoachingDashboard() {
       </View>
 
       {/* Main Tab Content */}
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1C4966" />
+        }
+      >
         {/* OVERVIEW TAB */}
         {activeTab === "overview" && (
           <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} className="gap-3.5">

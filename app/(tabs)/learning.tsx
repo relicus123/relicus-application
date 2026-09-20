@@ -150,6 +150,7 @@ export default function LearningScreen() {
         ) : (
           <View className="gap-3.5">
             {categories.map((category, index) => {
+              if (category.id === "dfssdf" || category.id === "sdfa") return null;
               const isCollapsed = collapsedCategories[category.id] ?? false;
               const categoryExams = filteredExams.filter((e) => e.category_id === category.id);
               const isCategoryUnlocked = isAdmin || userAllowedCategoryIds.includes(category.id);

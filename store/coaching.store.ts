@@ -123,12 +123,18 @@ export const useCoachingStore = create<CoachingStore>()(
 
         try {
           const [catsRes, examsRes] = await Promise.all([
-            supabase.from('coaching_exam_categories').select('*'),
+            supabase.from('coaching_exam_categories').select('*').order('sequence_number', { ascending: true }),
             supabase.from('coaching_exams').select('*'),
           ]);
 
-          if (catsRes.data) set({ categories: catsRes.data });
-          if (examsRes.data) set({ exams: examsRes.data });
+          if (!catsRes.error && catsRes.data) {
+            // Filter out any corrupted test categories client-side as safety guard
+            const validCats = catsRes.data.filter((c: any) => c.id !== 'dfssdf' && c.id !== 'sdfa');
+            set({ categories: validCats });
+          }
+          if (!examsRes.error && examsRes.data) {
+            set({ exams: examsRes.data });
+          }
         } catch (err) {
           console.error('Error fetching categories & exams:', err);
         } finally {
@@ -168,6 +174,13 @@ export const useCoachingStore = create<CoachingStore>()(
                 [examId]: subjectsRes.data || [],
               },
             }));
+
+            // If force refreshing, refresh chapters for each subject to purge deleted chapters
+            if (forceRefresh) {
+              subjectsRes.data.forEach((s: any) => {
+                get().fetchChapters(s.id, true);
+              });
+            }
           }
 
           if (liveRes.data) {
@@ -213,15 +226,15 @@ export const useCoachingStore = create<CoachingStore>()(
 
       fetchChapters: async (subjectId: string, forceRefresh = false) => {
         const { chaptersBySubject } = get();
-        if (chaptersBySubject[subjectId] && !forceRefresh) return;
+        if (chaptersBySubject[subjectId] !== undefined && !forceRefresh) return;
 
         try {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('coaching_chapters')
             .select('*, videos:coaching_videos(*), notes:coaching_notes(*), practiceQuestions:coaching_practice_questions(*)')
             .eq('subject_id', subjectId);
 
-          if (data) {
+          if (!error && data) {
             set((state) => ({
               chaptersBySubject: {
                 ...state.chaptersBySubject,

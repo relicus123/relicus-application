@@ -3,6 +3,8 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../lib/supabase";
 
+import { useAuthStore } from "./auth.store";
+
 export type NotificationType = "appointment" | "learning" | "system" | "message" | "alert";
 
 export interface AppNotification {
@@ -56,14 +58,15 @@ export const useNotificationsStore = create<NotificationsState>()(
       fetchLiveNotifications: async () => {
         set({ isLoading: true });
         try {
-          const { data: authData } = await supabase.auth.getUser();
-          const userId = authData?.user?.id;
+          // Instant memory lookup instead of slow remote supabase.auth.getUser() call
+          const currentUser = useAuthStore.getState().currentUser;
+          const userId = currentUser?.id;
 
           let notifQuery = supabase
             .from("coaching_notifications")
             .select("*")
             .order("created_at", { ascending: false })
-            .limit(30);
+            .limit(40);
 
           if (userId) {
             notifQuery = notifQuery.or(`target_user_id.is.null,target_user_id.eq.${userId}`);
@@ -82,15 +85,24 @@ export const useNotificationsStore = create<NotificationsState>()(
 
           const liveItems: AppNotification[] = [];
 
+          // Retain read status of existing notifications so reading isn't reset on refresh
+          const currentNotifications = get().notifications;
+          const readStatusMap = new Map<string, boolean>();
+          currentNotifications.forEach((n) => {
+            readStatusMap.set(n.id, n.unread);
+          });
+
           if (notifsRes.data) {
             notifsRes.data.forEach((n: any) => {
+              const id = `cn-${n.id}`;
+              const previouslyUnread = readStatusMap.has(id) ? readStatusMap.get(id)! : (n.is_read !== true);
               liveItems.push({
-                id: `cn-${n.id}`,
+                id,
                 type: n.category === "live" ? "alert" : n.category === "test" ? "alert" : "learning",
                 title: n.title,
                 message: n.message,
                 timestamp: n.created_at || new Date().toISOString(),
-                unread: true,
+                unread: previouslyUnread,
               });
             });
           }
@@ -99,30 +111,34 @@ export const useNotificationsStore = create<NotificationsState>()(
             annsRes.data.forEach((a: any) => {
               // Avoid duplicate if already in notifications
               if (!liveItems.some((item) => item.title === a.title)) {
+                const id = `ann-${a.id}`;
+                const previouslyUnread = readStatusMap.has(id) ? readStatusMap.get(id)! : true;
                 liveItems.push({
-                  id: `ann-${a.id}`,
+                  id,
                   type: "learning",
                   title: a.title,
                   message: a.content,
                   timestamp: a.created_at || new Date().toISOString(),
-                  unread: true,
+                  unread: previouslyUnread,
                 });
               }
             });
           }
 
-          if (liveItems.length > 0) {
-            set((state) => {
-              const existingIds = new Set(state.notifications.map((n) => n.id));
-              const newItems = liveItems.filter((item) => !existingIds.has(item.id));
-              return {
-                notifications: [...newItems, ...state.notifications],
-                isLoading: false,
-              };
-            });
-          } else {
-            set({ isLoading: false });
-          }
+          // Sort descending by date
+          liveItems.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+          // Reconcile: Purge stale/deleted server notifications from local state
+          // Keep only local custom notifications and the current active server items
+          set((state) => {
+            const localCustomItems = state.notifications.filter(
+              (n) => !n.id.startsWith("cn-") && !n.id.startsWith("ann-")
+            );
+            return {
+              notifications: [...liveItems, ...localCustomItems],
+              isLoading: false,
+            };
+          });
         } catch (err) {
           console.error("Error fetching live notifications:", err);
           set({ isLoading: false });

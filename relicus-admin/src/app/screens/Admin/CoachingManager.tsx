@@ -753,19 +753,18 @@ export function CoachingManager() {
 
     if (!window.confirm(confirmMsg)) return;
 
-    // Instant local state update
-    setCategories(prev => prev.filter((c: any) => c.id !== categoryId));
-    setSuccess(`Category "${categoryTitle}" deleted successfully.`);
-
-    if (examForm.categoryId === categoryId) {
-      const remaining = categories.filter((c: any) => c.id !== categoryId);
-      setExamForm(prev => ({
-        ...prev,
-        categoryId: remaining.length > 0 ? remaining[0].id : ""
-      }));
-    }
-
     try {
+      // 1. Delete any student category access permissions linked to this category
+      try {
+        await supabase
+          .from("coaching_category_access")
+          .delete()
+          .eq("category_id", categoryId);
+      } catch (accessErr) {
+        console.warn("Category access cleanup notice:", accessErr);
+      }
+
+      // 2. Unlink any exams referencing this category
       if (linkedExams.length > 0) {
         await supabase
           .from("coaching_exams")
@@ -773,12 +772,26 @@ export function CoachingManager() {
           .eq("category_id", categoryId);
       }
 
+      // 3. Delete the category from database
       const { error: delErr } = await supabase
         .from("coaching_exam_categories")
         .delete()
         .eq("id", categoryId);
 
       if (delErr) throw delErr;
+
+      // 4. Update UI only after server deletion succeeds
+      setCategories(prev => prev.filter((c: any) => c.id !== categoryId));
+      setSuccess(`Category "${categoryTitle}" deleted successfully.`);
+
+      if (examForm.categoryId === categoryId) {
+        const remaining = categories.filter((c: any) => c.id !== categoryId);
+        setExamForm(prev => ({
+          ...prev,
+          categoryId: remaining.length > 0 ? remaining[0].id : ""
+        }));
+      }
+
       loadAllData(false);
     } catch (err: any) {
       setError("Failed to delete category: " + err.message);
@@ -1122,34 +1135,28 @@ export function CoachingManager() {
   const handleDeleteChapter = async (chId: string, chName: string) => {
     if (!window.confirm(`Are you sure you want to delete chapter "${chName}"? All videos, notes, and questions inside will be deleted.`)) return;
 
-    // Instant local state update
-    setSelectedExam(prev => {
-      if (!prev) return prev;
-      return { ...prev, chapters: (prev.chapters || []).filter((ch: any) => ch.id !== chId) };
-    });
-    setExams(prev => prev.map(ex => {
-      if (ex.id !== selectedExam?.id) return ex;
-      return { ...ex, chapters: (ex.chapters || []).filter((ch: any) => ch.id !== chId) };
-    }));
-    if (selectedChapter?.id === chId) {
-      setSelectedChapter(null);
-    }
-    if (selectedSubject) {
-      setSelectedSubject((prev: any) => {
-        if (!prev) return prev;
-        const count = Math.max(0, (prev.chaptersCount || prev.chapters_count || 1) - 1);
-        return { ...prev, chaptersCount: count, chapters_count: count };
-      });
-    }
-    setSuccess(`Chapter "${chName}" deleted.`);
-
     try {
+      // 1. Delete chapter in database (cascades to videos, notes, questions)
       const { error: delErr } = await supabase
         .from("coaching_chapters")
         .delete()
         .eq("id", chId);
       if (delErr) throw delErr;
 
+      // 2. Clean up any related notifications for this chapter
+      try {
+        if (selectedExam?.id) {
+          await supabase
+            .from("coaching_notifications")
+            .delete()
+            .eq("exam_id", selectedExam.id)
+            .ilike("message", `%${chName}%`);
+        }
+      } catch (notifErr) {
+        console.warn("Notification cleanup notice:", notifErr);
+      }
+
+      // 3. Update subject count in DB
       if (selectedSubject) {
         const currentCount = (selectedSubject.chaptersCount || selectedSubject.chapters_count || 1);
         await supabase
@@ -1157,6 +1164,27 @@ export function CoachingManager() {
           .update({ chapters_count: Math.max(0, currentCount - 1) })
           .eq("id", selectedSubject.id);
       }
+
+      // 4. Update UI state on successful server response
+      setSelectedExam(prev => {
+        if (!prev) return prev;
+        return { ...prev, chapters: (prev.chapters || []).filter((ch: any) => ch.id !== chId) };
+      });
+      setExams(prev => prev.map(ex => {
+        if (ex.id !== selectedExam?.id) return ex;
+        return { ...ex, chapters: (ex.chapters || []).filter((ch: any) => ch.id !== chId) };
+      }));
+      if (selectedChapter?.id === chId) {
+        setSelectedChapter(null);
+      }
+      if (selectedSubject) {
+        setSelectedSubject((prev: any) => {
+          if (!prev) return prev;
+          const count = Math.max(0, (prev.chaptersCount || prev.chapters_count || 1) - 1);
+          return { ...prev, chaptersCount: count, chapters_count: count };
+        });
+      }
+      setSuccess(`Chapter "${chName}" deleted.`);
       loadAllData(false);
     } catch (err: any) {
       setError("Failed to delete chapter: " + err.message);
