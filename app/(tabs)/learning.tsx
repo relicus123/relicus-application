@@ -84,6 +84,15 @@ export default function LearningScreen() {
     });
   }, [exams, searchQuery]);
 
+  // Only show categories that have active exams
+  const visibleCategories = useMemo(() => {
+    return categories.filter((category) => {
+      if (category.id === "dfssdf" || category.id === "sdfa") return false;
+      const categoryExams = filteredExams.filter((e) => e.category_id === category.id);
+      return categoryExams.length > 0;
+    });
+  }, [categories, filteredExams]);
+
   return (
     <View className="flex-1 bg-surface-primary">
       {/* Header Banner */}
@@ -141,21 +150,18 @@ export default function LearningScreen() {
             <ActivityIndicator size="large" color="#1C4966" />
             <Typography color="secondary" className="mt-4 text-sm">Loading Categories...</Typography>
           </View>
-        ) : categories.length === 0 ? (
+        ) : visibleCategories.length === 0 ? (
           <View className="py-12 items-center px-4">
             <Typography color="secondary" className="text-center text-sm">
-              No exam categories found. Add categories from the Admin Panel.
+              {searchQuery ? "No exams match your search." : "No exam categories currently open for preparation."}
             </Typography>
           </View>
         ) : (
           <View className="gap-3.5">
-            {categories.map((category, index) => {
-              if (category.id === "dfssdf" || category.id === "sdfa") return null;
+            {visibleCategories.map((category, index) => {
               const isCollapsed = collapsedCategories[category.id] ?? false;
               const categoryExams = filteredExams.filter((e) => e.category_id === category.id);
               const isCategoryUnlocked = isAdmin || userAllowedCategoryIds.includes(category.id);
-
-              if (categoryExams.length === 0 && searchQuery) return null;
 
               return (
                 <MotiView

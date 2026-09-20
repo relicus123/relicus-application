@@ -108,7 +108,7 @@ export function AdminLayout() {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
       {/* Sidebar Navigation */}
-      <aside className="relative flex h-full w-72 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <aside className="relative flex h-full w-72 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
         <div className="flex h-20 items-center justify-between px-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-[#1C4966] to-[#8FBDD7] text-white">
@@ -171,7 +171,7 @@ export function AdminLayout() {
       </aside>
 
       {/* Main content viewport */}
-      <main className="flex-1 overflow-y-auto px-10 py-8">
+      <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-8 py-8">
         <Outlet />
       </main>
     </div>

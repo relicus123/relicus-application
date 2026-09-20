@@ -2236,7 +2236,7 @@ export function CoachingManager() {
     : "No ratings";
 
   return (
-    <div className="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
+    <div className="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100 w-full max-w-full overflow-hidden">
       {/* Top Banner */}
       <div className="flex items-center justify-between">
         <div>
@@ -2284,21 +2284,27 @@ export function CoachingManager() {
 
       {/* Categories View Mode */}
       {viewMode === "categories" && (
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 space-y-6">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-bold">Category Management</h3>
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 space-y-6 w-full max-w-full overflow-hidden">
+          <div className="flex justify-between items-center border-b pb-4 dark:border-slate-800">
+            <div>
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Category Management</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Organize entrance coaching exams into structured student categories.</p>
+            </div>
             <button
               onClick={() => setViewMode("exam")}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-700"
+              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
             >
-              Back to Exams
+              ← Back to Exams
             </button>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="md:col-span-1 p-5 border rounded-2xl bg-slate-50/50 dark:bg-slate-850/40">
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="font-semibold text-sm">{editingCategoryId ? "Edit Category" : "Add New Category"}</h4>
+          <div className="grid gap-6 lg:grid-cols-3 w-full max-w-full">
+            {/* Left Column: Form */}
+            <div className="lg:col-span-1 p-5 border border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/70 dark:bg-slate-850/40 w-full space-y-4">
+              <div className="flex justify-between items-center">
+                <h4 className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                  {editingCategoryId ? "Edit Category" : "Add New Category"}
+                </h4>
                 {editingCategoryId && (
                   <button
                     type="button"
@@ -2306,87 +2312,109 @@ export function CoachingManager() {
                       setEditingCategoryId(null);
                       setCategoryForm({ id: "", title: "", description: "", icon: "🎓" });
                     }}
-                    className="text-xs text-slate-400 hover:text-slate-600"
+                    className="text-xs font-semibold text-slate-400 hover:text-slate-600"
                   >
                     Cancel
                   </button>
                 )}
               </div>
-              <form onSubmit={handleSaveCategory} className="space-y-3">
+              <form onSubmit={handleSaveCategory} className="space-y-3.5">
                 <div>
-                  <label className="block text-[10px] uppercase font-bold text-slate-400">Unique Code ID</label>
+                  <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Unique Code ID</label>
                   <input
                     type="text" required placeholder="e.g. undergraduate, medical"
                     value={categoryForm.id}
                     disabled={!!editingCategoryId}
                     onChange={e => setCategoryForm({ ...categoryForm, id: e.target.value })}
-                    className="w-full rounded-xl border p-2 text-xs bg-white dark:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 p-2.5 text-xs bg-white dark:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] uppercase font-bold text-slate-400">Title</label>
+                  <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Title</label>
                   <input
                     type="text" required placeholder="e.g. Undergrad Exams"
                     value={categoryForm.title}
                     onChange={e => setCategoryForm({ ...categoryForm, title: e.target.value })}
-                    className="w-full rounded-xl border p-2 text-xs bg-white dark:bg-slate-800"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 p-2.5 text-xs bg-white dark:bg-slate-800"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] uppercase font-bold text-slate-400">Description</label>
+                  <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Description</label>
                   <textarea
-                    placeholder="Short category description..." rows={2}
+                    placeholder="Short category description..." rows={3}
                     value={categoryForm.description}
                     onChange={e => setCategoryForm({ ...categoryForm, description: e.target.value })}
-                    className="w-full rounded-xl border p-2 text-xs bg-white dark:bg-slate-800"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 p-2.5 text-xs bg-white dark:bg-slate-800 leading-relaxed"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] uppercase font-bold text-slate-400">Icon Emoji</label>
+                  <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Icon Emoji</label>
                   <input
                     type="text" placeholder="e.g. 🎓"
                     value={categoryForm.icon}
                     onChange={e => setCategoryForm({ ...categoryForm, icon: e.target.value })}
-                    className="w-full rounded-xl border p-2 text-xs bg-white dark:bg-slate-800"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 p-2.5 text-xs bg-white dark:bg-slate-800"
                   />
                 </div>
-                <button type="submit" className="w-full py-2 bg-teal-600 text-white rounded-xl text-xs font-bold hover:bg-teal-700">
+                <button type="submit" className="w-full py-2.5 bg-teal-600 text-white rounded-xl text-xs font-bold hover:bg-teal-700 transition shadow-xs">
                   {editingCategoryId ? "Update Category" : "Create Category"}
                 </button>
               </form>
             </div>
 
-            <div className="md:col-span-2 space-y-3">
-              <h4 className="font-semibold text-sm">Active Categories ({categories.length})</h4>
+            {/* Right Column: Active Categories */}
+            <div className="lg:col-span-2 space-y-3 w-full min-w-0">
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                  Active Categories ({categories.length})
+                </h4>
+              </div>
               {categories.length === 0 ? (
-                <div className="p-8 border border-dashed rounded-2xl text-center text-slate-400 text-xs">
+                <div className="p-8 border border-dashed rounded-2xl text-center text-slate-400 text-xs bg-slate-50/50 dark:bg-slate-850/30">
                   No categories found. Create one using the form on the left.
                 </div>
               ) : (
-                <div className="grid gap-3">
+                <div className="space-y-3 w-full min-w-0">
                   {categories.map((cat: any) => {
                     const linkedCount = exams.filter(
                       (ex: any) => ex.categoryId === cat.id || ex.category_id === cat.id
                     ).length;
 
                     return (
-                      <div key={cat.id} className="group flex justify-between items-center p-4 border rounded-2xl bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-sm">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span className="text-xl shrink-0 p-2 bg-slate-100 dark:bg-slate-700/60 rounded-xl">{cat.icon || "🎓"}</span>
-                          <div className="min-w-0">
-                            <span className="font-bold text-sm block truncate text-slate-800 dark:text-slate-100">{cat.title}</span>
+                      <div
+                        key={cat.id}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-xs gap-3 w-full min-w-0 overflow-hidden"
+                      >
+                        <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
+                          <span className="text-2xl shrink-0 p-2.5 bg-slate-100 dark:bg-slate-750 rounded-2xl">
+                            {cat.icon || "🎓"}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                                {cat.title}
+                              </span>
+                              <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md font-mono font-medium">
+                                {cat.id}
+                              </span>
+                            </div>
                             {cat.description && (
-                              <span className="text-xs text-slate-400 block truncate mt-0.5">{cat.description}</span>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+                                {cat.description}
+                              </p>
                             )}
-                            {linkedCount > 0 && (
-                              <span className="text-[10px] text-teal-600 dark:text-teal-400 font-medium block mt-1">
-                                {linkedCount} {linkedCount === 1 ? "exam" : "exams"} linked
+                            {linkedCount > 0 ? (
+                              <span className="text-[11px] text-teal-600 dark:text-teal-400 font-semibold block mt-1">
+                                ● {linkedCount} {linkedCount === 1 ? "exam" : "exams"} linked
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 font-normal block mt-1">
+                                ○ 0 exams linked
                               </span>
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0 ml-3">
-                          <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-full font-mono">{cat.id}</span>
+                        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100 dark:border-slate-800">
                           <button
                             type="button"
                             onClick={() => {
@@ -2399,7 +2427,7 @@ export function CoachingManager() {
                               setEditingCategoryId(cat.id);
                             }}
                             title={`Edit ${cat.title}`}
-                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-xl transition-colors"
+                            className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-xl transition-colors"
                           >
                             <Edit2 className="h-4 w-4" />
                           </button>
@@ -2407,7 +2435,7 @@ export function CoachingManager() {
                             type="button"
                             onClick={() => handleDeleteCategory(cat.id, cat.title)}
                             title={`Delete ${cat.title}`}
-                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors"
+                            className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>

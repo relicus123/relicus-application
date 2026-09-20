@@ -14,6 +14,8 @@ export interface AppNotification {
   message: string;
   timestamp: string; // ISO string
   unread: boolean;
+  examId?: string;
+  testId?: string;
 }
 
 interface NotificationsState {
@@ -103,6 +105,8 @@ export const useNotificationsStore = create<NotificationsState>()(
                 message: n.message,
                 timestamp: n.created_at || new Date().toISOString(),
                 unread: previouslyUnread,
+                examId: n.exam_id || undefined,
+                testId: n.test_id || undefined,
               });
             });
           }
@@ -120,6 +124,7 @@ export const useNotificationsStore = create<NotificationsState>()(
                   message: a.content,
                   timestamp: a.created_at || new Date().toISOString(),
                   unread: previouslyUnread,
+                  examId: a.exam_id || undefined,
                 });
               }
             });

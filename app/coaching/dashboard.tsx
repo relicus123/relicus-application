@@ -60,10 +60,10 @@ import { getExamDataset } from "./data/examRegistry";
 export default function CoachingDashboard() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const examType = (params.examType as string) || "EAMCET";
 
   const {
     exams,
+    selectedExam,
     subjectsByExam,
     chaptersBySubject,
     liveClassesByExam,
@@ -87,6 +87,9 @@ export default function CoachingDashboard() {
     userAllowedCategoryIds,
     fetchUserCategoryAccess,
   } = useCoachingStore();
+
+  const rawExamType = params.examType as string;
+  const examType = rawExamType || selectedExam || (exams.length > 0 ? exams[0].id : "CUET PG");
 
   const currentUser = useAuthStore((s) => s.currentUser);
   const isAdmin = currentUser?.role === "admin";

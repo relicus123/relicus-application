@@ -236,9 +236,28 @@ export default function NotificationsScreen() {
     }
   }, [notifications, activeTab]);
 
+  const navigateToNotification = (notification: AppNotification) => {
+    const info = getCategoryInfo(notification);
+    if (info.route.includes("/coaching/dashboard")) {
+      let targetExam = notification.examId;
+      if (!targetExam) {
+        const text = `${notification.title} ${notification.message}`.toLowerCase();
+        if (text.includes("cuet")) targetExam = "CUET PG";
+        else if (text.includes("jee")) targetExam = "JEE";
+        else if (text.includes("neet")) targetExam = "NEET";
+      }
+
+      router.push({
+        pathname: "/coaching/dashboard" as any,
+        params: targetExam ? { examType: targetExam } : undefined,
+      });
+    } else {
+      router.push(info.route as any);
+    }
+  };
+
   const handleCardPress = (notification: AppNotification) => {
     markAsRead(notification.id);
-    const info = getCategoryInfo(notification);
 
     // If message is an announcement or has extended content, show detailed modal
     if (
@@ -248,16 +267,15 @@ export default function NotificationsScreen() {
     ) {
       setSelectedNotification(notification);
     } else {
-      // Direct navigation for clear notifications (like exams, courses, etc.)
-      router.push(info.route as any);
+      navigateToNotification(notification);
     }
   };
 
   const handleModalAction = () => {
     if (!selectedNotification) return;
-    const info = getCategoryInfo(selectedNotification);
+    const notif = selectedNotification;
     setSelectedNotification(null);
-    router.push(info.route as any);
+    navigateToNotification(notif);
   };
 
   const selectedInfo = selectedNotification
