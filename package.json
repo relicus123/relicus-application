@@ -7,6 +7,10 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "check:ts": "node check_ts.cjs",
+    "check:readiness": "node scripts/verify-production-readiness.cjs",
+    "build:aab": "cd android && gradlew.bat bundleRelease",
+    "build:production": "eas build --platform android --profile production",
     "postinstall": "patch-package"
   },
   "dependencies": {
@@ -58,6 +62,9 @@
     "@types/react": "~18.2.45",
     "patch-package": "^8.0.1",
     "typescript": "~5.3.3"
+  },
+  "overrides": {
+    "expo-modules-autolinking": "~1.11.3"
   },
   "private": true
 }

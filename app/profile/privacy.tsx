@@ -198,14 +198,39 @@ export default function PrivacySecurityScreen() {
             {/* Section 4 */}
             <View className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm gap-2">
               <Text className="text-sm font-bold text-[#1C4966]">
-                4. Data Rights & Control
+                4. Data Rights & Account Deletion
               </Text>
               <Text className="text-xs text-[#475569] leading-5">
-                You maintain complete ownership of your data. You can edit your profile credentials anytime, or permanently delete your account and all associated test data using the Danger Zone below.
+                You maintain complete ownership of your personal data. In compliance with Google Play Store policies, you may permanently delete your account and all associated test, journal, and coaching records directly using the Danger Zone below, or request external deletion without installing the app by visiting our web portal.
               </Text>
             </View>
 
-            {/* External Link */}
+            {/* External Links */}
+            <TouchableOpacity
+              onPress={() => Linking.openURL("https://www.relicus.in/privacy-policy#rights")}
+              className="bg-white border border-[#1C4966]/20 p-4 rounded-2xl flex-row items-center justify-between shadow-sm mb-1"
+              activeOpacity={0.7}
+            >
+              <View className="flex-row items-center gap-3">
+                <View className="w-10 h-10 rounded-xl bg-[#1C4966]/5 items-center justify-center">
+                  <ExternalLink color="#1C4966" size={18} />
+                </View>
+                <View>
+                  <Text className="text-xs font-bold text-[#1C4966]">
+                    Online Account & Data Deletion Request
+                  </Text>
+                  <Text className="text-[11px] text-[#64748B]">
+                    relicus.in/privacy-policy#rights
+                  </Text>
+                </View>
+              </View>
+              <ArrowLeft
+                color="#71818B"
+                size={16}
+                style={{ transform: [{ rotate: "180deg" }] }}
+              />
+            </TouchableOpacity>
+
             <TouchableOpacity
               onPress={() => Linking.openURL("https://www.relicus.in/privacy-policy")}
               className="bg-white border border-[#1C4966]/20 p-4 rounded-2xl flex-row items-center justify-between shadow-sm"
