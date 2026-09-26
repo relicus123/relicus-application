@@ -82,6 +82,20 @@ check(
   `AndroidManifest update URL does not contain current EAS project ID ${easProjectId}`
 );
 
+// 6. Play Automatic Protection minSdkVersion Check (minSdkVersion >= 24)
+const gradleProps = fs.readFileSync(path.join(__dirname, '..', 'android', 'gradle.properties'), 'utf8');
+const minSdkPropMatch = gradleProps.match(/android\.minSdkVersion=(\d+)/);
+const minSdkProp = minSdkPropMatch ? parseInt(minSdkPropMatch[1], 10) : 0;
+const appJsonMinSdk = appJson.expo.plugins?.find((p) => Array.isArray(p) && p[0] === 'expo-build-properties')?.[1]?.android?.minSdkVersion;
+
+check(
+  'Google Play Automatic Protection minSdkVersion >= 24',
+  minSdkProp >= 24 && appJsonMinSdk >= 24,
+  10,
+  `Confirmed minSdkVersion=${minSdkProp} (meets Play Automatic Protection requirement >= 24)`,
+  `minSdkVersion is below 24 (gradle.properties: ${minSdkProp}, app.json: ${appJsonMinSdk})`
+);
+
 // 6. Blocked Storage Permissions (Google Play Photo/Video Policy)
 const hasStorageRemoved =
   manifest.includes('android.permission.READ_EXTERNAL_STORAGE" tools:node="remove"') &&
