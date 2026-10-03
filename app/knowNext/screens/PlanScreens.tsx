@@ -44,21 +44,34 @@ export function GlobalSearch({ onNavigate }: GlobalSearchProps) {
   const [results, setResults] = useState<any[]>([]);
 
   React.useEffect(() => {
-    async function doSearch() {
-      if (query.trim().length < 2) { setResults([]); return; }
+    if (query.trim().length < 2) {
+      setResults([]);
+      return;
+    }
+
+    let isCurrent = true;
+
+    const timer = setTimeout(async () => {
       try {
         const [carRes, colRes, schRes] = await Promise.all([
           supabase.from('knownext_careers').select('id, title, category').ilike('title', `%${query}%`).limit(3),
           supabase.from('knownext_colleges').select('id, name, location').ilike('name', `%${query}%`).limit(3),
           supabase.from('knownext_scholarships').select('id, name, provider').ilike('name', `%${query}%`).limit(3)
         ]);
+
+        if (!isCurrent) return;
+
         const careers = (carRes.data || []).map((c: any) => ({ id: c.id, title: c.title, type: 'career', subtitle: c.category, icon: '🧬' }));
         const colleges = (colRes.data || []).map((c: any) => ({ id: c.id, title: c.name, type: 'college', subtitle: c.location, icon: '🏛️' }));
         const scholarships = (schRes.data || []).map((s: any) => ({ id: s.id, title: s.name, type: 'scholarship', subtitle: s.provider, icon: '🎓' }));
         setResults([...careers, ...colleges, ...scholarships]);
-      } catch(e) {}
-    }
-    doSearch();
+      } catch (e) {}
+    }, 300);
+
+    return () => {
+      isCurrent = false;
+      clearTimeout(timer);
+    };
   }, [query]);
 
   const handleSelect = (item: any) => {

@@ -25,6 +25,7 @@ interface MindfulnessStore {
   fetchAllMindfulnessContent: (forceRefresh?: boolean) => Promise<void>;
   toggleActivityComplete: (id: string) => Promise<void>;
   addJournalEntry: (entry: JournalEntry) => Promise<void>;
+  resetUserSpecificData: () => void;
 }
 
 export const useMindfulnessStore = create<MindfulnessStore>()(
@@ -38,6 +39,13 @@ export const useMindfulnessStore = create<MindfulnessStore>()(
       isLoading: false,
       isSyncing: false,
 
+      resetUserSpecificData: () => {
+        set({
+          completedActivities: [],
+          journalEntries: [],
+        });
+      },
+
       fetchAllMindfulnessContent: async (forceRefresh = false) => {
         const { activities, affirmations, tasks } = get();
         const hasCache = activities.length > 0;
@@ -47,17 +55,23 @@ export const useMindfulnessStore = create<MindfulnessStore>()(
         }
 
         try {
-          const [actsRes, affsRes, tasksRes] = await Promise.all([
-            supabase.from('mindfulness_activities').select('*'),
-            supabase.from('mindfulness_affirmations').select('*'),
-            supabase.from('mindfulness_tasks').select('*'),
+          const fetchCatalog = async () => {
+            const [actsRes, affsRes, tasksRes] = await Promise.all([
+              supabase.from('mindfulness_activities').select('*'),
+              supabase.from('mindfulness_affirmations').select('*'),
+              supabase.from('mindfulness_tasks').select('*'),
+            ]);
+
+            if (actsRes.data) set({ activities: actsRes.data });
+            if (affsRes.data) set({ affirmations: affsRes.data.map((a: any) => a.text) });
+            if (tasksRes.data) set({ tasks: tasksRes.data });
+          };
+
+          // Parallelize independent catalog content and user-specific data fetches
+          await Promise.all([
+            fetchCatalog(),
+            get().fetchMindfulnessData(),
           ]);
-
-          if (actsRes.data) set({ activities: actsRes.data });
-          if (affsRes.data) set({ affirmations: affsRes.data.map((a: any) => a.text) });
-          if (tasksRes.data) set({ tasks: tasksRes.data });
-
-          await get().fetchMindfulnessData();
         } catch (error) {
           console.error('Error fetching mindfulness content:', error);
         } finally {
@@ -68,15 +82,21 @@ export const useMindfulnessStore = create<MindfulnessStore>()(
       fetchMindfulnessData: async () => {
         try {
           const currentUser = useAuthStore.getState().currentUser;
-          if (!currentUser) return;
+          if (!currentUser?.id) return;
+          const initiatingUserId = currentUser.id;
 
           const [
             { data: activities },
             { data: journals },
           ] = await Promise.all([
-            supabase.from('mindfulness_user_activities').select('activity_id').eq('user_id', currentUser.id),
-            supabase.from('mindfulness_journals').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
+            supabase.from('mindfulness_user_activities').select('activity_id').eq('user_id', initiatingUserId),
+            supabase.from('mindfulness_journals').select('*').eq('user_id', initiatingUserId).order('created_at', { ascending: false }),
           ]);
+
+          // User-ID Guard: Discard response if user logged out or switched during fetch
+          if (useAuthStore.getState().currentUser?.id !== initiatingUserId) {
+            return;
+          }
 
           set({
             completedActivities: activities ? activities.map((a) => a.activity_id) : [],

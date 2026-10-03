@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   ScrollView,
@@ -8,6 +8,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  BackHandler,
 } from "react-native";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -118,6 +119,27 @@ export default function ExamInfoScreen() {
     await Promise.all([fetchExam(), fetchUserEnrollment(examType), fetchUserCategoryAccess()]);
     setRefreshing(false);
   };
+
+  const handleBack = () => {
+    if (showReviewModal) {
+      setShowReviewModal(false);
+      return;
+    }
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(tabs)/learning" as any);
+    }
+  };
+
+  useEffect(() => {
+    const onBackPress = () => {
+      handleBack();
+      return true;
+    };
+    const sub = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+    return () => sub.remove();
+  }, [showReviewModal]);
 
   const handleStart = () => {
     router.push({
@@ -240,7 +262,7 @@ export default function ExamInfoScreen() {
             {/* Top Navigation Bar */}
             <View className="flex-row items-center justify-between mb-3.5">
               <TouchableOpacity
-                onPress={() => router.back()}
+                onPress={handleBack}
                 className="w-10 h-10 rounded-full bg-white/90 items-center justify-center border border-border-subtle shadow-xs"
                 activeOpacity={0.8}
               >

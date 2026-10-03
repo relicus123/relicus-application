@@ -37,47 +37,69 @@ interface KnowNextStore {
   clearCareerComparison: () => void;
   toggleCompareCollege: (id: string) => void;
   clearCollegeComparison: () => void;
+  resetUserSpecificData: () => void;
 }
 
 export const useKnowNextStore = create<KnowNextStore>()(
   persist(
     (set, get) => ({
-  activeStage: "all",
-  setActiveStage: (stage) => set({ activeStage: stage }),
-  
-  savedCareerIds: [],
-  savedCollegeIds: [],
-  savedScholarshipIds: [],
-  careerGoalId: null,
-  activeRoadmapId: null,
-  completedRoadmapSteps: [],
-  
-  compareCareerIds: [],
-  compareCollegeIds: [],
-  recentActivity: [],
-  isLoading: true,
+      activeStage: "all",
+      setActiveStage: (stage) => set({ activeStage: stage }),
+
+      savedCareerIds: [],
+      savedCollegeIds: [],
+      savedScholarshipIds: [],
+      careerGoalId: null,
+      activeRoadmapId: null,
+      completedRoadmapSteps: [],
+
+      compareCareerIds: [],
+      compareCollegeIds: [],
+      recentActivity: [],
+      isLoading: true,
+
+      resetUserSpecificData: () => {
+        set({
+          savedCareerIds: [],
+          savedCollegeIds: [],
+          savedScholarshipIds: [],
+          careerGoalId: null,
+          activeRoadmapId: null,
+          completedRoadmapSteps: [],
+          compareCareerIds: [],
+          compareCollegeIds: [],
+          recentActivity: [],
+          activeStage: "all",
+        });
+      },
   
   fetchKnowNextData: async () => {
     set({ isLoading: true });
-    try {
-      const currentUser = useAuthStore.getState().currentUser;
-      if (!currentUser) return;
+    const currentUser = useAuthStore.getState().currentUser;
+    if (!currentUser?.id) return;
+    const initiatingUserId = currentUser.id;
 
+    try {
       const { data: savedItems } = await supabase
         .from('knownext_saved_items')
         .select('*')
-        .eq('user_id', currentUser.id);
+        .eq('user_id', initiatingUserId);
 
       const { data: profile } = await supabase
         .from('knownext_profiles')
         .select('*')
-        .eq('user_id', currentUser.id)
+        .eq('user_id', initiatingUserId)
         .maybeSingle();
         
       const { data: progress } = await supabase
         .from('knownext_roadmap_progress')
         .select('*')
-        .eq('user_id', currentUser.id);
+        .eq('user_id', initiatingUserId);
+
+      // User-ID Guard: Discard response if user logged out or switched during fetch
+      if (useAuthStore.getState().currentUser?.id !== initiatingUserId) {
+        return;
+      }
 
       if (savedItems) {
         set({
@@ -100,7 +122,9 @@ export const useKnowNextStore = create<KnowNextStore>()(
     } catch (e) {
       console.error(e);
     } finally {
-      set({ isLoading: false });
+      if (useAuthStore.getState().currentUser?.id === initiatingUserId) {
+        set({ isLoading: false });
+      }
     }
   },
   

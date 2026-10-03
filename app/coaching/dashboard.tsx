@@ -11,6 +11,7 @@ import {
   Linking,
   Image,
   Modal,
+  BackHandler,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -157,10 +158,11 @@ export default function CoachingDashboard() {
 
   useEffect(() => {
     async function loadData() {
-      if (!exam && subjects.length === 0) {
+      const hasUsableCache = (Boolean(exam) || exams.some((e) => e.id?.toLowerCase() === examType.toLowerCase())) && subjects.length > 0;
+      if (!hasUsableCache) {
         setLoading(true);
       }
-      await fetchExamDashboard(examType, true);
+      await fetchExamDashboard(examType, false);
       setLoading(false);
     }
     loadData();
@@ -177,7 +179,7 @@ export default function CoachingDashboard() {
 
   useEffect(() => {
     if (selectedSubjectId) {
-      fetchChapters(selectedSubjectId, true);
+      fetchChapters(selectedSubjectId, false);
     }
   }, [selectedSubjectId, fetchChapters]);
 
@@ -258,7 +260,7 @@ export default function CoachingDashboard() {
           [{ text: "I Understand" }]
         );
       });
-    } catch (_) {}
+    } catch (_) { }
     return () => {
       if (sub) sub.remove();
     };
@@ -324,12 +326,43 @@ export default function CoachingDashboard() {
       if (selectedSubjectId) {
         fetchChapters(selectedSubjectId, true);
       }
-    } catch {}
+    } catch { }
   };
 
   const handleBack = () => {
-    router.back();
+    if (pdfModalVisible) {
+      setPdfModalVisible(false);
+      setActivePdfNote(null);
+      return;
+    }
+    if (videoModalVisible) {
+      setVideoModalVisible(false);
+      setActiveVideo(null);
+      return;
+    }
+    if (lockedModalVisible) {
+      setLockedModalVisible(false);
+      return;
+    }
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace({
+        pathname: "/coaching/exam-info" as any,
+        params: { examType },
+      });
+    }
   };
+
+  useEffect(() => {
+    const onBackPress = () => {
+      handleBack();
+      return true;
+    };
+
+    const sub = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+    return () => sub.remove();
+  }, [pdfModalVisible, videoModalVisible, lockedModalVisible, examType]);
 
   const handleAddDoubt = async () => {
     if (!hasAccess) {
@@ -1047,8 +1080,8 @@ export default function CoachingDashboard() {
                     <Typography weight="bold" color="primary" className="text-sm mb-1">{cls.topic}</Typography>
                     <Typography variant="caption" color="secondary" className="text-xs">{new Date(cls.scheduled_time).toLocaleString()}</Typography>
                   </View>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant={cls.status === "ongoing" ? "primary" : "outline"}
                     onPress={() => {
                       if (!hasAccess) {
@@ -1383,12 +1416,12 @@ export default function CoachingDashboard() {
                             {accessStatus.status === "upcoming"
                               ? `Opens ${test.scheduled_start_time || "Scheduled"}`
                               : accessStatus.status === "missed"
-                              ? "Window Closed"
-                              : isSpecial
-                              ? "Authorized ⭐"
-                              : accessStatus.status === "live"
-                              ? "Exam In Session"
-                              : "1 Attempt Only"}
+                                ? "Window Closed"
+                                : isSpecial
+                                  ? "Authorized ⭐"
+                                  : accessStatus.status === "live"
+                                    ? "Exam In Session"
+                                    : "1 Attempt Only"}
                           </Typography>
                         </View>
                       )}
@@ -1482,8 +1515,8 @@ export default function CoachingDashboard() {
                   onChangeText={setDoubtText}
                   className="flex-1 bg-surface-secondary/60 border border-border-subtle rounded-xl px-3.5 py-2 text-xs text-text-primary"
                 />
-                <TouchableOpacity 
-                  onPress={handleAddDoubt} 
+                <TouchableOpacity
+                  onPress={handleAddDoubt}
                   className="w-10 h-10 bg-primary rounded-xl items-center justify-center shadow-xs"
                 >
                   <Send size={15} color="white" />

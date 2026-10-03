@@ -27,13 +27,15 @@ ALTER TABLE public.coaching_category_access ENABLE ROW LEVEL SECURITY;
 -- 1. Users can read their own category permissions
 DROP POLICY IF EXISTS "Users can read own category access" ON public.coaching_category_access;
 CREATE POLICY "Users can read own category access" ON public.coaching_category_access
-  FOR SELECT USING (auth.uid() = user_id OR auth.role() = 'authenticated');
+  FOR SELECT TO authenticated USING (auth.uid() = user_id);
 
--- 2. Admins can manage all category permissions
+-- 2. Admins can manage all category permissions (no OR true fallback)
 DROP POLICY IF EXISTS "Admins can manage category access" ON public.coaching_category_access;
 CREATE POLICY "Admins can manage category access" ON public.coaching_category_access
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-    OR auth.role() = 'service_role'
-    OR true -- fallback to ensure smooth operation if RLS function is not present
+  FOR ALL TO authenticated, service_role
+  USING (
+    public.is_admin() OR auth.role() = 'service_role'
+  )
+  WITH CHECK (
+    public.is_admin() OR auth.role() = 'service_role'
   );

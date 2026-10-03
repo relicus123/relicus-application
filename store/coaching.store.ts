@@ -79,7 +79,12 @@ interface CoachingStore {
     badgeText: string;
     exception?: any;
   };
+  resetUserSpecificData: () => void;
 }
+
+// Monotonic request tracking to prevent stale background responses from overwriting newer state
+const latestDashboardRequestByExam: Record<string, number> = {};
+const latestChapterRequestBySubject: Record<string, number> = {};
 
 export const useCoachingStore = create<CoachingStore>()(
   persist(
@@ -94,6 +99,19 @@ export const useCoachingStore = create<CoachingStore>()(
       studentExceptions: {},
       isLoading: false,
       isSyncing: false,
+
+      resetUserSpecificData: () => {
+        set({
+          selectedExam: null,
+          learningStreak: 0,
+          lastActiveDate: null,
+          doubts: [],
+          testAttempts: [],
+          userEnrollments: {},
+          userAllowedCategoryIds: [],
+          studentExceptions: {},
+        });
+      },
 
       hasAttemptedTest: (testId: string) => {
         const { testAttempts } = get();
@@ -143,6 +161,9 @@ export const useCoachingStore = create<CoachingStore>()(
       },
 
       fetchExamDashboard: async (examId: string, forceRefresh = false) => {
+        const reqId = Date.now();
+        latestDashboardRequestByExam[examId] = reqId;
+
         const { subjectsByExam } = get();
         const hasCache = !!subjectsByExam[examId] && subjectsByExam[examId].length > 0;
 
@@ -151,13 +172,15 @@ export const useCoachingStore = create<CoachingStore>()(
         }
 
         try {
-          const [examRes, subjectsRes, liveRes, testsRes, notesRes] = await Promise.all([
+          const [examRes, subjectsRes, liveRes, testsRes] = await Promise.all([
             supabase.from('coaching_exams').select('*').eq('id', examId).maybeSingle(),
             supabase.from('coaching_subjects').select('*').eq('exam_id', examId),
             supabase.from('coaching_live_classes').select('*').eq('exam_id', examId),
             supabase.from('coaching_mock_tests').select('*, questions:coaching_mock_questions(id)').eq('exam_id', examId),
-            supabase.from('coaching_notes').select('*, chapter:coaching_chapters(name, subject_id)'),
           ]);
+
+          // Race condition guard: discard if a newer request for this exam was initiated
+          if (latestDashboardRequestByExam[examId] !== reqId) return;
 
           if (examRes.data) {
             set((state) => ({
@@ -174,13 +197,6 @@ export const useCoachingStore = create<CoachingStore>()(
                 [examId]: subjectsRes.data || [],
               },
             }));
-
-            // If force refreshing, refresh chapters for each subject to purge deleted chapters
-            if (forceRefresh) {
-              subjectsRes.data.forEach((s: any) => {
-                get().fetchChapters(s.id, true);
-              });
-            }
           }
 
           if (liveRes.data) {
@@ -205,34 +221,72 @@ export const useCoachingStore = create<CoachingStore>()(
             }));
           }
 
-          if (notesRes.data) {
-            const subjectIds = (subjectsRes.data || []).map((s: any) => s.id);
-            const examNotes = (notesRes.data || []).filter((n: any) => 
-              subjectIds.includes(n.chapter?.subject_id) || !n.chapter?.subject_id
-            );
+          // Scoped notes query: only fetch notes for chapters belonging to this exam's subjects
+          const subjectIds = (subjectsRes.data || []).map((s: any) => s.id);
+          if (subjectIds.length > 0) {
+            const { data: examChapters } = await supabase
+              .from('coaching_chapters')
+              .select('id')
+              .in('subject_id', subjectIds);
+
+            if (latestDashboardRequestByExam[examId] !== reqId) return;
+
+            const chapterIds = (examChapters || []).map((c: any) => c.id);
+            if (chapterIds.length > 0) {
+              const { data: examNotes } = await supabase
+                .from('coaching_notes')
+                .select('*, chapter:coaching_chapters(name, subject_id)')
+                .in('chapter_id', chapterIds);
+
+              if (latestDashboardRequestByExam[examId] !== reqId) return;
+
+              if (examNotes) {
+                set((state) => ({
+                  notesByExam: {
+                    ...state.notesByExam,
+                    [examId]: examNotes,
+                  },
+                }));
+              }
+            } else {
+              set((state) => ({
+                notesByExam: {
+                  ...state.notesByExam,
+                  [examId]: [],
+                },
+              }));
+            }
+          } else {
             set((state) => ({
               notesByExam: {
                 ...state.notesByExam,
-                [examId]: examNotes,
+                [examId]: [],
               },
             }));
           }
         } catch (err) {
           console.error('Error fetching exam dashboard:', err);
         } finally {
-          set({ isSyncing: false });
+          if (latestDashboardRequestByExam[examId] === reqId) {
+            set({ isSyncing: false });
+          }
         }
       },
 
       fetchChapters: async (subjectId: string, forceRefresh = false) => {
+        const reqId = Date.now();
+        latestChapterRequestBySubject[subjectId] = reqId;
+
         const { chaptersBySubject } = get();
         if (chaptersBySubject[subjectId] !== undefined && !forceRefresh) return;
 
         try {
           const { data, error } = await supabase
             .from('coaching_chapters')
-            .select('*, videos:coaching_videos(*), notes:coaching_notes(*), practiceQuestions:coaching_practice_questions(*)')
+            .select('*, videos:coaching_videos(*), notes:coaching_notes(*), practiceQuestions:coaching_practice_questions(id)')
             .eq('subject_id', subjectId);
+
+          if (latestChapterRequestBySubject[subjectId] !== reqId) return;
 
           if (!error && data) {
             set((state) => ({
@@ -250,17 +304,23 @@ export const useCoachingStore = create<CoachingStore>()(
       fetchCoachingData: async () => {
         try {
           const currentUser = useAuthStore.getState().currentUser;
-          if (!currentUser) return;
+          if (!currentUser?.id) return;
+          const initiatingUserId = currentUser.id;
 
           const [
             { data: profile },
             { data: doubtsData },
             { data: testsData },
           ] = await Promise.all([
-            supabase.from('coaching_profiles').select('*').eq('user_id', currentUser.id).maybeSingle(),
-            supabase.from('coaching_doubts').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
-            supabase.from('coaching_test_attempts').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
+            supabase.from('coaching_profiles').select('*').eq('user_id', initiatingUserId).maybeSingle(),
+            supabase.from('coaching_doubts').select('*').eq('user_id', initiatingUserId).order('created_at', { ascending: false }),
+            supabase.from('coaching_test_attempts').select('*').eq('user_id', initiatingUserId).order('created_at', { ascending: false }),
           ]);
+
+          // User-ID Guard: Discard response if user logged out or switched during fetch
+          if (useAuthStore.getState().currentUser?.id !== initiatingUserId) {
+            return;
+          }
 
           if (profile) {
             let streakVal = profile.learning_streak ?? profile.study_streak ?? profile.streak_count ?? 1;
@@ -272,7 +332,7 @@ export const useCoachingStore = create<CoachingStore>()(
                 if (diffDays > 1) {
                   streakVal = 1;
                 }
-              } catch (_) {}
+              } catch (_) { }
             }
             set({
               selectedExam: profile.selected_exam || profile.selected_exam_id || profile.target_exam || null,
@@ -322,7 +382,7 @@ export const useCoachingStore = create<CoachingStore>()(
               })),
             });
           }
-          if (currentUser?.id) {
+          if (useAuthStore.getState().currentUser?.id === initiatingUserId) {
             get().fetchUserCategoryAccess();
           }
         } catch (e) {
@@ -332,14 +392,16 @@ export const useCoachingStore = create<CoachingStore>()(
 
       setSelectedExam: async (exam) => {
         const currentUser = useAuthStore.getState().currentUser;
-        if (!currentUser) return;
+        if (!currentUser?.id) return;
+        const initiatingUserId = currentUser.id;
 
+        if (useAuthStore.getState().currentUser?.id !== initiatingUserId) return;
         set({ selectedExam: exam });
         try {
           await supabase.from('coaching_profiles').upsert(
             [
               {
-                user_id: currentUser.id,
+                user_id: initiatingUserId,
                 selected_exam: exam,
                 selected_exam_id: exam,
                 target_exam: exam,
@@ -357,6 +419,9 @@ export const useCoachingStore = create<CoachingStore>()(
       },
 
       recordDailyActivity: async () => {
+        const currentUser = useAuthStore.getState().currentUser;
+        const initiatingUserId = currentUser?.id;
+
         const todayStr = new Date().toISOString().split('T')[0];
         const { lastActiveDate, learningStreak } = get();
 
@@ -380,15 +445,19 @@ export const useCoachingStore = create<CoachingStore>()(
           }
         }
 
+        // Only update local state if user is still the same
+        if (initiatingUserId && useAuthStore.getState().currentUser?.id !== initiatingUserId) {
+          return newStreak;
+        }
+
         set({ learningStreak: newStreak, lastActiveDate: todayStr });
 
-        const currentUser = useAuthStore.getState().currentUser;
-        if (currentUser) {
+        if (initiatingUserId) {
           try {
             await supabase.from('coaching_profiles').upsert(
               [
                 {
-                  user_id: currentUser.id,
+                  user_id: initiatingUserId,
                   learning_streak: newStreak,
                   study_streak: newStreak,
                   streak_count: newStreak,
@@ -406,23 +475,24 @@ export const useCoachingStore = create<CoachingStore>()(
 
       addDoubt: async (doubt) => {
         const currentUser = useAuthStore.getState().currentUser;
-        if (!currentUser) return;
+        if (!currentUser?.id) return;
+        const initiatingUserId = currentUser.id;
 
         try {
           // Pre-emptively ensure user exists in public.users in case legacy foreign key constraint is active
           try {
             await supabase.from("users").upsert([
               {
-                id: currentUser.id,
+                id: initiatingUserId,
                 email: currentUser.email,
                 username: currentUser.username,
                 phone: currentUser.phone || "",
               },
             ], { onConflict: "id" });
-          } catch {}
+          } catch { }
 
           const payload: any = {
-            user_id: currentUser.id,
+            user_id: initiatingUserId,
             exam_type: doubt.examType,
             title: doubt.title,
             description: doubt.description,
@@ -440,6 +510,11 @@ export const useCoachingStore = create<CoachingStore>()(
             .single();
 
           if (error) throw error;
+
+          // User-ID Guard: Discard state update if user logged out or switched during async insert
+          if (useAuthStore.getState().currentUser?.id !== initiatingUserId) {
+            return;
+          }
 
           const newDoubt: Doubt = {
             id: data.id,
@@ -459,6 +534,9 @@ export const useCoachingStore = create<CoachingStore>()(
       },
 
       addTestAttempt: async (attempt) => {
+        const currentUser = useAuthStore.getState().currentUser;
+        const initiatingUserId = currentUser?.id;
+
         const localId = attempt.id || `attempt-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
         const localDate = attempt.date || new Date().toISOString();
 
@@ -488,15 +566,14 @@ export const useCoachingStore = create<CoachingStore>()(
         // Reward test completion with streak progress!
         await get().recordDailyActivity();
 
-        const currentUser = useAuthStore.getState().currentUser;
-        if (!currentUser) return;
+        if (!initiatingUserId) return;
 
         try {
           const { data, error } = await supabase
             .from('coaching_test_attempts')
             .insert([
               {
-                user_id: currentUser.id,
+                user_id: initiatingUserId,
                 test_id: attempt.testId,
                 test_name: attempt.testName,
                 exam_type: attempt.examType,
@@ -517,6 +594,11 @@ export const useCoachingStore = create<CoachingStore>()(
             .select()
             .single();
 
+          // User-ID Guard: Discard state update if user logged out or switched during async insert
+          if (useAuthStore.getState().currentUser?.id !== initiatingUserId) {
+            return;
+          }
+
           if (!error && data?.id) {
             set((state) => ({
               testAttempts: state.testAttempts.map((t) =>
@@ -535,13 +617,19 @@ export const useCoachingStore = create<CoachingStore>()(
           set({ userAllowedCategoryIds: [] });
           return [];
         }
+        const initiatingUserId = currentUser.id;
 
         try {
           const { data, error } = await supabase
             .from('coaching_category_access')
             .select('category_id, status')
-            .eq('user_id', currentUser.id)
+            .eq('user_id', initiatingUserId)
             .eq('status', 'active');
+
+          // User-ID Guard: Discard if user changed/logged out while request was in-flight
+          if (useAuthStore.getState().currentUser?.id !== initiatingUserId) {
+            return [];
+          }
 
           if (!error && data) {
             const catIds = data.map((d: any) => String(d.category_id));
@@ -558,14 +646,20 @@ export const useCoachingStore = create<CoachingStore>()(
       fetchUserEnrollment: async (examId: string) => {
         const currentUser = useAuthStore.getState().currentUser;
         if (!currentUser?.id || !examId) return 'none';
+        const initiatingUserId = currentUser.id;
 
         try {
           const { data, error } = await supabase
             .from('coaching_enrollments')
             .select('id, status')
-            .eq('user_id', currentUser.id)
+            .eq('user_id', initiatingUserId)
             .eq('exam_id', examId)
             .maybeSingle();
+
+          // User-ID Guard: Discard if user changed/logged out while request was in-flight
+          if (useAuthStore.getState().currentUser?.id !== initiatingUserId) {
+            return 'none';
+          }
 
           if (error && error.code !== 'PGRST116') {
             console.warn('Enrollment fetch notice:', error);
@@ -590,6 +684,7 @@ export const useCoachingStore = create<CoachingStore>()(
         if (!currentUser?.id || !examId) {
           return { success: false, error: 'User not logged in' };
         }
+        const initiatingUserId = currentUser.id;
 
         const name = studentName || currentUser.username || currentUser.email?.split('@')[0] || 'Student';
         const email = studentEmail || currentUser.email || '';
@@ -598,9 +693,14 @@ export const useCoachingStore = create<CoachingStore>()(
           const { data: existing } = await supabase
             .from('coaching_enrollments')
             .select('*')
-            .eq('user_id', currentUser.id)
+            .eq('user_id', initiatingUserId)
             .eq('exam_id', examId)
             .maybeSingle();
+
+          // User-ID Guard
+          if (useAuthStore.getState().currentUser?.id !== initiatingUserId) {
+            return { success: false, error: 'User session changed' };
+          }
 
           if (existing) {
             set((state) => ({
@@ -616,7 +716,7 @@ export const useCoachingStore = create<CoachingStore>()(
             .from('coaching_enrollments')
             .insert([
               {
-                user_id: currentUser.id,
+                user_id: initiatingUserId,
                 exam_id: examId,
                 student_name: name,
                 student_email: email,
@@ -626,6 +726,11 @@ export const useCoachingStore = create<CoachingStore>()(
             ])
             .select()
             .single();
+
+          // User-ID Guard
+          if (useAuthStore.getState().currentUser?.id !== initiatingUserId) {
+            return { success: false, error: 'User session changed' };
+          }
 
           if (error) throw error;
 
@@ -646,13 +751,19 @@ export const useCoachingStore = create<CoachingStore>()(
       fetchStudentExceptions: async () => {
         const currentUser = useAuthStore.getState().currentUser;
         if (!currentUser?.id) return;
+        const initiatingUserId = currentUser.id;
 
         try {
           const { data, error } = await supabase
             .from('coaching_test_exceptions')
             .select('*')
-            .eq('user_id', currentUser.id)
+            .eq('user_id', initiatingUserId)
             .eq('is_active', true);
+
+          // User-ID Guard: Discard if user changed/logged out while request was in-flight
+          if (useAuthStore.getState().currentUser?.id !== initiatingUserId) {
+            return;
+          }
 
           if (!error && data) {
             const exceptionsMap: Record<string, any> = {};
@@ -749,14 +860,21 @@ export const useCoachingStore = create<CoachingStore>()(
       },
 
       clearTestAttempts: async () => {
+        const currentUser = useAuthStore.getState().currentUser;
+        const initiatingUserId = currentUser?.id;
+        if (!initiatingUserId) return;
+
         try {
-          const currentUser = useAuthStore.getState().currentUser;
-          if (currentUser?.id) {
-            await supabase.from('coaching_test_attempts').delete().eq('user_id', currentUser.id);
-          }
+          await supabase.from('coaching_test_attempts').delete().eq('user_id', initiatingUserId);
         } catch (e) {
           console.error('Error clearing test attempts in db:', e);
         }
+
+        // User-ID Guard: Discard if user logged out or session changed
+        if (useAuthStore.getState().currentUser?.id !== initiatingUserId) {
+          return;
+        }
+
         set({ testAttempts: [] });
       },
     }),

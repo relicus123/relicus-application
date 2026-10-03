@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
+import { uploadFileToCloudinary } from '../services/cloudinaryService';
 
 interface ImageUploadProps {
   value: string;
@@ -26,30 +27,21 @@ export function ImageUpload({ value, onChange, label, className = '' }: ImageUpl
     setError(null);
 
     try {
-      // 1. Attempt upload to Supabase Storage if available
+      // 1. Upload to Cloudinary (protects Supabase free tier storage quota)
       let uploadedUrl: string | null = null;
-      if (supabase && supabase.storage) {
-        const fileExt = file.name.split('.').pop() || 'png';
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-        const filePath = `uploads/${fileName}`;
-
-        try {
-          const { error: uploadErr } = await supabase.storage
-            .from('coaching-assets')
-            .upload(filePath, file, { upsert: true, contentType: file.type });
-
-          if (!uploadErr) {
-            const { data: { publicUrl } } = supabase.storage
-              .from('coaching-assets')
-              .getPublicUrl(filePath);
-            if (publicUrl) uploadedUrl = publicUrl;
-          }
-        } catch (_) {
-          // Fall through to FileReader fallback
+      try {
+        const result = await uploadFileToCloudinary(file, {
+          folder: 'relicus/images',
+          resourceType: 'image',
+        });
+        if (result.secureUrl) {
+          uploadedUrl = result.secureUrl;
         }
+      } catch (cloudErr) {
+        console.warn('Cloudinary image upload failed, falling back to local data URL:', cloudErr);
       }
 
-      // 2. If Supabase storage didn't return a URL, fallback to high-quality compressed Data URI
+      // 2. If Cloudinary failed, fallback to Data URI
       if (!uploadedUrl) {
         uploadedUrl = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();

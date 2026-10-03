@@ -5,9 +5,10 @@ import {
   Plus, Trash2, Edit2, GraduationCap, Video, FileText, Check, AlertCircle, X, 
   Sparkles, Book, Calendar, MessageSquare, Star, ArrowRight, Layers, Megaphone,
   FileSpreadsheet, Download, Upload, Send, HelpCircle, User, Shield, Clock, Lock, RotateCcw, Image as ImageIcon,
-  RefreshCw, Loader2, Mail, CheckCircle2
+  RefreshCw, Loader2, Mail, CheckCircle2, ExternalLink
 } from "lucide-react";
 import { ImageUpload } from "../../components/ImageUpload";
+import { PDFUpload } from "../../components/PDFUpload";
 import { sendAutomatedMegaTestEmail } from "../../services/emailService";
 
 export function CoachingManager() {
@@ -1312,10 +1313,15 @@ export function CoachingManager() {
     e.preventDefault();
     if (!selectedExam || !selectedChapter) return;
 
+    if (!noteForm.pdfUrl) {
+      setError("Please upload a PDF document (under 2 MB) before saving.");
+      return;
+    }
+
     const currentNoteId = editingNoteId;
-    const nTitle = noteForm.title;
-    const nSize = noteForm.size;
-    const nPdf = noteForm.pdfUrl || "https://arxiv.org/pdf/quant-ph/0410100.pdf";
+    const nTitle = noteForm.title.trim() || "Revision Note";
+    const nSize = noteForm.size || "1.0 MB";
+    const nPdf = noteForm.pdfUrl;
 
     if (currentNoteId) {
       // Instant local update
@@ -3191,25 +3197,50 @@ export function CoachingManager() {
                                     </button>
                                   )}
                                 </div>
-                                <input
-                                  type="text" required placeholder="Note Title"
-                                  value={noteForm.title}
-                                  onChange={e => setNoteForm({ ...noteForm, title: e.target.value })}
-                                  className="w-full rounded-lg border p-1.5 text-[10px] bg-white dark:bg-slate-900"
-                                />
-                                <input
-                                  type="text" placeholder="File Size (e.g., 2.3 MB)"
-                                  value={noteForm.size}
-                                  onChange={e => setNoteForm({ ...noteForm, size: e.target.value })}
-                                  className="w-full rounded-lg border p-1.5 text-[10px] bg-white dark:bg-slate-900"
-                                />
-                                <input
-                                  type="text" required placeholder="PDF Document URL"
+                                <div>
+                                  <label className="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                                    Note Title
+                                  </label>
+                                  <input
+                                    type="text" required placeholder="Note Title (e.g. Thermodynamics Cheat Sheet)"
+                                    value={noteForm.title}
+                                    onChange={e => setNoteForm({ ...noteForm, title: e.target.value })}
+                                    className="w-full rounded-lg border p-1.5 text-[10px] bg-white dark:bg-slate-900"
+                                  />
+                                </div>
+                                <PDFUpload
+                                  label="Upload Revision PDF"
                                   value={noteForm.pdfUrl}
-                                  onChange={e => setNoteForm({ ...noteForm, pdfUrl: e.target.value })}
-                                  className="w-full rounded-lg border p-1.5 text-[10px] bg-white dark:bg-slate-900"
+                                  maxSizeMB={2}
+                                  currentSizeDisplay={noteForm.size}
+                                  onChange={(url, fileInfo) => {
+                                    if (url && fileInfo) {
+                                      setNoteForm(prev => ({
+                                        ...prev,
+                                        pdfUrl: url,
+                                        size: fileInfo.size,
+                                        title: prev.title.trim() ? prev.title : fileInfo.name,
+                                      }));
+                                    } else {
+                                      setNoteForm(prev => ({
+                                        ...prev,
+                                        pdfUrl: url,
+                                      }));
+                                    }
+                                  }}
                                 />
-                                <div className="flex justify-end gap-1">
+                                <div className="flex items-center justify-between text-[10px] text-slate-500 px-0.5">
+                                  <span>Document Size:</span>
+                                  <input
+                                    type="text"
+                                    placeholder="e.g. 1.2 MB"
+                                    value={noteForm.size}
+                                    onChange={e => setNoteForm({ ...noteForm, size: e.target.value })}
+                                    className="w-24 rounded border px-1.5 py-0.5 text-[10px] text-right font-mono bg-white dark:bg-slate-900"
+                                    title="Auto-calculated from uploaded PDF, or edit manually"
+                                  />
+                                </div>
+                                <div className="flex justify-end gap-1 pt-1">
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -3237,6 +3268,17 @@ export function CoachingManager() {
                                     <span className="truncate pr-2">{n.title}</span>
                                     <div className="flex items-center gap-1.5 shrink-0">
                                       <span className="text-slate-400 font-mono text-[10px]">{n.size}</span>
+                                      {(n.pdf_url || n.pdfUrl) && (
+                                        <a
+                                          href={n.pdf_url || n.pdfUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="p-1 text-slate-400 hover:text-teal-600 transition-colors"
+                                          title="Open / Preview PDF in new tab"
+                                        >
+                                          <ExternalLink className="h-3 w-3" />
+                                        </a>
+                                      )}
                                       <button
                                         type="button"
                                         onClick={() => {

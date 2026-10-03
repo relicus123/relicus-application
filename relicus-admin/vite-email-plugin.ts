@@ -17,6 +17,24 @@ export function emailDispatchPlugin(): Plugin {
           return;
         }
 
+        // Security Finding #5: Require shared-secret authorization
+        const emailApiSecret = process.env.EMAIL_API_SECRET;
+        if (!emailApiSecret) {
+          console.error('[Email Dispatcher] EMAIL_API_SECRET is not set — rejecting all requests.');
+          res.statusCode = 503;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Email service not configured' }));
+          return;
+        }
+        const authHeader = req.headers['authorization'] || '';
+        const providedToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+        if (providedToken !== emailApiSecret) {
+          res.statusCode = 401;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Unauthorized' }));
+          return;
+        }
+
         let body = '';
         req.on('data', chunk => {
           body += chunk.toString();
@@ -34,17 +52,24 @@ export function emailDispatchPlugin(): Plugin {
               return;
             }
 
-            const host = process.env.SMTP_HOST || 'smtp.hostinger.com';
+            const host = process.env.SMTP_HOST;
             const port = parseInt(process.env.SMTP_PORT || '465', 10);
-            const user = process.env.SMTP_USER || 'info@relicus.in';
-            const pass = (process.env.SMTP_PASS || 'Relicus5252#*').replace(/^"|"$/g, '');
+            const user = process.env.SMTP_USER;
+            const pass = (process.env.SMTP_PASS || '').replace(/^"|"$/g, '');
+
+            if (!host || !user || !pass) {
+              res.statusCode = 503;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: false, error: 'SMTP credentials not configured' }));
+              return;
+            }
 
             const transporter = nodemailer.createTransport({
               host,
               port,
               secure: true,
               auth: { user, pass },
-              tls: { rejectUnauthorized: false }
+              tls: { rejectUnauthorized: true }
             });
 
             const mailOptions: nodemailer.SendMailOptions = {

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
-import { StyleSheet, View, Text, TouchableOpacity, AppState, Alert } from "react-native";
-import { Stack, type ErrorBoundaryProps } from "expo-router";
+import { StyleSheet, View, Text, TouchableOpacity, AppState, Alert, BackHandler, Platform } from "react-native";
+import { Stack, useRouter, usePathname, type ErrorBoundaryProps } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -36,6 +36,52 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
         <Text style={{ color: "#ffffff", fontWeight: "bold", fontSize: 15 }}>Try Again</Text>
       </TouchableOpacity>
     </View>
+  );
+}
+
+function RootNavigation() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+
+    const onBackPress = () => {
+      // 1. Pop the LIFO navigation stack if possible
+      if (router.canGoBack()) {
+        router.back();
+        return true;
+      }
+
+      // 2. If we are on any page other than Home, navigate back to Home
+      const isHome = pathname === "/(tabs)/home" || pathname === "/" || pathname === "/home";
+      if (!isHome) {
+        router.replace("/(tabs)/home");
+        return true;
+      }
+
+      // 3. We are on Home and history is empty -> allow Android to exit
+      return false;
+    };
+
+    const sub = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+    return () => sub.remove();
+  }, [pathname, router]);
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        gestureEnabled: true,
+        animation: "slide_from_right",
+        contentStyle: { backgroundColor: "#fdf7ff" },
+      }}
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="intro" />
+      <Stack.Screen name="landing" />
+      <Stack.Screen name="(tabs)" />
+    </Stack>
   );
 }
 
@@ -161,17 +207,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AppProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: "#fdf7ff" },
-            }}
-          >
-            <Stack.Screen name="index" />
-            <Stack.Screen name="intro" />
-            <Stack.Screen name="landing" />
-            <Stack.Screen name="(tabs)" />
-          </Stack>
+          <RootNavigation />
           <GlobalDialogHost />
           <StatusBar style="auto" />
         </AppProvider>

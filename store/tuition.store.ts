@@ -47,6 +47,7 @@ interface TuitionStore {
   createProfile: (name: string, classLevel: string, board: string) => Promise<void>;
   toggleAssignmentComplete: (id: string) => Promise<void>;
   submitAssessment: (assessmentIdOrObj: any, score?: number) => void;
+  resetUserSpecificData: () => void;
 }
 
 export const useTuitionStore = create<TuitionStore>()(
@@ -62,25 +63,43 @@ export const useTuitionStore = create<TuitionStore>()(
       selectedClass: null,
       setSelectedClass: (cls) => set({ selectedClass: cls }),
       completedAssignments: [],
+
+      resetUserSpecificData: () => {
+        set({
+          student: null,
+          parent: null,
+          completedAssignments: [],
+          selectedTeacher: null,
+          selectedClass: null,
+          activeTab: "overview",
+          isLoading: false,
+        });
+      },
       
       fetchProfile: async () => {
         const { student } = get();
         if (!student) {
           set({ isLoading: true });
         }
-        try {
-          const currentUser = useAuthStore.getState().currentUser;
-          if (!currentUser) return;
+        const currentUser = useAuthStore.getState().currentUser;
+        if (!currentUser?.id) return;
+        const initiatingUserId = currentUser.id;
 
+        try {
           const [
             { data: studentData },
             { data: parentData },
             { data: assignments }
           ] = await Promise.all([
-            supabase.from('tuition_students').select('*').eq('user_id', currentUser.id).maybeSingle(),
-            supabase.from('tuition_parents').select('*').eq('user_id', currentUser.id).maybeSingle(),
-            supabase.from('tuition_completed_assignments').select('assignment_id').eq('user_id', currentUser.id)
+            supabase.from('tuition_students').select('*').eq('user_id', initiatingUserId).maybeSingle(),
+            supabase.from('tuition_parents').select('*').eq('user_id', initiatingUserId).maybeSingle(),
+            supabase.from('tuition_completed_assignments').select('assignment_id').eq('user_id', initiatingUserId)
           ]);
+
+          // User-ID Guard: Discard response if user logged out or switched during fetch
+          if (useAuthStore.getState().currentUser?.id !== initiatingUserId) {
+            return;
+          }
 
           const formattedStudent: Student | null = studentData ? {
             ...studentData,
@@ -105,7 +124,9 @@ export const useTuitionStore = create<TuitionStore>()(
         } catch (e) {
           console.error(e);
         } finally {
-          set({ isLoading: false });
+          if (useAuthStore.getState().currentUser?.id === initiatingUserId) {
+            set({ isLoading: false });
+          }
         }
       },
 

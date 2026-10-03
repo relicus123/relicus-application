@@ -9,18 +9,20 @@ const { width, height } = Dimensions.get("window");
 
 export default function Splash() {
   const router = useRouter();
-  const currentUser = useAuthStore(state => state.currentUser);
+  const currentUser = useAuthStore((state) => state.currentUser);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+  const hasNavigated = React.useRef(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (currentUser) {
-        router.replace("/(tabs)/home");
-      } else {
-        router.replace("/intro" as any);
-      }
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [currentUser, router]);
+    if (!isHydrated || hasNavigated.current) return;
+
+    hasNavigated.current = true;
+    if (currentUser) {
+      router.replace("/(tabs)/home");
+    } else {
+      router.replace("/intro" as any);
+    }
+  }, [isHydrated, currentUser, router]);
 
   return (
     <View className="flex-1 bg-surface-primary">

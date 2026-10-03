@@ -12,6 +12,12 @@ import {
   removeCurrentDevice,
   getOrCreateDeviceId,
 } from "../lib/deviceService";
+import { useCoachingStore } from "./coaching.store";
+import { useSkillsStore } from "./skills.store";
+import { useTuitionStore } from "./tuition.store";
+import { useMindfulnessStore } from "./mindfulness.store";
+import { useKnowNextStore } from "./knownext.store";
+import { useNotificationsStore } from "./notifications.store";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -352,20 +358,68 @@ export const useAuthStore = create<AuthState>()(
         } catch {}
 
         // 1. Immediately reset currentUser in memory so no rebound can ever happen
+        // This also invalidates all in-flight request guards across all stores
         set({ currentUser: null });
 
-        // 2. Wipe persisted auth & coaching storage
+        // 2. Clear user-private Zustand state across all stores
         try {
-          await AsyncStorage.removeItem("relicus-auth-storage");
-          await AsyncStorage.removeItem("relicus-coaching-storage");
-        } catch {}
+          useCoachingStore.getState().resetUserSpecificData?.();
+        } catch (e) {
+          console.warn("[Auth Logout] Error resetting coaching store:", e);
+        }
+        try {
+          useSkillsStore.getState().resetAll?.();
+        } catch (e) {
+          console.warn("[Auth Logout] Error resetting skills store:", e);
+        }
+        try {
+          useTuitionStore.getState().resetUserSpecificData?.();
+        } catch (e) {
+          console.warn("[Auth Logout] Error resetting tuition store:", e);
+        }
+        try {
+          useMindfulnessStore.getState().resetUserSpecificData?.();
+        } catch (e) {
+          console.warn("[Auth Logout] Error resetting mindfulness store:", e);
+        }
+        try {
+          useKnowNextStore.getState().resetUserSpecificData?.();
+        } catch (e) {
+          console.warn("[Auth Logout] Error resetting knownext store:", e);
+        }
+        try {
+          useNotificationsStore.getState().clearAll?.();
+        } catch (e) {
+          console.warn("[Auth Logout] Error resetting notifications store:", e);
+        }
 
-        // 3. Purge Supabase local session so getSession returns null immediately
+        // 3. Purge persisted private storage keys
+        // - relicus-auth-storage: completely private (currentUser)
+        // - relicus-tuition-storage: completely private (student/parent profile, assignments)
+        // - knownext-store: completely private (saved careers, goals, roadmaps)
+        // - relicus-notifications-storage: user-targeted notifications
+        // - relicus-skills-storage: user enrollments, progress, certificates (courses are fetched fresh from Supabase)
+        // NOTE: Coaching (relicus-coaching-storage) and Mindfulness (relicus-mindfulness-storage) contain
+        // valuable public catalog data (exams, subjects, chapters, notes, activities, affirmations) which was
+        // sanitized by resetUserSpecificData(); their storage keys are preserved to retain public catalog cache.
+        try {
+          await Promise.all([
+            AsyncStorage.removeItem("relicus-auth-storage"),
+            AsyncStorage.removeItem("relicus-tuition-storage"),
+            AsyncStorage.removeItem("knownext-store"),
+            AsyncStorage.removeItem("relicus-notifications-storage"),
+            AsyncStorage.removeItem("relicus-skills-storage"),
+          ]);
+        } catch (storageErr) {
+          console.warn("[Auth Logout] Error removing private storage keys:", storageErr);
+        }
+
+        // 4. Purge Supabase local session so getSession returns null immediately
         try {
           await supabase.auth.signOut({ scope: "local" });
         } catch {}
 
-        // 4. Invalidate server-side session in background
+        // 5. Invalidate server-side session in background
         try {
           await supabase.auth.signOut();
         } catch (err) {
@@ -406,8 +460,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (err) {
           console.error("Account wipe error:", err);
         } finally {
-          await supabase.auth.signOut();
-          set({ currentUser: null });
+          await get().logout();
         }
       },
 
@@ -431,9 +484,8 @@ export const useAuthStore = create<AuthState>()(
             const { error: userError } = await supabase.auth.getUser();
             if (userError) {
               console.warn("Session user no longer exists in Supabase Auth:", userError.message);
-              set({ currentUser: null, isHydrated: true });
-              await AsyncStorage.removeItem("relicus-auth-storage");
-              await supabase.auth.signOut();
+              await get().logout();
+              set({ isHydrated: true });
               return;
             }
 

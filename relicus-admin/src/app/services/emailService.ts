@@ -164,10 +164,13 @@ Relicus Entrance Coaching Team
   `.trim();
 
   try {
+    // Security Finding #5: include shared-secret Bearer token for /api/send-email auth
+    const emailSecret = import.meta.env.VITE_EMAIL_API_SECRET || '';
     const response = await fetch('/api/send-email', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...(emailSecret ? { 'Authorization': `Bearer ${emailSecret}` } : {})
       },
       body: JSON.stringify({
         recipients: validRecipients,

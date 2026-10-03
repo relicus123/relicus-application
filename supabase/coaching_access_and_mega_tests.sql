@@ -27,10 +27,15 @@ create index if not exists idx_coaching_enrollments_status on public.coaching_en
 alter table public.coaching_enrollments enable row level security;
 
 -- Policies:
--- 1) Any authenticated student can read their own enrollments
+-- 1) Any authenticated student can read their own enrollments; Admins and service_role can read all
 drop policy if exists "Users can read own enrollments" on public.coaching_enrollments;
 create policy "Users can read own enrollments" on public.coaching_enrollments
-  for select using (auth.uid() = user_id or true);
+  for select to authenticated, service_role
+  using (
+    auth.uid() = user_id 
+    or public.is_admin() 
+    or auth.role() = 'service_role'
+  );
 
 -- 2) Any authenticated student can request course access (insert own record with 'pending' status)
 drop policy if exists "Users can request enrollment" on public.coaching_enrollments;
@@ -40,9 +45,12 @@ create policy "Users can request enrollment" on public.coaching_enrollments
 -- 3) Admins have full access to view, update, delete all enrollments
 drop policy if exists "Admins can manage all enrollments" on public.coaching_enrollments;
 create policy "Admins can manage all enrollments" on public.coaching_enrollments
-  for all using (
-    exists (select 1 from public.profiles where profiles.id = auth.uid() and profiles.role = 'admin')
-    or auth.role() = 'service_role'
+  for all to authenticated, service_role
+  using (
+    public.is_admin() or auth.role() = 'service_role'
+  )
+  with check (
+    public.is_admin() or auth.role() = 'service_role'
   );
 
 
@@ -77,17 +85,25 @@ create index if not exists idx_coaching_test_exceptions_lookup on public.coachin
 alter table public.coaching_test_exceptions enable row level security;
 
 -- Policies:
--- 1) Student can read own active exceptions (or all if fallback)
+-- 1) Student can read own active exceptions; Admins and service_role can read all
 drop policy if exists "Students can read own test exceptions" on public.coaching_test_exceptions;
 create policy "Students can read own test exceptions" on public.coaching_test_exceptions
-  for select using (auth.uid() = user_id or true);
+  for select to authenticated, service_role
+  using (
+    auth.uid() = user_id 
+    or public.is_admin() 
+    or auth.role() = 'service_role'
+  );
 
 -- 2) Admin can manage all exceptions
 drop policy if exists "Admins can manage test exceptions" on public.coaching_test_exceptions;
 create policy "Admins can manage test exceptions" on public.coaching_test_exceptions
-  for all using (
-    exists (select 1 from public.profiles where profiles.id = auth.uid() and profiles.role = 'admin')
-    or auth.role() = 'service_role'
+  for all to authenticated, service_role
+  using (
+    public.is_admin() or auth.role() = 'service_role'
+  )
+  with check (
+    public.is_admin() or auth.role() = 'service_role'
   );
 
 
