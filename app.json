@@ -3,7 +3,7 @@
     "name": "Relicus",
     "slug": "relicus-native",
     "scheme": "relicus",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
@@ -50,7 +50,7 @@
     },
     "android": {
       "package": "com.relicus.com",
-      "versionCode": 6,
+      "versionCode": 7,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"

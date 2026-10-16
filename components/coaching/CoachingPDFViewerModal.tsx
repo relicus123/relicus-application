@@ -8,6 +8,7 @@ import {
   Platform,
   StatusBar,
   Linking,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -41,6 +42,8 @@ export const CoachingPDFViewerModal: React.FC<CoachingPDFViewerModalProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [totalPages, setTotalPages] = useState<number | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
+  const [statusText, setStatusText] = useState<string>("Opening Protected Document...");
   const webViewRef = useRef<WebView>(null);
   const screenshotSubRef = useRef<any>(null);
 
@@ -89,6 +92,8 @@ export const CoachingPDFViewerModal: React.FC<CoachingPDFViewerModalProps> = ({
       setLoading(true);
       setError(false);
       setTotalPages(null);
+      setDownloadProgress(null);
+      setStatusText("Opening Protected Document...");
     }
   }, [visible, note]);
 
@@ -111,7 +116,12 @@ export const CoachingPDFViewerModal: React.FC<CoachingPDFViewerModalProps> = ({
   const handleWebViewMessage = (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      if (data.type === "FIRST_PAGE_READY" || data.type === "COMPLETE") {
+      if (data.type === "PROGRESS") {
+        setDownloadProgress(data.percent);
+        setStatusText(`Downloading ${data.percent}%...`);
+      } else if (data.type === "RENDERING") {
+        setStatusText(data.pages ? `Rendering pages (1 of ${data.pages})...` : "Rendering document...");
+      } else if (data.type === "FIRST_PAGE_READY" || data.type === "COMPLETE") {
         setLoading(false);
         setError(false);
       } else if (data.type === "TOTAL_PAGES") {
@@ -166,42 +176,9 @@ export const CoachingPDFViewerModal: React.FC<CoachingPDFViewerModalProps> = ({
       max-width: 100%;
       height: auto !important;
     }
-    #status-overlay {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: #F8FAFC;
-      z-index: 10;
-      padding: 20px;
-      text-align: center;
-    }
-    .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid #CBD5E1;
-      border-top-color: #1C4966;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-bottom: 12px;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .status-text {
-      font-size: 13px;
-      color: #64748B;
-      font-weight: 500;
-    }
   </style>
 </head>
 <body>
-  <div id="status-overlay">
-    <div class="spinner"></div>
-    <div id="status-msg" class="status-text">Loading document...</div>
-  </div>
   <div id="viewer-container"></div>
 
   <script>
@@ -226,16 +203,14 @@ export const CoachingPDFViewerModal: React.FC<CoachingPDFViewerModalProps> = ({
         loadingTask.onProgress = function(p) {
           if (p.total > 0) {
             const percent = Math.round((p.loaded / p.total) * 100);
-            const msgEl = document.getElementById('status-msg');
-            if (msgEl) msgEl.innerText = 'Downloading ' + percent + '%...';
+            notifyRN({ type: 'PROGRESS', percent: percent });
           }
         };
 
         const pdf = await loadingTask.promise;
         const container = document.getElementById('viewer-container');
-        const statusMsg = document.getElementById('status-msg');
-        if (statusMsg) statusMsg.innerText = 'Rendering pages (1 of ' + pdf.numPages + ')...';
 
+        notifyRN({ type: 'RENDERING', pages: pdf.numPages });
         notifyRN({ type: 'TOTAL_PAGES', pages: pdf.numPages });
 
         const dpr = Math.min(window.devicePixelRatio || 1.5, 2.5);
@@ -265,18 +240,12 @@ export const CoachingPDFViewerModal: React.FC<CoachingPDFViewerModalProps> = ({
           }).promise;
 
           if (num === 1) {
-            const overlay = document.getElementById('status-overlay');
-            if (overlay) overlay.style.display = 'none';
             notifyRN({ type: 'FIRST_PAGE_READY' });
           }
         }
 
-        const overlay = document.getElementById('status-overlay');
-        if (overlay) overlay.style.display = 'none';
         notifyRN({ type: 'COMPLETE' });
       } catch (err) {
-        const overlay = document.getElementById('status-overlay');
-        if (overlay) overlay.style.display = 'none';
         notifyRN({ type: 'ERROR', message: err.message || 'Failed to render PDF' });
       }
     }
@@ -404,22 +373,55 @@ export const CoachingPDFViewerModal: React.FC<CoachingPDFViewerModalProps> = ({
             style={{ flex: 1, backgroundColor: "#F7F9FB" }}
           />
 
-          {/* Loading Spinner in Relicus Styling */}
+          {/* Unified Loading Experience in Relicus Styling */}
           {loading && (
-            <View className="absolute inset-0 bg-surface-primary/95 items-center justify-center p-6">
-              <ActivityIndicator size="large" color="#1C4966" />
-              <Typography weight="bold" color="primary" className="mt-3 text-sm">
-                Opening Protected Document...
+            <View
+              style={[
+                StyleSheet.absoluteFillObject,
+                {
+                  justifyContent: "center",
+                  alignItems: "center",
+                  backgroundColor: "#F8FAFC",
+                  zIndex: 20,
+                  padding: 24,
+                },
+              ]}
+            >
+              <View className="w-14 h-14 rounded-2xl bg-white items-center justify-center border border-border-subtle shadow-sm mb-3">
+                <ActivityIndicator size="small" color="#1C4966" />
+              </View>
+              <Typography weight="bold" color="primary" className="text-sm text-center">
+                {statusText}
               </Typography>
               <Typography variant="caption" color="secondary" className="mt-1 text-xs text-center">
                 Rendering material directly inside Relicus App
               </Typography>
+
+              {downloadProgress !== null && downloadProgress > 0 && downloadProgress < 100 && (
+                <View className="w-44 h-1.5 bg-slate-200 rounded-full mt-4 overflow-hidden">
+                  <View
+                    className="h-full bg-primary rounded-full"
+                    style={{ width: `${downloadProgress}%` }}
+                  />
+                </View>
+              )}
             </View>
           )}
 
           {/* Error View in Relicus Styling */}
           {error && !loading && (
-            <View className="absolute inset-0 bg-white items-center justify-center p-6">
+            <View
+              style={[
+                StyleSheet.absoluteFillObject,
+                {
+                  justifyContent: "center",
+                  alignItems: "center",
+                  backgroundColor: "#FFFFFF",
+                  zIndex: 20,
+                  padding: 24,
+                },
+              ]}
+            >
               <AlertCircle size={44} color="#C45151" />
               <Typography weight="bold" color="primary" className="mt-3 text-base">
                 Failed to Load Document

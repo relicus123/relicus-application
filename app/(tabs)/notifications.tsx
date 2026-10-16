@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Dimensions,
   Image,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { MotiView } from "moti";
@@ -27,6 +28,7 @@ import {
   ExternalLink,
   Inbox,
   ShieldAlert,
+  Trash2,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -188,8 +190,14 @@ type FilterTab = "all" | "unread" | "exams" | "announcements";
 
 export default function NotificationsScreen() {
   const router = useRouter();
-  const { notifications, markAllAsRead, markAsRead, fetchLiveNotifications } =
-    useNotificationsStore();
+  const {
+    notifications,
+    markAllAsRead,
+    markAsRead,
+    deleteNotification,
+    clearAll,
+    fetchLiveNotifications,
+  } = useNotificationsStore();
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [selectedNotification, setSelectedNotification] =
@@ -203,6 +211,21 @@ export default function NotificationsScreen() {
     setRefreshing(true);
     await fetchLiveNotifications();
     setRefreshing(false);
+  };
+
+  const handleClearAll = () => {
+    Alert.alert(
+      "Clear Notifications",
+      "Are you sure you want to clear all notifications from your inbox?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear All",
+          style: "destructive",
+          onPress: () => clearAll(),
+        },
+      ]
+    );
   };
 
   const unreadCount = useMemo(
@@ -326,19 +349,35 @@ export default function NotificationsScreen() {
               </View>
             </View>
 
-            {/* Right: Mark All As Read */}
-            {unreadCount > 0 && (
-              <TouchableOpacity
-                activeOpacity={0.75}
-                onPress={markAllAsRead}
-                className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EDF5F8] border border-[#DCE5EA]"
-              >
-                <CheckCheck size={14} color="#1C4966" strokeWidth={2.4} />
-                <Text className="text-xs font-bold text-[#1C4966]">
-                  Read All
-                </Text>
-              </TouchableOpacity>
-            )}
+            {/* Right: Actions (Read All & Clear All) */}
+            <View className="flex-row items-center gap-1.5">
+              {unreadCount > 0 && (
+                <TouchableOpacity
+                  activeOpacity={0.75}
+                  onPress={markAllAsRead}
+                  className="flex-row items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#EDF5F8] border border-[#DCE5EA]"
+                >
+                  <CheckCheck size={13} color="#1C4966" strokeWidth={2.4} />
+                  <Text className="text-xs font-bold text-[#1C4966]">
+                    Read All
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {notifications.length > 0 && (
+                <TouchableOpacity
+                  activeOpacity={0.75}
+                  onPress={handleClearAll}
+                  className="flex-row items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#FEE2E2]/60 border border-[#FECACA]"
+                  accessibilityLabel="Clear All Notifications"
+                >
+                  <Trash2 size={13} color="#DC2626" strokeWidth={2.2} />
+                  <Text className="text-xs font-bold text-[#DC2626]">
+                    Clear All
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           {/* =================================================================== */}
@@ -468,7 +507,7 @@ export default function NotificationsScreen() {
                         </View>
                       </View>
 
-                      {/* Timestamp & Unread Dot */}
+                      {/* Timestamp, Unread Dot & Delete */}
                       <View className="flex-row items-center gap-2">
                         <View className="flex-row items-center gap-1">
                           <Clock size={11} color="#94A3B8" />
@@ -479,6 +518,18 @@ export default function NotificationsScreen() {
                         {notification.unread && (
                           <View className="w-2.5 h-2.5 rounded-full bg-[#1C4966]" />
                         )}
+                        <TouchableOpacity
+                          activeOpacity={0.6}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          onPress={(e) => {
+                            e.stopPropagation?.();
+                            deleteNotification(notification.id);
+                          }}
+                          className="p-1 -mr-1 rounded-md"
+                          accessibilityLabel="Delete notification"
+                        >
+                          <Trash2 size={13} color="#94A3B8" />
+                        </TouchableOpacity>
                       </View>
                     </View>
 
@@ -606,10 +657,25 @@ export default function NotificationsScreen() {
               </Button>
 
               <TouchableOpacity
-                onPress={() => setSelectedNotification(null)}
-                className="py-2 items-center justify-center"
+                onPress={() => {
+                  if (selectedNotification) {
+                    deleteNotification(selectedNotification.id);
+                    setSelectedNotification(null);
+                  }
+                }}
+                className="py-2 flex-row items-center justify-center gap-1.5"
               >
-                <Typography weight="medium" className="text-sm text-[#71818B]">
+                <Trash2 size={13} color="#EF4444" />
+                <Typography weight="semibold" className="text-xs text-red-500">
+                  Delete Notification
+                </Typography>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setSelectedNotification(null)}
+                className="py-1.5 items-center justify-center"
+              >
+                <Typography weight="medium" className="text-xs text-[#71818B]">
                   Dismiss
                 </Typography>
               </TouchableOpacity>

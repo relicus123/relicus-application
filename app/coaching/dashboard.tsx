@@ -12,6 +12,7 @@ import {
   Image,
   Modal,
   BackHandler,
+  StyleSheet,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -57,6 +58,29 @@ import { toTitleCase } from "../../constants/coaching/examFormatter";
 import { CoachingVideoPlayerModal } from "../../components/coaching/CoachingVideoPlayerModal";
 import { CoachingPDFViewerModal } from "../../components/coaching/CoachingPDFViewerModal";
 import { getExamDataset } from "./data/examRegistry";
+
+const getVideoThumbnail = (v: any): string | null => {
+  if (v?.thumbnail_url && typeof v.thumbnail_url === "string" && v.thumbnail_url.trim().length > 0) {
+    return v.thumbnail_url.trim();
+  }
+  if (v?.thumbnailUrl && typeof v.thumbnailUrl === "string" && v.thumbnailUrl.trim().length > 0) {
+    return v.thumbnailUrl.trim();
+  }
+  const url = v?.url || v?.video_url || "";
+  if (!url) return null;
+
+  const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/i);
+  if (ytMatch && ytMatch[1]) {
+    return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+  }
+
+  const gdMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
+  if (gdMatch && gdMatch[1]) {
+    return `https://drive.google.com/thumbnail?id=${gdMatch[1]}&sz=w800`;
+  }
+
+  return null;
+};
 
 export default function CoachingDashboard() {
   const router = useRouter();
@@ -137,13 +161,23 @@ export default function CoachingDashboard() {
     : (localDataset?.mockTests || []);
   const allExamNotes = notesByExam[examType] || [];
 
+  const [selectedSubjectId, setSelectedSubjectId] = useState("");
+  const [loading, setLoading] = useState(!exam && subjects.length === 0);
+
   const practiceMockTests = useMemo(() => {
     return mockTests.filter((test: any) => {
       const isOnce = (test.attempt_type || test.attemptType) === "once";
       const isMega = test.test_type === "mega" || (isOnce && (test.scheduled_date || test.scheduled_start_time));
-      return !isMega;
+      if (isMega) return false;
+
+      // Subject Filtering:
+      // If mock test has no subject_id (null/empty), it is an all-subjects/general mock test.
+      // If assigned to a specific subject, only show if that subject is selected!
+      const testSubjectId = test.subject_id || test.subjectId;
+      if (!testSubjectId) return true;
+      return testSubjectId === selectedSubjectId;
     });
-  }, [mockTests]);
+  }, [mockTests, selectedSubjectId]);
 
   const megaTestsList = useMemo(() => {
     return mockTests.filter((test: any) => {
@@ -152,9 +186,6 @@ export default function CoachingDashboard() {
       return isMega;
     });
   }, [mockTests]);
-
-  const [selectedSubjectId, setSelectedSubjectId] = useState("");
-  const [loading, setLoading] = useState(!exam && subjects.length === 0);
 
   useEffect(() => {
     async function loadData() {
@@ -842,7 +873,7 @@ export default function CoachingDashboard() {
                           {chapterVideos.length > 0 ? (
                             <View className="gap-2.5">
                               {chapterVideos.map((v: any) => {
-                                const thumb = v.thumbnail_url || v.thumbnailUrl;
+                                const thumb = getVideoThumbnail(v);
                                 const isFreeLecture = String(v.id) === freePreviewVideoId || Boolean(v.is_free_preview);
                                 const isVideoUnlocked = hasAccess || isFreeLecture;
 
@@ -851,62 +882,63 @@ export default function CoachingDashboard() {
                                     key={v.id}
                                     onPress={() => handleOpenVideo(v, chapter)}
                                     className={twMerge(clsx(
-                                      "p-2.5 rounded-2xl border gap-2 shadow-2xs",
+                                      "p-2.5 rounded-2xl border gap-2.5 shadow-2xs overflow-hidden",
                                       isVideoUnlocked
                                         ? "bg-surface-secondary/40 border-border-subtle active:bg-surface-secondary"
                                         : "bg-slate-50/80 border-slate-200/80 active:bg-slate-100"
                                     ))}
                                     activeOpacity={0.8}
                                   >
-                                    {thumb ? (
-                                      <View className="relative w-full h-36 rounded-xl overflow-hidden bg-slate-900 border border-border-subtle">
+                                    <View className="relative w-full h-36 rounded-xl overflow-hidden bg-slate-900 border border-border-subtle">
+                                      {thumb ? (
                                         <Image
                                           source={{ uri: thumb }}
                                           className="w-full h-full"
                                           resizeMode="cover"
                                         />
-                                        <View className="absolute inset-0 bg-black/25 items-center justify-center">
-                                          <View className={twMerge(clsx(
-                                            "w-10 h-10 rounded-full items-center justify-center shadow-md",
-                                            isVideoUnlocked ? "bg-white/90" : "bg-slate-900/80"
-                                          ))}>
-                                            {isVideoUnlocked ? (
-                                              <Play size={18} color="#1C4966" fill="#1C4966" className="ml-0.5" />
-                                            ) : (
-                                              <Lock size={18} color="#D97706" />
-                                            )}
+                                      ) : (
+                                        <LinearGradient
+                                          colors={["#0F283C", "#1C4966", "#2B6387"]}
+                                          start={{ x: 0, y: 0 }}
+                                          end={{ x: 1, y: 1 }}
+                                          className="w-full h-full items-center justify-center"
+                                        >
+                                          <View className="opacity-20 items-center">
+                                            <Video size={48} color="white" />
                                           </View>
-                                        </View>
-                                        {Boolean(v.duration) && (
-                                          <View className="absolute bottom-2 right-2 bg-black/75 px-2 py-0.5 rounded-md">
-                                            <Typography variant="caption" className="text-white text-[10px] font-bold">
-                                              {v.duration}
-                                            </Typography>
-                                          </View>
-                                        )}
-                                      </View>
-                                    ) : (
-                                      <View className={twMerge(clsx(
-                                        "w-full h-20 rounded-xl border items-center justify-center flex-row gap-2",
-                                        isVideoUnlocked ? "bg-primary/10 border-primary/20" : "bg-slate-100 border-slate-200"
-                                      ))}>
+                                        </LinearGradient>
+                                      )}
+
+                                      <View
+                                        style={[
+                                          StyleSheet.absoluteFillObject,
+                                          {
+                                            justifyContent: "center",
+                                            alignItems: "center",
+                                            backgroundColor: "rgba(0, 0, 0, 0.25)",
+                                          },
+                                        ]}
+                                      >
                                         <View className={twMerge(clsx(
-                                          "w-8 h-8 rounded-full items-center justify-center shadow-xs",
-                                          isVideoUnlocked ? "bg-primary" : "bg-slate-300"
+                                          "w-11 h-11 rounded-full items-center justify-center shadow-md",
+                                          isVideoUnlocked ? "bg-white/95" : "bg-slate-900/85"
                                         ))}>
                                           {isVideoUnlocked ? (
-                                            <Play size={14} color="white" fill="white" className="ml-0.5" />
+                                            <Play size={18} color="#1C4966" fill="#1C4966" className="ml-0.5" />
                                           ) : (
-                                            <Lock size={14} color="#475569" />
+                                            <Lock size={18} color="#D97706" />
                                           )}
                                         </View>
-                                        <Typography variant="caption" weight="bold" color={isVideoUnlocked ? "primary" : "secondary"} className="text-xs">
-                                          {isVideoUnlocked
-                                            ? `Watch Lecture ${v.duration ? `• ${v.duration}` : ""}`
-                                            : `Locked Lecture ${v.duration ? `• ${v.duration}` : ""}`}
-                                        </Typography>
                                       </View>
-                                    )}
+
+                                      {Boolean(v.duration) && (
+                                        <View className="absolute bottom-2 right-2 bg-black/75 px-2 py-0.5 rounded-md">
+                                          <Typography variant="caption" className="text-white text-[10px] font-bold">
+                                            {v.duration}
+                                          </Typography>
+                                        </View>
+                                      )}
+                                    </View>
 
                                     <View className="flex-row items-center justify-between px-1">
                                       <View className="flex-1 mr-2">
@@ -1175,11 +1207,20 @@ export default function CoachingDashboard() {
                   >
                     {/* Header Tags */}
                     <View className="flex-row items-center justify-between mb-2">
-                      <View className="flex-row items-center gap-1.5 bg-teal-50 px-2.5 py-0.5 rounded-md border border-teal-200/60">
-                        <RotateCcw size={10} color="#0F766E" />
-                        <Typography variant="caption" weight="bold" className="text-teal-900 text-[10px] uppercase tracking-wider">
-                          Practice Mock • Multi-Attempt
-                        </Typography>
+                      <View className="flex-row items-center gap-1.5 flex-wrap flex-1 mr-2">
+                        <View className="flex-row items-center gap-1 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200/60">
+                          <RotateCcw size={10} color="#0F766E" />
+                          <Typography variant="caption" weight="bold" className="text-teal-900 text-[10px] uppercase tracking-wider">
+                            Practice Mock
+                          </Typography>
+                        </View>
+                        {test.subject_id && (
+                          <View className="bg-primary/10 px-2 py-0.5 rounded-md border border-primary/15">
+                            <Typography variant="caption" weight="bold" color="primary" className="text-[10px]">
+                              {subjects.find((s: any) => s.id === test.subject_id)?.name || "Subject Mock"}
+                            </Typography>
+                          </View>
+                        )}
                       </View>
 
                       {pastAttempt && (

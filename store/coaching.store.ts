@@ -191,10 +191,13 @@ export const useCoachingStore = create<CoachingStore>()(
           }
 
           if (subjectsRes.data) {
+            const sortedSubjects = [...(subjectsRes.data || [])].sort(
+              (a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0)
+            );
             set((state) => ({
               subjectsByExam: {
                 ...state.subjectsByExam,
-                [examId]: subjectsRes.data || [],
+                [examId]: sortedSubjects,
               },
             }));
           }
@@ -289,10 +292,13 @@ export const useCoachingStore = create<CoachingStore>()(
           if (latestChapterRequestBySubject[subjectId] !== reqId) return;
 
           if (!error && data) {
+            const sortedChapters = [...(data || [])].sort(
+              (a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0)
+            );
             set((state) => ({
               chaptersBySubject: {
                 ...state.chaptersBySubject,
-                [subjectId]: data,
+                [subjectId]: sortedChapters,
               },
             }));
           }
@@ -820,21 +826,39 @@ export const useCoachingStore = create<CoachingStore>()(
           };
         }
 
+        // Helper to robustly parse both 12-hour AM/PM (e.g. "10:00 AM", "01:30 PM") and 24-hour (e.g. "13:30") on Hermes
+        const parseScheduledDateTime = (dateStr: string, timeStr?: string, defaultHour = 0, defaultMin = 0): Date => {
+          const parts = (dateStr || '').split('-');
+          const year = parseInt(parts[0], 10) || new Date().getFullYear();
+          const month = (parseInt(parts[1], 10) || 1) - 1;
+          const day = parseInt(parts[2], 10) || 1;
+
+          let hours = defaultHour;
+          let minutes = defaultMin;
+
+          if (timeStr && timeStr.trim()) {
+            const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+            if (match) {
+              let h = parseInt(match[1], 10);
+              const m = parseInt(match[2], 10);
+              const meridiem = match[4]?.toUpperCase();
+
+              if (meridiem === 'PM' && h < 12) h += 12;
+              if (meridiem === 'AM' && h === 12) h = 0;
+
+              hours = h;
+              minutes = m;
+            }
+          }
+
+          return new Date(year, month, day, hours, minutes, defaultHour === 23 ? 59 : 0);
+        };
+
         // Compute schedule window
         const now = new Date();
         const datePart = test.scheduled_date; // YYYY-MM-DD
-        let startTime = new Date(`${datePart}T00:00:00`);
-        let endTime = new Date(`${datePart}T23:59:59`);
-
-        if (test.scheduled_start_time) {
-          const sDate = new Date(`${datePart} ${test.scheduled_start_time}`);
-          if (!isNaN(sDate.getTime())) startTime = sDate;
-        }
-
-        if (test.scheduled_end_time) {
-          const eDate = new Date(`${datePart} ${test.scheduled_end_time}`);
-          if (!isNaN(eDate.getTime())) endTime = eDate;
-        }
+        const startTime = parseScheduledDateTime(datePart, test.scheduled_start_time, 0, 0);
+        const endTime = parseScheduledDateTime(datePart, test.scheduled_end_time, 23, 59);
 
         if (now.getTime() < startTime.getTime()) {
           return {

@@ -7,6 +7,7 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import { MotiView } from "moti";
 import {
@@ -294,9 +295,18 @@ export default function ProfileScreen() {
             <Typography weight="bold" className="text-red-500">Logout</Typography>
           </TouchableOpacity>
 
-          <View className="items-center mt-6">
+          <View className="items-center mt-6 mb-2">
             <Typography variant="caption" color="secondary" className="mb-1">Version 1.0.0</Typography>
-            <Typography variant="caption" color="secondary" className="opacity-60">
+            <TouchableOpacity 
+              activeOpacity={0.7}
+              onPress={() => Linking.openURL("https://mahajanashok.in/")}
+              className="py-1 px-2.5 rounded-full bg-[#1C4966]/5 mb-1"
+            >
+              <Text className="text-[11px] text-[#71818B] font-medium">
+                Developed by <Text className="font-bold text-[#1C4966] underline">mahajanashok.in</Text>
+              </Text>
+            </TouchableOpacity>
+            <Typography variant="caption" color="secondary" className="opacity-60 text-[10px]">
               © 2026 Relicus. All rights reserved.
             </Typography>
           </View>

@@ -21,9 +21,12 @@ export interface AppNotification {
 interface NotificationsState {
   notifications: AppNotification[];
   isLoading: boolean;
+  clearedAt: string | null;
+  deletedIds: string[];
   addNotification: (notification: Omit<AppNotification, "id" | "timestamp" | "unread">) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
+  deleteNotification: (id: string) => void;
   clearAll: () => void;
   fetchLiveNotifications: () => Promise<void>;
 }
@@ -33,6 +36,8 @@ export const useNotificationsStore = create<NotificationsState>()(
     (set, get) => ({
       notifications: [],
       isLoading: false,
+      clearedAt: null,
+      deletedIds: [],
       addNotification: (notif) =>
         set((state) => {
           const newNotif: AppNotification = {
@@ -55,7 +60,17 @@ export const useNotificationsStore = create<NotificationsState>()(
         set((state) => ({
           notifications: state.notifications.map((n) => ({ ...n, unread: false })),
         })),
-      clearAll: () => set({ notifications: [] }),
+      deleteNotification: (id) =>
+        set((state) => ({
+          notifications: state.notifications.filter((n) => n.id !== id),
+          deletedIds: [...(state.deletedIds || []), id],
+        })),
+      clearAll: () =>
+        set({
+          notifications: [],
+          clearedAt: new Date().toISOString(),
+          deletedIds: [],
+        }),
 
       fetchLiveNotifications: async () => {
         set({ isLoading: true });
@@ -94,9 +109,16 @@ export const useNotificationsStore = create<NotificationsState>()(
             readStatusMap.set(n.id, n.unread);
           });
 
+          const clearedAtTime = get().clearedAt ? new Date(get().clearedAt!).getTime() : 0;
+          const deletedIdsSet = new Set(get().deletedIds || []);
+
           if (notifsRes.data) {
             notifsRes.data.forEach((n: any) => {
               const id = `cn-${n.id}`;
+              const itemTime = new Date(n.created_at || 0).getTime();
+              if (clearedAtTime && itemTime <= clearedAtTime) return;
+              if (deletedIdsSet.has(id)) return;
+
               const previouslyUnread = readStatusMap.has(id) ? readStatusMap.get(id)! : (n.is_read !== true);
               liveItems.push({
                 id,
@@ -113,9 +135,13 @@ export const useNotificationsStore = create<NotificationsState>()(
 
           if (annsRes.data) {
             annsRes.data.forEach((a: any) => {
+              const id = `ann-${a.id}`;
+              const itemTime = new Date(a.created_at || 0).getTime();
+              if (clearedAtTime && itemTime <= clearedAtTime) return;
+              if (deletedIdsSet.has(id)) return;
+
               // Avoid duplicate if already in notifications
               if (!liveItems.some((item) => item.title === a.title)) {
-                const id = `ann-${a.id}`;
                 const previouslyUnread = readStatusMap.has(id) ? readStatusMap.get(id)! : true;
                 liveItems.push({
                   id,

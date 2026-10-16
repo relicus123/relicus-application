@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { View, StyleSheet, Dimensions, Image } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useRootNavigationState } from "expo-router";
 import { MotiView } from "moti";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuthStore } from "../store/auth.store";
@@ -9,20 +9,26 @@ const { width, height } = Dimensions.get("window");
 
 export default function Splash() {
   const router = useRouter();
+  const rootNavigationState = useRootNavigationState();
   const currentUser = useAuthStore((state) => state.currentUser);
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const hasNavigated = React.useRef(false);
 
   useEffect(() => {
-    if (!isHydrated || hasNavigated.current) return;
+    if (!rootNavigationState?.key || !isHydrated || hasNavigated.current) return;
 
-    hasNavigated.current = true;
-    if (currentUser) {
-      router.replace("/(tabs)/home");
-    } else {
-      router.replace("/intro" as any);
-    }
-  }, [isHydrated, currentUser, router]);
+    const timer = setTimeout(() => {
+      if (hasNavigated.current) return;
+      hasNavigated.current = true;
+      if (currentUser) {
+        router.replace("/(tabs)/home");
+      } else {
+        router.replace("/intro" as any);
+      }
+    }, 1800);
+
+    return () => clearTimeout(timer);
+  }, [rootNavigationState?.key, isHydrated, currentUser, router]);
 
   return (
     <View className="flex-1 bg-surface-primary">

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   StyleSheet,
   Image,
   Platform,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -46,6 +48,7 @@ import { useLiveWeather } from "../../lib/weatherService";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 32 - 12) / 2; // 2 column layout with 16px screen padding & 12px gap
+const BANNER_WIDTH = width - 32;
 
 export default function Home() {
   const router = useRouter();
@@ -168,14 +171,41 @@ export default function Home() {
     []
   );
   const [activeSlide, setActiveSlide] = useState<number>(0);
+  const carouselRef = useRef<ScrollView>(null);
+  const isInteractingRef = useRef(false);
 
-  // Auto-cycle through the 4 learning slides
+  // Auto-cycle through the 4 learning slides when user is not manually scrolling
   useEffect(() => {
     const timer = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % learningSlides.length);
+      if (!isInteractingRef.current) {
+        setActiveSlide((prev) => {
+          const next = (prev + 1) % learningSlides.length;
+          carouselRef.current?.scrollTo({
+            x: next * BANNER_WIDTH,
+            animated: true,
+          });
+          return next;
+        });
+      }
     }, 5500);
     return () => clearInterval(timer);
   }, [learningSlides.length]);
+
+  const goToSlide = (dotIdx: number) => {
+    setActiveSlide(dotIdx);
+    carouselRef.current?.scrollTo({
+      x: dotIdx * BANNER_WIDTH,
+      animated: true,
+    });
+  };
+
+  const handleBannerScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const slideIndex = Math.round(offsetX / BANNER_WIDTH);
+    if (slideIndex >= 0 && slideIndex < learningSlides.length && slideIndex !== activeSlide) {
+      setActiveSlide(slideIndex);
+    }
+  };
 
   const cycleSkyMode = () => {
     setSkyModeIndex((prev) => (prev + 1) % skyModes.length);
@@ -283,64 +313,97 @@ export default function Home() {
             transition={{ type: "timing", duration: 400 }}
             style={styles.learningHeroCard}
           >
-            {/* Right Background Artwork Image */}
-            <Image
-              source={require("../../assets/home/learning_journey_banner.jpg")}
-              style={styles.learningBannerImg}
-              resizeMode="cover"
-            />
-
-            {/* Gradient Mask to ensure high-contrast legibility for text */}
-            <LinearGradient
-              colors={[
-                "#FFFFFF",
-                "#FFFFFF",
-                "rgba(255, 255, 255, 0.95)",
-                "rgba(255, 255, 255, 0.65)",
-                "rgba(255, 255, 255, 0.0)",
-              ]}
-              start={{ x: 0.38, y: 0 }}
-              end={{ x: 0.68, y: 0 }}
-              style={StyleSheet.absoluteFillObject}
-            />
-
-            {/* Content Column */}
-            <View style={styles.learningHeroContent}>
-              <Text style={styles.learningTagText}>
-                {learningSlides[activeSlide].tag}
-              </Text>
-              <Text style={styles.learningHeroTitle}>
-                {learningSlides[activeSlide].title}
-              </Text>
-              <Text style={styles.learningHeroQuote}>
-                "{learningSlides[activeSlide].quote}"
-              </Text>
-
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => router.push(learningSlides[activeSlide].route as any)}
-                style={styles.continueLearningBtn}
-              >
-                <Text style={styles.continueLearningBtnText}>
-                  {learningSlides[activeSlide].buttonText}
-                </Text>
-                <ArrowRight color="#FFFFFF" size={13} strokeWidth={2.6} />
-              </TouchableOpacity>
-
-              {/* Carousel Pagination Indicator Dots */}
-              <View style={styles.carouselDotsRow}>
-                {learningSlides.map((_, dotIdx) => (
-                  <TouchableOpacity
-                    key={dotIdx}
-                    activeOpacity={0.7}
-                    onPress={() => setActiveSlide(dotIdx)}
-                    style={[
-                      styles.carouselDot,
-                      activeSlide === dotIdx && styles.carouselDotActive,
-                    ]}
+            {/* Horizontal Swipeable Carousel */}
+            <ScrollView
+              ref={carouselRef}
+              horizontal
+              pagingEnabled
+              nestedScrollEnabled={true}
+              showsHorizontalScrollIndicator={false}
+              onScroll={handleBannerScroll}
+              scrollEventThrottle={16}
+              onScrollBeginDrag={() => {
+                isInteractingRef.current = true;
+              }}
+              onScrollEndDrag={() => {
+                setTimeout(() => {
+                  isInteractingRef.current = false;
+                }, 1200);
+              }}
+              onMomentumScrollEnd={(e) => {
+                isInteractingRef.current = false;
+                const offsetX = e.nativeEvent.contentOffset.x;
+                const nextIndex = Math.round(offsetX / BANNER_WIDTH);
+                if (nextIndex >= 0 && nextIndex < learningSlides.length) {
+                  setActiveSlide(nextIndex);
+                }
+              }}
+              style={{ width: BANNER_WIDTH }}
+            >
+              {learningSlides.map((slide, slideIdx) => (
+                <View
+                  key={slideIdx}
+                  style={{
+                    width: BANNER_WIDTH,
+                    minHeight: 185,
+                    position: "relative",
+                  }}
+                >
+                  {/* Right Background Artwork Image */}
+                  <Image
+                    source={require("../../assets/home/learning_journey_banner.jpg")}
+                    style={styles.learningBannerImg}
+                    resizeMode="cover"
                   />
-                ))}
-              </View>
+
+                  {/* Gradient Mask to ensure high-contrast legibility for text */}
+                  <LinearGradient
+                    colors={[
+                      "#FFFFFF",
+                      "#FFFFFF",
+                      "rgba(255, 255, 255, 0.95)",
+                      "rgba(255, 255, 255, 0.65)",
+                      "rgba(255, 255, 255, 0.0)",
+                    ]}
+                    start={{ x: 0.38, y: 0 }}
+                    end={{ x: 0.68, y: 0 }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+
+                  {/* Content Column */}
+                  <View style={styles.learningHeroContent}>
+                    <Text style={styles.learningTagText}>{slide.tag}</Text>
+                    <Text style={styles.learningHeroTitle}>{slide.title}</Text>
+                    <Text style={styles.learningHeroQuote}>"{slide.quote}"</Text>
+
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={() => router.push(slide.route as any)}
+                      style={styles.continueLearningBtn}
+                    >
+                      <Text style={styles.continueLearningBtnText}>
+                        {slide.buttonText}
+                      </Text>
+                      <ArrowRight color="#FFFFFF" size={13} strokeWidth={2.6} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+
+            {/* Carousel Pagination Indicator Dots (Fixed over carousel) */}
+            <View style={styles.carouselDotsRow} pointerEvents="box-none">
+              {learningSlides.map((_, dotIdx) => (
+                <TouchableOpacity
+                  key={dotIdx}
+                  activeOpacity={0.7}
+                  onPress={() => goToSlide(dotIdx)}
+                  style={[
+                    styles.carouselDot,
+                    activeSlide === dotIdx && styles.carouselDotActive,
+                  ]}
+                />
+              ))}
             </View>
           </MotiView>
         </View>
@@ -680,6 +743,7 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 5,
     minHeight: 185,
+    width: BANNER_WIDTH,
   },
   learningBannerImg: {
     position: "absolute",
@@ -726,6 +790,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8.5,
     borderRadius: 18,
     gap: 6,
+    marginBottom: 22,
     shadowColor: "#6D28D9",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
@@ -738,10 +803,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   carouselDotsRow: {
+    position: "absolute",
+    bottom: 14,
+    left: 16,
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    marginTop: 14,
+    zIndex: 10,
   },
   carouselDot: {
     width: 5,

@@ -3,12 +3,13 @@ import { supabase } from "../../services/supabaseClient";
 import * as XLSX from "xlsx";
 import { 
   Plus, Trash2, Edit2, GraduationCap, Video, FileText, Check, AlertCircle, X, 
-  Sparkles, Book, Calendar, MessageSquare, Star, ArrowRight, Layers, Megaphone,
+  Book, Calendar, Star, Layers, Megaphone,
   FileSpreadsheet, Download, Upload, Send, HelpCircle, User, Shield, Clock, Lock, RotateCcw, Image as ImageIcon,
-  RefreshCw, Loader2, Mail, CheckCircle2, ExternalLink
+  RefreshCw, Loader2, Mail, CheckCircle2, ExternalLink, ChevronUp, ChevronDown
 } from "lucide-react";
 import { ImageUpload } from "../../components/ImageUpload";
 import { PDFUpload } from "../../components/PDFUpload";
+import { TimePicker12Hour } from "../../components/TimePicker12Hour";
 import { sendAutomatedMegaTestEmail } from "../../services/emailService";
 
 export function CoachingManager() {
@@ -23,7 +24,7 @@ export function CoachingManager() {
   const [loading, setLoading] = useState(true);
 
   // Selection states
-  const [selectedExam, setSelectedExam] = useState<any | null>(null);
+  const [selectedExam, setSelectedExam] = useState<any>(null);
   const [selectedSubject, setSelectedSubject] = useState<any | null>(null);
   const [selectedChapter, setSelectedChapter] = useState<any | null>(null);
   const [selectedMockTest, setSelectedMockTest] = useState<any | null>(null);
@@ -105,6 +106,7 @@ export function CoachingManager() {
   const [mockForm, setMockForm] = useState({
     id: "",
     name: "",
+    subjectId: "",
     testType: "mock" as "mock" | "mega",
     durationHours: 1,
     durationMinutes: 30,
@@ -134,7 +136,6 @@ export function CoachingManager() {
   const [announcementForm, setAnnouncementForm] = useState({ title: "", content: "" });
 
   // Toggle modes
-  const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [isAddingSubject, setIsAddingSubject] = useState(false);
   const [isAddingChapter, setIsAddingChapter] = useState(false);
   const [isAddingVideo, setIsAddingVideo] = useState(false);
@@ -538,7 +539,11 @@ export function CoachingManager() {
       if (liveClassesError) throw liveClassesError;
       if (feedbacksError) throw feedbacksError;
 
-      const freshExams = examsData || [];
+      const freshExams = (examsData || []).map((ex: any) => ({
+        ...ex,
+        subjects: (ex.subjects || []).sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0)),
+        chapters: (ex.chapters || []).sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0)),
+      }));
       const freshCategories = categoriesData || [];
       const freshAnnouncements = announcementsData || [];
       const freshLiveClasses = liveClassesData || [];
@@ -550,10 +555,17 @@ export function CoachingManager() {
       setLiveClasses(freshLiveClasses);
       setFeedbacks(freshFeedbacks);
       
-      // Auto select first exam if available
-      if (freshExams.length > 0 && !selectedExam) {
-        setSelectedExam(freshExams[0]);
-        fillExamForm(freshExams[0]);
+      // Auto select first exam if available or sync selectedExam
+      if (freshExams.length > 0) {
+        if (!selectedExam) {
+          setSelectedExam(freshExams[0]);
+          fillExamForm(freshExams[0]);
+        } else {
+          const updatedSelected = freshExams.find((ex: any) => ex.id === selectedExam.id);
+          if (updatedSelected) {
+            setSelectedExam(updatedSelected);
+          }
+        }
       }
 
       return {
@@ -716,7 +728,6 @@ export function CoachingManager() {
 
     setCategoryForm({ id: "", title: "", description: "", icon: "🎓" });
     setEditingCategoryId(null);
-    setIsAddingCategory(false);
 
     try {
       if (currentId) {
@@ -876,7 +887,7 @@ export function CoachingManager() {
         };
 
         // Instant local state update
-        setSelectedExam(prev => prev ? ({ ...prev, ...updatedFields }) : prev);
+        setSelectedExam((prev: any) => prev ? ({ ...prev, ...updatedFields }) : prev);
         setExams(prev => prev.map(ex => ex.id === selectedExam.id ? { ...ex, ...updatedFields } : ex));
         setSuccess(`Exam ${selectedExam.id} profile updated.`);
 
@@ -938,7 +949,7 @@ export function CoachingManager() {
     try {
       if (currentSubId) {
         // Instant local state update
-        setSelectedExam(prev => {
+        setSelectedExam((prev: any) => {
           if (!prev) return prev;
           const updatedSubs = (prev.subjects || []).map((s: any) =>
             s.id === currentSubId ? { ...s, name: subName, icon: subIcon, color: subColor } : s
@@ -985,7 +996,7 @@ export function CoachingManager() {
         };
 
         // Instant local state update
-        setSelectedExam(prev => prev ? ({ ...prev, subjects: [...(prev.subjects || []), newSub] }) : prev);
+        setSelectedExam((prev: any) => prev ? ({ ...prev, subjects: [...(prev.subjects || []), newSub] }) : prev);
         setExams(prev => prev.map(ex => ex.id === selectedExam.id ? ({ ...ex, subjects: [...(ex.subjects || []), newSub] }) : ex));
         setSuccess("Subject created.");
 
@@ -1017,7 +1028,7 @@ export function CoachingManager() {
     if (!window.confirm(`Are you sure you want to delete the subject "${subName}"? All chapters and questions inside this subject will also be deleted.`)) return;
 
     // Instant local state update
-    setSelectedExam(prev => {
+    setSelectedExam((prev: any) => {
       if (!prev) return prev;
       return { ...prev, subjects: (prev.subjects || []).filter((s: any) => s.id !== subId) };
     });
@@ -1044,6 +1055,70 @@ export function CoachingManager() {
     }
   };
 
+  const handleMoveSubject = async (index: number, direction: 'up' | 'down') => {
+    if (!selectedExam) return;
+    const currentSubjects = [...(selectedExam.subjects || [])].sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0));
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= currentSubjects.length) return;
+
+    // Swap items
+    const itemA = currentSubjects[index];
+    const itemB = currentSubjects[targetIndex];
+    currentSubjects[index] = itemB;
+    currentSubjects[targetIndex] = itemA;
+
+    // Normalize order_index
+    const updated = currentSubjects.map((sub: any, idx: number) => ({ ...sub, order_index: idx }));
+
+    // Instant local state update
+    setSelectedExam((prev: any) => prev ? ({ ...prev, subjects: updated }) : prev);
+    setExams((prev: any) => prev.map((ex: any) => ex.id === selectedExam.id ? ({ ...ex, subjects: updated }) : ex));
+
+    try {
+      await Promise.all([
+        supabase.from("coaching_subjects").update({ order_index: targetIndex }).eq("id", itemA.id),
+        supabase.from("coaching_subjects").update({ order_index: index }).eq("id", itemB.id),
+      ]);
+    } catch (err: any) {
+      console.error("Failed to reorder subjects:", err);
+      loadAllData(false);
+    }
+  };
+
+  const handleMoveChapter = async (subjectId: string, index: number, direction: 'up' | 'down') => {
+    if (!selectedExam) return;
+    const allChapters = [...(selectedExam.chapters || [])];
+    const subjectChapters = allChapters
+      .filter((ch: any) => ch.subject_id === subjectId)
+      .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0));
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= subjectChapters.length) return;
+
+    const itemA = subjectChapters[index];
+    const itemB = subjectChapters[targetIndex];
+    subjectChapters[index] = itemB;
+    subjectChapters[targetIndex] = itemA;
+
+    const otherChapters = allChapters.filter((ch: any) => ch.subject_id !== subjectId);
+    const updatedSubjectChapters = subjectChapters.map((ch: any, idx: number) => ({ ...ch, order_index: idx }));
+    const newAllChapters = [...otherChapters, ...updatedSubjectChapters];
+
+    // Instant local state update
+    setSelectedExam((prev: any) => prev ? ({ ...prev, chapters: newAllChapters }) : prev);
+    setExams((prev: any) => prev.map((ex: any) => ex.id === selectedExam.id ? ({ ...ex, chapters: newAllChapters }) : ex));
+
+    try {
+      await Promise.all([
+        supabase.from("coaching_chapters").update({ order_index: targetIndex }).eq("id", itemA.id),
+        supabase.from("coaching_chapters").update({ order_index: index }).eq("id", itemB.id),
+      ]);
+    } catch (err: any) {
+      console.error("Failed to reorder chapters:", err);
+      loadAllData(false);
+    }
+  };
+
   // ── Chapter & Content Operations ─────────────────────────────────────────
   const handleAddChapter = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1055,7 +1130,7 @@ export function CoachingManager() {
     try {
       if (currentChId) {
         // Instant local state update
-        setSelectedExam(prev => {
+        setSelectedExam((prev: any) => {
           if (!prev) return prev;
           const nextChs = (prev.chapters || []).map((ch: any) =>
             ch.id === currentChId ? { ...ch, name: chName } : ch
@@ -1096,7 +1171,7 @@ export function CoachingManager() {
         };
 
         // Instant local state update
-        setSelectedExam(prev => prev ? ({ ...prev, chapters: [...(prev.chapters || []), newCh] }) : prev);
+        setSelectedExam((prev: any) => prev ? ({ ...prev, chapters: [...(prev.chapters || []), newCh] }) : prev);
         setExams(prev => prev.map(ex => ex.id === selectedExam.id ? ({ ...ex, chapters: [...(ex.chapters || []), newCh] }) : ex));
         setSelectedSubject((prev: any) => {
           if (!prev) return prev;
@@ -1167,7 +1242,7 @@ export function CoachingManager() {
       }
 
       // 4. Update UI state on successful server response
-      setSelectedExam(prev => {
+      setSelectedExam((prev: any) => {
         if (!prev) return prev;
         return { ...prev, chapters: (prev.chapters || []).filter((ch: any) => ch.id !== chId) };
       });
@@ -1193,6 +1268,19 @@ export function CoachingManager() {
     }
   };
 
+  const extractThumbnailFromUrl = (url: string) => {
+    if (!url) return "";
+    const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/i);
+    if (ytMatch && ytMatch[1]) {
+      return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+    }
+    const gdMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
+    if (gdMatch && gdMatch[1]) {
+      return `https://drive.google.com/thumbnail?id=${gdMatch[1]}&sz=w800`;
+    }
+    return "";
+  };
+
   const handleAddVideo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedExam || !selectedChapter) return;
@@ -1201,7 +1289,7 @@ export function CoachingManager() {
     const vTitle = videoForm.title;
     const vDuration = videoForm.duration;
     const vUrl = videoForm.url || "https://www.w3schools.com/html/mov_bbb.mp4";
-    const vThumbnailUrl = videoForm.thumbnailUrl || "";
+    const vThumbnailUrl = videoForm.thumbnailUrl?.trim() || extractThumbnailFromUrl(vUrl);
     const vIsFreePreview = Boolean(videoForm.isFreePreview);
 
     if (currentVidId) {
@@ -1714,16 +1802,18 @@ export function CoachingManager() {
     const mScheduledDate = mockForm.scheduledDate || null;
     const mScheduledStartTime = mockForm.scheduledStartTime || null;
     const mScheduledEndTime = mockForm.scheduledEndTime || null;
+    const mSubjectId = mTestType === "mock" ? (mockForm.subjectId?.trim() || null) : null;
 
     try {
       if (currentMockId) {
         // Instant local state update
-        setSelectedExam(prev => {
+        setSelectedExam((prev: any) => {
           if (!prev) return prev;
           const nextMocks = (prev.mockTests || []).map((m: any) =>
             m.id === currentMockId ? {
               ...m,
               name: mName,
+              subject_id: mSubjectId,
               duration: mDuration,
               test_type: mTestType,
               attempt_type: mAttemptType,
@@ -1744,6 +1834,7 @@ export function CoachingManager() {
               m.id === currentMockId ? {
                 ...m,
                 name: mName,
+                subject_id: mSubjectId,
                 duration: mDuration,
                 test_type: mTestType,
                 attempt_type: mAttemptType,
@@ -1760,6 +1851,7 @@ export function CoachingManager() {
           setSelectedMockTest((prev: any) => prev ? ({
             ...prev,
             name: mName,
+            subject_id: mSubjectId,
             duration: mDuration,
             test_type: mTestType,
             attempt_type: mAttemptType,
@@ -1777,6 +1869,7 @@ export function CoachingManager() {
         setMockForm({
           id: "",
           name: "",
+          subjectId: "",
           testType: "mock",
           durationHours: 1,
           durationMinutes: 30,
@@ -1795,6 +1888,7 @@ export function CoachingManager() {
           .from("coaching_mock_tests")
           .update({
             name: mName,
+            subject_id: mSubjectId,
             duration: mDuration,
             test_type: mTestType,
             attempt_type: mAttemptType,
@@ -1822,6 +1916,7 @@ export function CoachingManager() {
           id: mockId,
           exam_id: selectedExam.id,
           name: mName,
+          subject_id: mSubjectId,
           duration: mDuration,
           test_type: mTestType,
           attempt_type: mAttemptType,
@@ -1834,7 +1929,7 @@ export function CoachingManager() {
         };
 
         // Instant local state update
-        setSelectedExam(prev => prev ? ({ ...prev, mockTests: [...(prev.mockTests || []), newMock] }) : prev);
+        setSelectedExam((prev: any) => prev ? ({ ...prev, mockTests: [...(prev.mockTests || []), newMock] }) : prev);
         setExams(prev => prev.map(ex => ex.id === selectedExam.id ? ({ ...ex, mockTests: [...(ex.mockTests || []), newMock] }) : ex));
         setSuccess("Test created successfully.");
 
@@ -1843,6 +1938,7 @@ export function CoachingManager() {
         setMockForm({
           id: "",
           name: "",
+          subjectId: "",
           testType: "mock",
           durationHours: 1,
           durationMinutes: 30,
@@ -1912,7 +2008,7 @@ export function CoachingManager() {
     if (!window.confirm(`Delete mock test "${mockName}" and all of its questions?`)) return;
 
     // Instant local state update
-    setSelectedExam(prev => {
+    setSelectedExam((prev: any) => {
       if (!prev) return prev;
       return { ...prev, mockTests: (prev.mockTests || []).filter((m: any) => m.id !== mockId) };
     });
@@ -2254,7 +2350,7 @@ export function CoachingManager() {
         <div className="flex gap-2">
 
           <button
-            onClick={() => { setViewMode("categories"); setIsAddingCategory(false); }}
+            onClick={() => setViewMode("categories")}
             className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-bold"
           >
             <Layers className="h-4 w-4" /> Categories
@@ -2833,13 +2929,35 @@ export function CoachingManager() {
                         {(selectedExam.subjects || []).length === 0 ? (
                           <p className="text-xs text-slate-400 py-4 text-center">No subjects yet. Click + to add.</p>
                         ) : (
-                          (selectedExam.subjects || []).map((sub: any) => (
+                          [...(selectedExam.subjects || [])]
+                            .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
+                            .map((sub: any, index: number, arr: any[]) => (
                             <div
                               key={sub.id}
                               className={`group relative w-full px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors ${
                                 selectedSubject?.id === sub.id ? "bg-slate-100 dark:bg-slate-800 text-teal-600" : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
                               }`}
                             >
+                              <div className="flex items-center gap-0.5 mr-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  disabled={index === 0}
+                                  onClick={(e) => { e.stopPropagation(); handleMoveSubject(index, 'up'); }}
+                                  className="p-0.5 text-slate-300 hover:text-teal-600 disabled:opacity-20 disabled:hover:text-slate-300"
+                                  title="Move Up"
+                                >
+                                  <ChevronUp className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={index === arr.length - 1}
+                                  onClick={(e) => { e.stopPropagation(); handleMoveSubject(index, 'down'); }}
+                                  className="p-0.5 text-slate-300 hover:text-teal-600 disabled:opacity-20 disabled:hover:text-slate-300"
+                                  title="Move Down"
+                                >
+                                  <ChevronDown className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => { setSelectedSubject(sub); setSelectedChapter(null); }}
@@ -2954,13 +3072,36 @@ export function CoachingManager() {
                           {(selectedExam.chapters || []).filter((ch: any) => ch.subject_id === selectedSubject.id).length === 0 ? (
                             <p className="text-xs text-slate-400 py-4 text-center">No chapters in {selectedSubject.name} yet. Click + to add.</p>
                           ) : (
-                            (selectedExam.chapters || []).filter((ch: any) => ch.subject_id === selectedSubject.id).map((ch: any) => (
+                            [...(selectedExam.chapters || [])]
+                              .filter((ch: any) => ch.subject_id === selectedSubject.id)
+                              .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
+                              .map((ch: any, index: number, arr: any[]) => (
                               <div
                                 key={ch.id}
                                 className={`group relative w-full px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors ${
                                   selectedChapter?.id === ch.id ? "bg-slate-100 dark:bg-slate-800 text-indigo-500" : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
                                 }`}
                               >
+                                <div className="flex items-center gap-0.5 mr-1.5 shrink-0">
+                                  <button
+                                    type="button"
+                                    disabled={index === 0}
+                                    onClick={(e) => { e.stopPropagation(); handleMoveChapter(selectedSubject.id, index, 'up'); }}
+                                    className="p-0.5 text-slate-300 hover:text-indigo-600 disabled:opacity-20 disabled:hover:text-slate-300"
+                                    title="Move Up"
+                                  >
+                                    <ChevronUp className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={index === arr.length - 1}
+                                    onClick={(e) => { e.stopPropagation(); handleMoveChapter(selectedSubject.id, index, 'down'); }}
+                                    className="p-0.5 text-slate-300 hover:text-indigo-600 disabled:opacity-20 disabled:hover:text-slate-300"
+                                    title="Move Down"
+                                  >
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -3066,7 +3207,15 @@ export function CoachingManager() {
                                 <input
                                   type="text" required placeholder="YouTube URL or Video Stream Link"
                                   value={videoForm.url}
-                                  onChange={e => setVideoForm({ ...videoForm, url: e.target.value })}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    const autoThumb = extractThumbnailFromUrl(val);
+                                    setVideoForm(prev => ({
+                                      ...prev,
+                                      url: val,
+                                      thumbnailUrl: prev.thumbnailUrl || autoThumb || ""
+                                    }));
+                                  }}
                                   className="w-full rounded-lg border p-1.5 text-[10px] bg-white dark:bg-slate-900"
                                 />
                                 <div className="pt-1">
@@ -3113,8 +3262,8 @@ export function CoachingManager() {
                                 (selectedChapter.videos || []).map((v: any) => (
                                   <div key={v.id} className="group text-[11px] flex justify-between items-center py-1.5 border-b last:border-0 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 px-1 rounded">
                                     <div className="flex items-center gap-2 truncate pr-2">
-                                      {(v.thumbnail_url || v.thumbnailUrl) ? (
-                                        <img src={v.thumbnail_url || v.thumbnailUrl} alt="Thumb" className="w-8 h-6 object-cover rounded border border-slate-200 shrink-0" />
+                                      {(v.thumbnail_url || v.thumbnailUrl || extractThumbnailFromUrl(v.url)) ? (
+                                        <img src={v.thumbnail_url || v.thumbnailUrl || extractThumbnailFromUrl(v.url)} alt="Thumb" className="w-8 h-6 object-cover rounded border border-slate-200 shrink-0" />
                                       ) : (
                                         <div className="w-8 h-6 rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
                                           <Video className="w-3 h-3 text-slate-400" />
@@ -3319,7 +3468,7 @@ export function CoachingManager() {
                                 </button>
                                 <button
                                   onClick={() => {
-                                    setPracticeForm({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "" });
+                                    setPracticeForm({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "", imageUrl: "" });
                                     setEditingPracticeId(null);
                                     setIsAddingPractice(prev => !prev);
                                   }}
@@ -3340,7 +3489,7 @@ export function CoachingManager() {
                                       onClick={() => {
                                         setIsAddingPractice(false);
                                         setEditingPracticeId(null);
-                                        setPracticeForm({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "" });
+                                        setPracticeForm({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "", imageUrl: "" });
                                       }}
                                       className="text-slate-400 hover:text-slate-600 text-[9px]"
                                     >
@@ -3470,7 +3619,23 @@ export function CoachingManager() {
                         </h4>
                         <button
                           onClick={() => {
-                            setMockForm({ id: "", name: "", durationHours: 1, durationMinutes: 30, duration: 5400, attemptType: "multiple", isProctored: false, testCategory: "mock" });
+                            setMockForm({
+                              id: "",
+                              name: "",
+                              subjectId: "",
+                              testType: "mock",
+                              durationHours: 1,
+                              durationMinutes: 30,
+                              duration: 5400,
+                              attemptType: "multiple",
+                              isProctored: false,
+                              testCategory: "mock",
+                              scheduledDate: "",
+                              scheduledStartTime: "10:00 AM",
+                              scheduledEndTime: "01:00 PM",
+                              sendInAppNotification: true,
+                              sendEmailNotification: true,
+                            });
                             setEditingMockId(null);
                             setIsAddingMock(prev => !prev);
                           }}
@@ -3491,7 +3656,23 @@ export function CoachingManager() {
                                 onClick={() => {
                                   setIsAddingMock(false);
                                   setEditingMockId(null);
-                                  setMockForm({ id: "", name: "", durationHours: 1, durationMinutes: 30, duration: 5400, attemptType: "multiple", isProctored: false, testCategory: "mock" });
+                                  setMockForm({
+                                    id: "",
+                                    name: "",
+                                    subjectId: "",
+                                    testType: "mock",
+                                    durationHours: 1,
+                                    durationMinutes: 30,
+                                    duration: 5400,
+                                    attemptType: "multiple",
+                                    isProctored: false,
+                                    testCategory: "mock",
+                                    scheduledDate: "",
+                                    scheduledStartTime: "10:00 AM",
+                                    scheduledEndTime: "01:00 PM",
+                                    sendInAppNotification: true,
+                                    sendEmailNotification: true,
+                                  });
                                 }}
                                 className="text-slate-400 hover:text-slate-600 text-[10px]"
                               >
@@ -3569,6 +3750,31 @@ export function CoachingManager() {
                             </div>
                           </div>
 
+                          {mockForm.testType === "mock" && (
+                            <div>
+                              <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">
+                                Subject / Syllabus Scope
+                              </label>
+                              <select
+                                value={mockForm.subjectId || ""}
+                                onChange={e => setMockForm({ ...mockForm, subjectId: e.target.value })}
+                                className="w-full rounded-lg border p-2 text-[11px] bg-white dark:bg-slate-900 font-medium"
+                              >
+                                <option value="">🌐 All Subjects (Default - Visible across all subjects)</option>
+                                {(selectedExam.subjects || []).map((sub: any) => (
+                                  <option key={sub.id} value={sub.id}>
+                                    📘 {sub.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <span className="text-[10px] text-slate-400 mt-1 block">
+                                {mockForm.subjectId
+                                  ? "This mock test will only be shown when students select this specific subject."
+                                  : "Default: Visible to students in all subjects."}
+                              </span>
+                            </div>
+                          )}
+
                           {mockForm.testType === "mega" && (
                             <div className="p-3 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 rounded-xl space-y-2.5">
                               <div className="flex items-center justify-between">
@@ -3578,35 +3784,30 @@ export function CoachingManager() {
                                 <span className="text-[10px] bg-amber-200/70 text-amber-950 px-2 py-0.5 rounded-full font-bold">1 Attempt Only</span>
                               </div>
 
-                              <div className="grid grid-cols-3 gap-2">
-                                <div>
-                                  <label className="block text-[9px] uppercase font-bold text-slate-500 mb-0.5">Exam Date</label>
+                              <div className="space-y-2">
+                                <div className="space-y-1">
+                                  <label className="block text-[9px] uppercase font-bold text-slate-500 dark:text-slate-400">
+                                    Exam Date
+                                  </label>
                                   <input
                                     type="date"
                                     required
                                     value={mockForm.scheduledDate}
                                     onChange={e => setMockForm({ ...mockForm, scheduledDate: e.target.value })}
-                                    className="w-full rounded-lg border p-1.5 text-[11px] bg-white dark:bg-slate-900 font-medium"
+                                    className="w-full rounded-lg border border-slate-200 dark:border-slate-800 p-1.5 text-xs bg-white dark:bg-slate-900 font-medium text-slate-800 dark:text-slate-200 shadow-sm"
                                   />
                                 </div>
-                                <div>
-                                  <label className="block text-[9px] uppercase font-bold text-slate-500 mb-0.5">Start Time</label>
-                                  <input
-                                    type="text"
-                                    placeholder="e.g. 10:00 AM"
+
+                                <div className="grid grid-cols-2 gap-2">
+                                  <TimePicker12Hour
+                                    label="Start Time"
                                     value={mockForm.scheduledStartTime}
-                                    onChange={e => setMockForm({ ...mockForm, scheduledStartTime: e.target.value })}
-                                    className="w-full rounded-lg border p-1.5 text-[11px] bg-white dark:bg-slate-900 font-medium"
+                                    onChange={(val) => setMockForm({ ...mockForm, scheduledStartTime: val })}
                                   />
-                                </div>
-                                <div>
-                                  <label className="block text-[9px] uppercase font-bold text-slate-500 mb-0.5">End Time</label>
-                                  <input
-                                    type="text"
-                                    placeholder="e.g. 01:00 PM"
+                                  <TimePicker12Hour
+                                    label="End Time"
                                     value={mockForm.scheduledEndTime}
-                                    onChange={e => setMockForm({ ...mockForm, scheduledEndTime: e.target.value })}
-                                    className="w-full rounded-lg border p-1.5 text-[11px] bg-white dark:bg-slate-900 font-medium"
+                                    onChange={(val) => setMockForm({ ...mockForm, scheduledEndTime: val })}
                                   />
                                 </div>
                               </div>
@@ -3661,6 +3862,7 @@ export function CoachingManager() {
                                 setMockForm({
                                   id: "",
                                   name: "",
+                                  subjectId: "",
                                   testType: "mock",
                                   durationHours: 1,
                                   durationMinutes: 30,
@@ -3724,6 +3926,7 @@ export function CoachingManager() {
                                         setMockForm({
                                           id: t.id,
                                           name: t.name,
+                                          subjectId: t.subject_id || t.subjectId || "",
                                           testType: isMega ? "mega" : "mock",
                                           durationHours: h,
                                           durationMinutes: m,
@@ -3782,6 +3985,13 @@ export function CoachingManager() {
                                       <Calendar className="w-2.5 h-2.5" /> {t.scheduled_date} {t.scheduled_start_time ? `• ${t.scheduled_start_time}` : ""}
                                     </span>
                                   )}
+                                  {!isMega && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 font-medium">
+                                      {t.subject_id
+                                        ? `📘 ${(selectedExam.subjects || []).find((s: any) => s.id === t.subject_id)?.name || "Subject Mock"}`
+                                        : "🌐 All Subjects"}
+                                    </span>
+                                  )}
                                 </div>
 
                                 {(isMega || isOnce) && (
@@ -3831,7 +4041,7 @@ export function CoachingManager() {
                               </button>
                               <button
                                 onClick={() => {
-                                  setQuestionForm({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "", topic: "" });
+                                  setQuestionForm({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "", topic: "", imageUrl: "" });
                                   setEditingQuestionId(null);
                                   setIsAddingQuestion(prev => !prev);
                                 }}
@@ -3852,7 +4062,7 @@ export function CoachingManager() {
                                     onClick={() => {
                                       setIsAddingQuestion(false);
                                       setEditingQuestionId(null);
-                                      setQuestionForm({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "", topic: "" });
+                                      setQuestionForm({ question: "", optionA: "", optionB: "", optionC: "", optionD: "", correctAnswer: 0, explanation: "", topic: "", imageUrl: "" });
                                     }}
                                     className="text-slate-400 hover:text-slate-600 text-[10px]"
                                   >
@@ -4810,7 +5020,12 @@ export function CoachingManager() {
                 Course Enrolled Students ({enrollments.filter(e => e.status === "active").length})
               </span>
 
-              {enrollments.filter(e => e.status === "active").length === 0 ? (
+              {loadingExceptions ? (
+                <div className="flex items-center justify-center py-10 gap-2 text-slate-400">
+                  <Loader2 className="h-5 w-5 animate-spin text-amber-600" />
+                  <span className="text-xs">Loading test attempts & permissions...</span>
+                </div>
+              ) : enrollments.filter(e => e.status === "active").length === 0 ? (
                 <p className="text-xs text-slate-400 py-6 text-center">No enrolled students in this course yet.</p>
               ) : (
                 <div className="border rounded-2xl divide-y text-xs">

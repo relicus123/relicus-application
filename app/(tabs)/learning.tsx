@@ -173,45 +173,64 @@ export default function LearningScreen() {
                   <BentoCard variant="primary" padding="none" className="overflow-hidden border border-border-subtle bg-white shadow-xs">
                     {/* Category Accordion Header */}
                     <TouchableOpacity
-                      activeOpacity={0.8}
+                      activeOpacity={0.85}
                       onPress={() => toggleCategory(category.id)}
-                      className="flex-row items-center p-4 bg-surface-secondary/50 border-b border-border-subtle/60"
+                      className="p-4 bg-surface-secondary/40 border-b border-border-subtle/50"
                     >
-                      <View className="w-10 h-10 items-center justify-center bg-white rounded-xl shadow-2xs border border-border-subtle mr-3">
-                        <Typography className="text-xl">{category.icon || "📚"}</Typography>
-                      </View>
-                      <View className="flex-1">
-                        <Typography weight="bold" color="primary" className="text-base">
-                          {category.title}
-                        </Typography>
-                        <Typography variant="caption" color="secondary" numberOfLines={1} className="text-xs">
-                          {category.description}
-                        </Typography>
-                      </View>
-                      <View className="flex-row items-center gap-1.5">
-                        {isCategoryUnlocked ? (
-                          <View className="bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex-row items-center">
-                            <Typography variant="caption" weight="bold" className="text-[10px] text-emerald-700">
-                              Unlocked 🔓
-                            </Typography>
+                      <View className="flex-row items-center justify-between">
+                        {/* Left: Cute Icon + One-line Title & Sub-badge row */}
+                        <View className="flex-row items-center flex-1 mr-3">
+                          <View className="w-12 h-12 items-center justify-center bg-white rounded-2xl shadow-2xs border border-primary/10 mr-3">
+                            <Typography className="text-2xl">{category.icon || "🎓"}</Typography>
                           </View>
-                        ) : (
-                          <View className="bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex-row items-center">
-                            <Typography variant="caption" weight="bold" className="text-[10px] text-amber-700">
-                              Demo 🎬
+                          <View className="flex-1 justify-center">
+                            {/* Strictly 1-line clean title */}
+                            <Typography
+                              weight="bold"
+                              color="primary"
+                              numberOfLines={1}
+                              className="text-[15px] tracking-tight leading-snug"
+                            >
+                              {category.title}
                             </Typography>
+
+                            {/* Cute status row directly underneath */}
+                            <View className="flex-row items-center gap-1.5 mt-1.5 flex-wrap">
+                              {isCategoryUnlocked ? (
+                                <View className="bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full flex-row items-center shadow-2xs">
+                                  <Typography variant="caption" weight="bold" className="text-[10px] text-emerald-700">
+                                    Unlocked 🔓
+                                  </Typography>
+                                </View>
+                              ) : (
+                                <View className="bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 rounded-full flex-row items-center shadow-2xs">
+                                  <Typography variant="caption" weight="bold" className="text-[10px] text-amber-700">
+                                    Demo 🎬
+                                  </Typography>
+                                </View>
+                              )}
+
+                              <View className="bg-primary/10 px-2 py-0.5 rounded-full border border-primary/10">
+                                <Typography variant="caption" weight="bold" color="primary" className="text-[10px]">
+                                  {categoryExams.length} {categoryExams.length === 1 ? "Course" : "Courses"}
+                                </Typography>
+                              </View>
+
+                              <Typography variant="caption" color="secondary" className="text-[10px] font-semibold text-slate-400">
+                                CUET-PG
+                              </Typography>
+                            </View>
                           </View>
-                        )}
-                        <View className="bg-primary/10 px-2 py-0.5 rounded-full">
-                          <Typography variant="caption" weight="bold" color="primary" className="text-[10px]">
-                            {categoryExams.length} {categoryExams.length === 1 ? "Exam" : "Exams"}
-                          </Typography>
                         </View>
-                        {isCollapsed ? (
-                          <ChevronDown size={18} color="#71818B" />
-                        ) : (
-                          <ChevronUp size={18} color="#71818B" />
-                        )}
+
+                        {/* Cute rounded chevron on the far right */}
+                        <View className="w-8 h-8 rounded-full bg-white items-center justify-center border border-border-subtle/80 shadow-2xs">
+                          {isCollapsed ? (
+                            <ChevronDown size={16} color="#71818B" strokeWidth={2.2} />
+                          ) : (
+                            <ChevronUp size={16} color="#1C4966" strokeWidth={2.2} />
+                          )}
+                        </View>
                       </View>
                     </TouchableOpacity>
 
@@ -227,7 +246,15 @@ export default function LearningScreen() {
                         ) : (
                           categoryExams.map((exam) => {
                             const examType = exam.id;
-                            const cleanTitle = toTitleCase(exam.full_name || exam.id);
+                            const rawTitle = toTitleCase(exam.full_name || exam.id);
+                            // Avoid clumsy duplication if badge already says "CUET PG" and title says "CUET PG Psychology"
+                            let cleanTitle = rawTitle;
+                            if (exam.id && cleanTitle.toLowerCase().startsWith(exam.id.toLowerCase())) {
+                              const stripped = cleanTitle.slice(exam.id.length).trim().replace(/^[-–—:]\s*/, '');
+                              if (stripped.length > 0) {
+                                cleanTitle = stripped;
+                              }
+                            }
                             const tagline = exam.tagline?.trim();
 
                             return (
