@@ -11,6 +11,8 @@ const filesToDelete = [
   'components/Button.tsx',
   'components/Input.tsx',
   'components/GradientCard.tsx',
+  'app/counselling',
+  'app/therapist',
 
   // Web App Dead Code
   'relicus-admin/src/app/screens/EntranceCoaching',
